@@ -132,11 +132,13 @@ def main():
             exit_code = client.__getattribute__(client.func)()
         except SystemExit as e:
             exit_code = e.code
+            print(f'ERROR: {exit_code}')
         finally:
             print(f'End process')
 
         if exit_code is not None:
             cli_parser.parse_args(_args)
+            print(f'ERROR: {exit_code}', file=sys.stderr, end=' ')
             sys.exit(exit_code)
     else:
         cli_parser.parse_args(_args)

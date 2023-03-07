@@ -1,0 +1,70 @@
+{
+    "title": "GRDM CLI - Project/Component Template schema",
+    "description": "For projects/component definition JSON Schema",
+    "type": "object",
+    "properties": {
+        "projects": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "enum": [
+                            "analysis",
+                            "communication",
+                            "data",
+                            "hypothesis",
+                            "instrumentation",
+                            "methods and measures",
+                            "procedure",
+                            "project",
+                            "software",
+                            "other"
+                        ]
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "node_license": {
+                        "type": "object"
+                    },
+                    "public": {
+                        "type": "boolean"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "template_from": {
+                        "type": "string"
+                    },
+                    "children": {
+                        "type": "object"
+                    },
+                    "project_links": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "category",
+                    "title"
+                ],
+                "additionalProperties": true
+            }
+        }
+    },
+    "required": [
+        "projects"
+    ],
+    "additionalProperties": false,
+    "definitions": {
+    }
+}

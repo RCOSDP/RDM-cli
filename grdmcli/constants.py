@@ -1,8 +1,13 @@
 CONFIG_FILENAME = '.grdmcli.config'
 CONFIG_SECTION = 'default'
+
 OSF_API_URL_VAR_NAME = 'OSF_API_URL'
 OSF_TOKEN_VAR_NAME = 'OSF_TOKEN'
+
 MAX_PAGE_SIZE = 1000
 PAGE_SIZE_QUERY_PARAM = 'page[size]'
 ORDERING_QUERY_PARAM = 'sort'
 ORDERING_BY = 'pk'
+
+TEMPLATE_SCHEMA_PROJECTS = './json_schema/projects_create_schema.json'
+TEMPLATE_SCHEMA_CONTRIBUTORS = './json_schema/contributors_create_schema.json'

@@ -1,0 +1,24 @@
+{
+    "title": "GRDM CLI - Contributor Template schema",
+    "description": "For project contributors definition JSON Schema",
+    "type": "object",
+    "properties": {
+        "projects": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                },
+                "required": [
+                ],
+                "additionalProperties": true
+            }
+        }
+    },
+    "required": [
+        "projects"
+    ],
+    "additionalProperties": false,
+    "definitions": {
+    }
+}
