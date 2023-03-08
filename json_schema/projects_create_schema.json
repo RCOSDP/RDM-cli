@@ -1,6 +1,6 @@
 {
-    "title": "GRDM CLI - Project/Component Template schema",
-    "description": "For projects/component definition JSON Schema",
+    "title": "GRDM CLI - Projects/Components Template schema",
+    "description": "For projects/components definition JSON Schema",
     "type": "object",
     "properties": {
         "projects": {
@@ -8,19 +8,19 @@
             "items": {
                 "type": "object",
                 "properties": {
+                    "id": {
+                        "$ref": "#/definitions/NodeIdOrNull",
+                        "default": null
+                    },
+                    "fork_id": {
+                        "$ref": "#/definitions/NodeIdOrNull",
+                        "default": null
+                    },
+                    "template_from": {
+                        "$ref": "#/definitions/NodeId"
+                    },
                     "category": {
-                        "enum": [
-                            "analysis",
-                            "communication",
-                            "data",
-                            "hypothesis",
-                            "instrumentation",
-                            "methods and measures",
-                            "procedure",
-                            "project",
-                            "software",
-                            "other"
-                        ]
+                        "$ref": "#/definitions/NodeCategory"
                     },
                     "title": {
                         "type": "string"
@@ -29,7 +29,7 @@
                         "type": "string"
                     },
                     "node_license": {
-                        "type": "object"
+                        "$ref": "#/definitions/NodeLicense"
                     },
                     "public": {
                         "type": "boolean"
@@ -40,24 +40,35 @@
                             "type": "string"
                         }
                     },
-                    "template_from": {
-                        "type": "string"
-                    },
                     "children": {
-                        "type": "object"
+                        "$ref": "#/definitions/NodeChildren"
                     },
                     "project_links": {
                         "type": "array",
                         "items": {
-                            "type": "string"
+                            "$ref": "#/definitions/NodeIdOrNull"
                         }
                     }
                 },
-                "required": [
-                    "category",
-                    "title"
-                ],
-                "additionalProperties": true
+                "additionalProperties": false,
+                "anyOf": [
+                    {
+                        "properties": {
+                            "id": {
+                                "$ref": "#/definitions/NodeId"
+                            }
+                        },
+                        "required": [
+                            "id"
+                        ]
+                    },
+                    {
+                        "required": [
+                            "category",
+                            "title"
+                        ]
+                    }
+                ]
             }
         }
     },
@@ -66,5 +77,123 @@
     ],
     "additionalProperties": false,
     "definitions": {
+        "LicenseId": {
+            "type": "string",
+            "pattern": "^[0-9a-z]{24}$"
+        },
+        "NodeId": {
+            "type": "string",
+            "pattern": "^[23456789abcdefghjkmnpqrstuvwxyz]{5}$"
+        },
+        "NodeIdOrNull": {
+            "anyOf": [
+                {
+                    "type": "null"
+                },
+                {
+                    "$ref": "#/definitions/NodeId"
+                }
+            ]
+        },
+        "NodeCategory": {
+            "enum": [
+                "analysis",
+                "communication",
+                "data",
+                "hypothesis",
+                "instrumentation",
+                "methods and measures",
+                "procedure",
+                "project",
+                "software",
+                "other"
+            ]
+        },
+        "NodeLicense": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "$ref": "#/definitions/LicenseId"
+                },
+                "copyright_holders": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "year": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "id",
+                "copyright_holders",
+                "year"
+            ],
+            "additionalProperties": false
+        },
+        "NodeChildren": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/definitions/NodeIdOrNull"
+                    },
+                    "template_from": {
+                        "$ref": "#/definitions/NodeId"
+                    },
+                    "category": {
+                        "$ref": "#/definitions/NodeCategory"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "node_license": {
+                        "$ref": "#/definitions/NodeLicense"
+                    },
+                    "public": {
+                        "type": "boolean"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "children": {
+                        "$ref": "#/definitions/NodeChildren"
+                    },
+                    "project_links": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/NodeIdOrNull"
+                        }
+                    }
+                },
+                "anyOf": [
+                    {
+                        "properties": {
+                            "id": {
+                                "$ref": "#/definitions/NodeId"
+                            }
+                        },
+                        "required": [
+                            "id"
+                        ]
+                    },
+                    {
+                        "required": [
+                            "category",
+                            "title"
+                        ]
+                    }
+                ],
+                "additionalProperties": false
+            }
+        }
     }
 }

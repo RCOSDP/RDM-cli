@@ -1,6 +1,6 @@
 {
-    "title": "GRDM CLI - Contributor Template schema",
-    "description": "For project contributors definition JSON Schema",
+    "title": "GRDM CLI - Contributors Template schema",
+    "description": "For projects' contributors definition JSON Schema",
     "type": "object",
     "properties": {
         "projects": {
@@ -8,10 +8,35 @@
             "items": {
                 "type": "object",
                 "properties": {
+                    "id": {
+                        "$ref": "#/definitions/NodeIdOrNull"
+                    },
+                    "contributors": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "$ref": "#/definitions/UserId"
+                            },
+                            "bibliographic": {
+                                "type": "boolean",
+                                "default": true
+                            },
+                            "permission": {
+                                "$ref": "#/definitions/ContributorPermission"
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": [
+                            "id",
+                            "contributors"
+                        ]
+                    }
                 },
+                "additionalProperties": false,
                 "required": [
-                ],
-                "additionalProperties": true
+                    "id",
+                    "contributors"
+                ]
             }
         }
     },
@@ -20,5 +45,31 @@
     ],
     "additionalProperties": false,
     "definitions": {
+        "UserId": {
+            "type": "string",
+            "pattern": "^[23456789abcdefghjkmnpqrstuvwxyz]{5}$"
+        },
+        "NodeId": {
+            "type": "string",
+            "pattern": "^[23456789abcdefghjkmnpqrstuvwxyz]{5}$"
+        },
+        "NodeIdOrNull": {
+            "anyOf": [
+                {
+                    "type": "null"
+                },
+                {
+                    "$ref": "#/definitions/NodeId"
+                }
+            ]
+        },
+        "ContributorPermission": {
+            "enum": [
+                "admin",
+                "read",
+                "write"
+            ],
+            "default": "write"
+        }
     }
 }

@@ -34,7 +34,9 @@ class GRDMClient(Namespace):
         self.created_projects = []
 
     def _request(self, method, url, params=None, data=None, headers=None):
+        """  """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
         if isinstance(validators.url(url, public=False), ValidationFailure):
             url = f'{self.osf_api_url}{url}'
 
@@ -78,14 +80,13 @@ class GRDMClient(Namespace):
         if self.is_authenticated:
             return True
 
-        # get from config property
-        # print(f'get from config property')
+        print(f'Try get from config property')
         if self.config_file is None:
             self.config_file = Path(os.getcwd()) / const.CONFIG_FILENAME
 
         if os.path.exists(self.config_file):
             config = configparser.ConfigParser()
-            # print(f'config_file {self.config_file}')
+            print(f'config_file: {self.config_file}')
             config.read(self.config_file)
             config_dict = dict(config.items(const.CONFIG_SECTION))
             if self.osf_api_url is None:
@@ -95,8 +96,7 @@ class GRDMClient(Namespace):
         else:
             self.config_file = None
 
-        # get from environment variable
-        # print(f'get from environment variable')
+        print(f'Try get from environment variable')
         if self.osf_api_url is None:
             self.osf_api_url = os.environ.get(const.OSF_API_URL_VAR_NAME)
         if self.osf_token is None:
@@ -108,17 +108,21 @@ class GRDMClient(Namespace):
         if not self.osf_token:
             sys.exit('Missing Personal Access Token')
 
-        self._users_me(verbose)
+        if not self.is_authenticated:
+            print('Check Personal Access Token')
+            self._users_me(verbose=verbose)
 
     def _users_me(self, verbose=True):
         """ Get the currently logged-in user """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
+        print('GET the currently logged-in user')
         _response = self._request('GET', 'users/me/', params={}, data={})
+        _content = _response.content
 
         # pprint(_response.json())
         # Parse JSON into an object with attributes corresponding to dict keys.
-        response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 
         self.is_authenticated = True
         self.user = response.data
@@ -140,10 +144,11 @@ class GRDMClient(Namespace):
 
         # users/{user.id}/institutions/
         _response = self._request('GET', self.user.relationships.institutions.links.related.href, params={const.ORDERING_QUERY_PARAM: 'name'})
+        _content = _response.content
 
         # pprint(_response.json())
         # Parse JSON into an object with attributes corresponding to dict keys.
-        response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 
         self.affiliated_institutions = response.data
         _institutions_numb = response.links.meta.total
@@ -168,10 +173,11 @@ class GRDMClient(Namespace):
         for inst in self.affiliated_institutions:
             # institutions/{inst.id}/users/
             _response = self._request('GET', inst.relationships.users.links.related.href, params={const.ORDERING_QUERY_PARAM: 'full_name'})
+            _content = _response.content
 
             # pprint(_response.json())
             # Parse JSON into an object with attributes corresponding to dict keys.
-            response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
+            response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 
             self.affiliated_users.extend(response.data)
             _users_numb = _users_numb + response.links.meta.total
@@ -192,10 +198,11 @@ class GRDMClient(Namespace):
 
         print(f'[For development]GET List of licenses')
         _response = self._request('GET', 'licenses/', params={const.ORDERING_QUERY_PARAM: 'name'}, data={}, )
+        _content = _response.content
 
         # pprint(_response.json())
         # Parse JSON into an object with attributes corresponding to dict keys.
-        response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 
         self.licenses = response.data
         _licenses_numb = response.links.meta.total
@@ -214,10 +221,11 @@ class GRDMClient(Namespace):
 
         print(f'[For development]GET List of projects')
         _response = self._request('GET', 'nodes/', params={const.ORDERING_QUERY_PARAM: 'title'}, data={}, )
+        _content = _response.content
 
         # pprint(_response.json())
         # Parse JSON into an object with attributes corresponding to dict keys.
-        response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 
         self.projects = response.data
         _projects_numb = response.links.meta.total
@@ -237,18 +245,35 @@ class GRDMClient(Namespace):
         print(f'GET List of contributors')
         sys.exit(f'TODO {inspect.stack()[0][3]}')
 
-    def _projects_load_project(self, pk, verbose=True):
+    def _projects_fake_project_content_data(self, pk, verbose=True):
+        """  """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-        return {}
 
-    def _projects_fork_project(self, pk, verbose=True):
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-        return {}
+        _content = json.dumps({
+            'data': {
+                'id': pk,
+                'type': 'nodes',
+                'attributes': {
+                    'title': 'N/A',
+                    'category': 'N/A'
+                },
+                'relationships': {}
+            }
+        })
 
-    def _projects_create_project(self, node_object, verbose=True):
+        if verbose:
+            print(f'prepared project data: {_content}')
+
+        return _content
+
+    def _projects_prepare_project_data(self, node_object, verbose=True):
+        """  """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-        _today_str = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+
         _project = node_object
+
+        # For development
+        _today_str = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
         # initial
         _category = _project.get('category')
@@ -269,7 +294,7 @@ class GRDMClient(Namespace):
         _attributes['description'] = _description
 
         # update description
-        _public = _project.get('public')
+        _public = _project.get('public', False)
         _attributes['public'] = _public
 
         # update description
@@ -299,7 +324,47 @@ class GRDMClient(Namespace):
             }
         }
 
-        _response = self._request('POST', 'nodes/', params={}, data=_data, )
+        if verbose:
+            print(f'prepared project data: {_data}')
+
+        return _data
+
+    def _projects_load_project(self, pk, is_fake=True, verbose=True):
+        """  """
+        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
+        _content = None
+        _faked_or_loaded = f'[loaded nodes/{pk}/]'
+
+        if is_fake:
+            _faked_or_loaded = '[faked]'
+            _content = self._projects_fake_project_content_data(pk, verbose=False)
+
+        print(f'GET Retrieve project {_faked_or_loaded}')
+        if not is_fake:
+            _response = self._request('GET', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
+            _content = _response.content
+
+        # pprint(_response.json())
+        # Parse JSON into an object with attributes corresponding to dict keys.
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
+
+        project = response.data
+
+        if verbose:
+            print(f'Loaded project:')
+            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+
+        return project
+
+    def _projects_fork_project(self, node_object, verbose=True):
+        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
+        _data = self._projects_prepare_project_data(node_object, verbose=False)
+        pk = node_object['fork_id']
+
+        print(f'POST Fork a project from nodes/{pk}/')
+        _response = self._request('POST', 'nodes/{node_id}/forks/'.format(node_id=pk), params={}, data=_data, )
 
         # pprint(_response.json())
         # Parse JSON into an object with attributes corresponding to dict keys.
@@ -307,30 +372,117 @@ class GRDMClient(Namespace):
 
         project = response.data
 
+        self.created_projects.append(project)
+
+        if verbose:
+            print(f'Forked project:')
+            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+
         return project
 
-    def _projects_add_component(self, project, node, verbose=True):
+    def _projects_create_project(self, node_object, verbose=True):
+        """  """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-        _children = node.get('children', [])
-        _project_links = node.get('project_links', [])
 
-        # create Components
-        for _comp in _children:
-            component = self._projects_add_component(project, _comp)
-            self.created_projects.append(component)
+        _data = self._projects_prepare_project_data(node_object, verbose=False)
+
+        print(f'POST Create new project')
+        _response = self._request('POST', 'nodes/', params={}, data=_data, )
+        _content = _response.content
+
+        # pprint(_response.json())
+        # Parse JSON into an object with attributes corresponding to dict keys.
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
+
+        project = response.data
+
+        self.created_projects.append(project)
+
+        if verbose:
+            print(f'Created project:')
+            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+
+        return project
+
+    def _projects_add_component(self, parent_id, node_object, verbose=True):
+        """  """
+        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
+        _children = node_object.get('children', [])
+        _project_links = node_object.get('project_links', [])
+
+        _data = self._projects_prepare_project_data(node_object, verbose=False)
+
+        print(f'POST Create new component to nodes/{parent_id}/')
+        _response = self._request('POST', 'nodes/{node_id}/children/'.format(node_id=parent_id), params={}, data=_data, )
+        _content = _response.content
+
+        # pprint(_response.json())
+        # Parse JSON into an object with attributes corresponding to dict keys.
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
+
+        project = response.data
+
+        self.created_projects.append(project)
+
+        if verbose:
+            print(f'Create component:')
+            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
         # link a project (pointer)
-        for _node in _project_links:
-            self._projects_link_project(project, _node)
+        for idx_nid, _node_id in enumerate(_project_links):
+            print(f'POINTER ./project_links/{idx_nid}/')
+            project_link = self._projects_link_project(project.id, _node_id, verbose=True)
 
-        return {}
+        # create Components
+        for idx_c, _comp_dict in enumerate(_children):
+            _comp_id = _comp_dict.get('id')
+            if _comp_id:
+                print(f'POINTER ./children/{idx_c}/ ignored')
+                continue
 
-    def _projects_link_project(self, project, node, verbose=True):
+            print(f'POINTER ./children/{idx_c}/')
+            component = self._projects_add_component(project.id, _comp_dict, verbose=True)
+
+        return project
+
+    def _projects_link_project(self, node_id, pointer_id, verbose=True):
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-        return {}
+
+        _data = {
+            "data": {
+                "type": "node_links",  # required
+                "relationships": {
+                    "nodes": {
+                        "data": {
+                            "type": "nodes",  # required
+                            "id": pointer_id  # required
+                        }
+                    }
+                }
+            }
+        }
+
+        _response = self._request('POST', 'nodes/{node_id}/node_links/'.format(node_id=node_id), params={}, data=_data, )
+        _content = _response.content
+
+        # pprint(_response.json())
+        # Parse JSON into an object with attributes corresponding to dict keys.
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
+
+        project_link = response.data
+        project = response.data.embeds.target_node.data
+
+        if verbose:
+            print(f'Created Node Links:')
+            print(f'\'{project_link.id}\' - [{project_link.type}]')
+            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+
+        return project
 
     def projects_create(self, verbose=True):
-        """  """
+        """ Create Projects/Components following the inputted template file
+        """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         if not os.path.exists(const.TEMPLATE_SCHEMA_PROJECTS):
@@ -339,42 +491,50 @@ class GRDMClient(Namespace):
         if not os.path.exists(self.template):
             sys.exit('Missing the template file')
 
+        print(f'Check config and authenticate by token')
         self._check_config(verbose=False)
 
-        print(f'CREATE Following the template of projects')
-
         try:
-            _projects_struct = read_json_file(self.template)
+            print(f'USE the template of projects: {self.template}')
+            _projects_dict = read_json_file(self.template)
 
             # check json schema
-            check_json_schema(const.TEMPLATE_SCHEMA_PROJECTS, _projects_struct)
+            print(f'USE the template of projects: {const.TEMPLATE_SCHEMA_PROJECTS}')
+            check_json_schema(const.TEMPLATE_SCHEMA_PROJECTS, _projects_dict)
 
-            _projects = _projects_struct.get('projects', [])
-            for _project in _projects:
-                _id = _project.get('id')
-                _fork_id = _project.get('fork_id')
-                _children = _project.get('children', [])
-                _project_links = _project.get('project_links', [])
+            print(f'CREATE Following the template of projects')
+            _projects = _projects_dict.get('projects', [])
+            for idx, _project_dict in enumerate(_projects):
+                _id = _project_dict.get('id')
+                _fork_id = _project_dict.get('fork_id')
+                _children = _project_dict.get('children', [])
+                _project_links = _project_dict.get('project_links', [])
 
                 if _id:
-                    project = self._projects_load_project(_id)
+                    print(f'POINTER /projects/{idx}/id == {_id}')
+                    project = self._projects_load_project(_id, is_fake=True, verbose=True)
                 elif _fork_id:
-                    project = self._projects_fork_project(_fork_id)
+                    print(f'POINTER /projects/{idx}/fork_id == {_fork_id}')
+                    project = self._projects_fork_project(_project_dict, verbose=True)
                 else:
-                    project = self._projects_create_project(_project)
-
-                self.created_projects.append(project)
-
-                # create Components
-                for _comp in _children:
-                    component = self._projects_add_component(project, _comp)
-                    self.created_projects.append(component)
+                    print(f'POINTER /projects/{idx}/')
+                    project = self._projects_create_project(_project_dict, verbose=True)
 
                 # link a project (pointer)
-                for _node in _project_links:
-                    self._projects_link_project(project, _node)
+                for idx_nid, _node_id in enumerate(_project_links):
+                    print(f'POINTER ./project_links/{idx_nid}/')
+                    project_link = self._projects_link_project(project.id, _node_id, verbose=True)
+
+                # create Components
+                for idx_c, _comp_dict in enumerate(_children):
+                    _comp_id = _comp_dict.get('id')
+                    if _comp_id:
+                        print(f'POINTER ./children/{idx_c}/ ignored')
+                        continue
+
+                    print(f'POINTER ./children/{idx_c}/')
+                    component = self._projects_add_component(project.id, _comp_dict, verbose=True)
         except Exception as exce:
-            print('!---{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
             sys.exit(f'Exception {exce}')
         finally:
             if verbose:
