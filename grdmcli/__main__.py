@@ -2,9 +2,9 @@ from __future__ import print_function
 
 import argparse
 import inspect  # noqa
+import sys
 
 import six
-import sys
 
 from grdmcli import __version__
 from grdmcli.grdm_client import GRDMClient
@@ -62,7 +62,11 @@ def main():
     projects_create_parser.set_defaults(func='projects_create')
     # to add template arg
     projects_create_parser.add_argument('--template', required=True,
+                                        default='./template_file.json',
                                         help='template file for projects/components')
+    projects_create_parser.add_argument('--output_result_file',
+                                        default='./output_result_file.json',
+                                        help='the output result file path')
     # to add config args
     _have_config_parsers.append(projects_create_parser)
 
@@ -74,34 +78,18 @@ def main():
     # dest=command stores the name of the command in a variable
     contributors_cmd_subparsers = contributors_parser.add_subparsers(dest='command')
 
-    # [For development] command=list
-    contributors_list_parser = _add_subparser(contributors_cmd_subparsers, 'list', 'contributors list command', ['ls', ])
-    contributors_list_parser.set_defaults(func='contributors_list')
-    # to add config args
-    _have_config_parsers.append(contributors_list_parser)
-
     # command=create
     contributors_create_parser = _add_subparser(contributors_cmd_subparsers, 'create', 'contributors create command')
     contributors_create_parser.set_defaults(func='contributors_create')
     # to add template arg
     contributors_create_parser.add_argument('--template', required=True,
+                                            default='./template_file.json',
                                             help='template file for contributors')
+    contributors_create_parser.add_argument('--output_result_file',
+                                            default='./output_result_file.json',
+                                            help='the output result file path')
     # to add config args
     _have_config_parsers.append(contributors_create_parser)
-
-    # [END] entity=contributors
-
-    # [For development][START] entity=users
-
-    users_parser = _add_subparser(entity_subparsers, 'users', 'users entity')
-    # dest=command stores the name of the command in a variable
-    users_cmd_subparsers = users_parser.add_subparsers(dest='command')
-
-    # command=list
-    users_list_parser = _add_subparser(users_cmd_subparsers, 'list', 'users list command', ['ls', ])
-    users_list_parser.set_defaults(func='affiliated_users_list')
-    # to add config args
-    _have_config_parsers.append(users_list_parser)
 
     # [END] entity=contributors
 
@@ -125,21 +113,21 @@ def main():
     _args.append('-h')
 
     if hasattr(client, 'func'):
+        exit_code = None
         # give functions a chance to influence the exit code this setup is,
         # so we can print usage for the sub command even if there was an error further down
         try:
             print(f'Start process')
             exit_code = client.__getattribute__(client.func)()
-        except SystemExit as e:
+        except (SystemExit, KeyboardInterrupt) as e:
             exit_code = e.code
-            print(f'ERROR: {exit_code}')
         finally:
+            if exit_code is not None:
+                cli_parser.parse_args(_args)
+                print(f'ERROR: {exit_code}', file=sys.stderr, end=' ')
+                sys.exit(exit_code)
             print(f'End process')
 
-        if exit_code is not None:
-            cli_parser.parse_args(_args)
-            print(f'ERROR: {exit_code}', file=sys.stderr, end=' ')
-            sys.exit(exit_code)
     else:
         cli_parser.parse_args(_args)
 

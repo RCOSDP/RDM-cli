@@ -54,8 +54,7 @@ def write_json_file(file, data):
     """
     with open(file, "w", encoding='utf-8') as write_file:
         try:
-            json.dump(
-                data, write_file, ensure_ascii=False, indent=2, sort_keys=False)
+            json.dump(data, write_file, ensure_ascii=False, indent=4, sort_keys=False)
             print("File was written successfully: ", file)
         except Exception as exc:
             raise Exception("Cannot write json file", exc)

@@ -24,6 +24,8 @@ class GRDMClient(Namespace):
 
         self._meta = {}
         self.config_file = None
+        self.template = './template_file.json'
+        self.output_result_file = './output_result_file.json'
 
         self.user = None
         self.is_authenticated = False
@@ -65,9 +67,10 @@ class GRDMClient(Namespace):
             # pprint(_response.json())
             # Parse JSON into an object with attributes corresponding to dict keys.
             response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
-            sys.exit(response.errors[0].detail)
+            print(f'WARN Exception: {response.errors[0].detail}')
+            return None, response.errors[0].detail
 
-        return _response
+        return _response, None
 
     def _check_config(self, verbose=True):
         """ The priority order
@@ -112,12 +115,14 @@ class GRDMClient(Namespace):
             print('Check Personal Access Token')
             self._users_me(verbose=verbose)
 
-    def _users_me(self, verbose=True):
+    def _users_me(self, ignore_error=True, verbose=True):
         """ Get the currently logged-in user """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         print('GET the currently logged-in user')
-        _response = self._request('GET', 'users/me/', params={}, data={})
+        _response, _error_message = self._request('GET', 'users/me/', params={}, data={})
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
         _content = _response.content
 
         # pprint(_response.json())
@@ -135,7 +140,7 @@ class GRDMClient(Namespace):
             self._users_me_affiliated_users()
             self._licenses()
 
-    def _users_me_affiliated_institutions(self, verbose=True):
+    def _users_me_affiliated_institutions(self, ignore_error=True, verbose=True):
         """For development"""
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
@@ -143,7 +148,10 @@ class GRDMClient(Namespace):
             sys.exit('Missing currently logged-in user')
 
         # users/{user.id}/institutions/
-        _response = self._request('GET', self.user.relationships.institutions.links.related.href, params={const.ORDERING_QUERY_PARAM: 'name'})
+        params = {const.ORDERING_QUERY_PARAM: 'name'}
+        _response, _error_message = self._request('GET', self.user.relationships.institutions.links.related.href, params=params)
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
         _content = _response.content
 
         # pprint(_response.json())
@@ -159,7 +167,7 @@ class GRDMClient(Namespace):
             for inst in self.affiliated_institutions:
                 print(f'\'{inst.id}\' - \'{inst.attributes.name}\' [{inst.type}][{inst.attributes.description[:10]}...]')
 
-    def _users_me_affiliated_users(self, verbose=True):
+    def _users_me_affiliated_users(self, ignore_error=True, verbose=True):
         """For development"""
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
@@ -172,7 +180,10 @@ class GRDMClient(Namespace):
 
         for inst in self.affiliated_institutions:
             # institutions/{inst.id}/users/
-            _response = self._request('GET', inst.relationships.users.links.related.href, params={const.ORDERING_QUERY_PARAM: 'full_name'})
+            params = {const.ORDERING_QUERY_PARAM: 'full_name'}
+            _response, _error_message = self._request('GET', inst.relationships.users.links.related.href, params=params)
+            if _error_message and not ignore_error:
+                sys.exit(_error_message)
             _content = _response.content
 
             # pprint(_response.json())
@@ -189,7 +200,7 @@ class GRDMClient(Namespace):
             for user in self.affiliated_users:
                 print(f'\'{user.id}\' - \'{user.attributes.full_name}\'')
 
-    def _licenses(self, verbose=True):
+    def _licenses(self, ignore_error=True, verbose=True):
         """For development"""
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
@@ -197,7 +208,10 @@ class GRDMClient(Namespace):
             sys.exit('Missing currently logged-in user')
 
         print(f'[For development]GET List of licenses')
-        _response = self._request('GET', 'licenses/', params={const.ORDERING_QUERY_PARAM: 'name'}, data={}, )
+        params = {const.ORDERING_QUERY_PARAM: 'name'}
+        _response, _error_message = self._request('GET', 'licenses/', params=params, data={}, )
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
         _content = _response.content
 
         # pprint(_response.json())
@@ -213,14 +227,17 @@ class GRDMClient(Namespace):
             for _license in self.licenses:
                 print(f'\'{_license.id}\' - \'{_license.attributes.name}\' [{_license.type}]')
 
-    def projects_list(self, verbose=True):
+    def projects_list(self, ignore_error=True, verbose=True):
         """For development"""
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         self._check_config()
 
         print(f'[For development]GET List of projects')
-        _response = self._request('GET', 'nodes/', params={const.ORDERING_QUERY_PARAM: 'title'}, data={}, )
+        params = {const.ORDERING_QUERY_PARAM: 'title'}
+        _response, _error_message = self._request('GET', 'nodes/', params=params, data={}, )
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
         _content = _response.content
 
         # pprint(_response.json())
@@ -234,16 +251,11 @@ class GRDMClient(Namespace):
         if verbose:
             print(f'[For development]List of projects are those which are public or which the user has access to view. [{_projects_numb}]')
             for project in self.projects:
-                print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+                print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]{project.attributes.tags}')
+                if project.id not in ['xwq9k', 'z6dne', '4hexc', 'm7ah9']:
+                    self._projects_delete_project(project.id, ignore_error=True, verbose=False)
 
-    def projects_contributors_list(self, verbose=True):
-        """For development"""
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-
-        self._check_config()
-
-        print(f'GET List of contributors')
-        sys.exit(f'TODO {inspect.stack()[0][3]}')
+        sys.exit()
 
     def _projects_fake_project_content_data(self, pk, verbose=True):
         """  """
@@ -329,7 +341,19 @@ class GRDMClient(Namespace):
 
         return _data
 
-    def _projects_load_project(self, pk, is_fake=True, verbose=True):
+    def _projects_delete_project(self, pk, ignore_error=True, verbose=True):
+        """  """
+        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
+        print(f'DELETE Remove project \'{pk}\'')
+        _response, _error_message = self._request('DELETE', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
+
+        if verbose:
+            print(f'Deleted project: \'{pk}\'')
+
+    def _projects_load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
         """  """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
@@ -342,7 +366,9 @@ class GRDMClient(Namespace):
 
         print(f'GET Retrieve project {_faked_or_loaded}')
         if not is_fake:
-            _response = self._request('GET', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
+            _response, _error_message = self._request('GET', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
+            if _error_message and not ignore_error:
+                sys.exit(_error_message)
             _content = _response.content
 
         # pprint(_response.json())
@@ -357,14 +383,16 @@ class GRDMClient(Namespace):
 
         return project
 
-    def _projects_fork_project(self, node_object, verbose=True):
+    def _projects_fork_project(self, node_object, ignore_error=True, verbose=True):
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _data = self._projects_prepare_project_data(node_object, verbose=False)
         pk = node_object['fork_id']
 
         print(f'POST Fork a project from nodes/{pk}/')
-        _response = self._request('POST', 'nodes/{node_id}/forks/'.format(node_id=pk), params={}, data=_data, )
+        _response, _error_message = self._request('POST', 'nodes/{node_id}/forks/'.format(node_id=pk), params={}, data=_data, )
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
 
         # pprint(_response.json())
         # Parse JSON into an object with attributes corresponding to dict keys.
@@ -380,14 +408,16 @@ class GRDMClient(Namespace):
 
         return project
 
-    def _projects_create_project(self, node_object, verbose=True):
+    def _projects_create_project(self, node_object, ignore_error=True, verbose=True):
         """  """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _data = self._projects_prepare_project_data(node_object, verbose=False)
 
         print(f'POST Create new project')
-        _response = self._request('POST', 'nodes/', params={}, data=_data, )
+        _response, _error_message = self._request('POST', 'nodes/', params={}, data=_data, )
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
         _content = _response.content
 
         # pprint(_response.json())
@@ -404,7 +434,7 @@ class GRDMClient(Namespace):
 
         return project
 
-    def _projects_add_component(self, parent_id, node_object, verbose=True):
+    def _projects_add_component(self, parent_id, node_object, ignore_error=True, verbose=True):
         """  """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
@@ -414,7 +444,9 @@ class GRDMClient(Namespace):
         _data = self._projects_prepare_project_data(node_object, verbose=False)
 
         print(f'POST Create new component to nodes/{parent_id}/')
-        _response = self._request('POST', 'nodes/{node_id}/children/'.format(node_id=parent_id), params={}, data=_data, )
+        _response, _error_message = self._request('POST', 'nodes/{node_id}/children/'.format(node_id=parent_id), params={}, data=_data, )
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
         _content = _response.content
 
         # pprint(_response.json())
@@ -431,22 +463,22 @@ class GRDMClient(Namespace):
 
         # link a project (pointer)
         for idx_nid, _node_id in enumerate(_project_links):
-            print(f'POINTER ./project_links/{idx_nid}/')
-            project_link = self._projects_link_project(project.id, _node_id, verbose=True)
+            print(f'JSONPOINTER ./project_links/{idx_nid}/')
+            self._projects_link_project(project.id, _node_id, verbose=True)
 
         # create Components
         for idx_c, _comp_dict in enumerate(_children):
             _comp_id = _comp_dict.get('id')
             if _comp_id:
-                print(f'POINTER ./children/{idx_c}/ ignored')
+                print(f'JSONPOINTER ./children/{idx_c}/ ignored')
                 continue
 
-            print(f'POINTER ./children/{idx_c}/')
-            component = self._projects_add_component(project.id, _comp_dict, verbose=True)
+            print(f'JSONPOINTER ./children/{idx_c}/')
+            self._projects_add_component(project.id, _comp_dict, ignore_error=True, verbose=True)
 
         return project
 
-    def _projects_link_project(self, node_id, pointer_id, verbose=True):
+    def _projects_link_project(self, node_id, pointer_id, ignore_error=True, verbose=True):
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _data = {
@@ -463,7 +495,9 @@ class GRDMClient(Namespace):
             }
         }
 
-        _response = self._request('POST', 'nodes/{node_id}/node_links/'.format(node_id=node_id), params={}, data=_data, )
+        _response, _error_message = self._request('POST', 'nodes/{node_id}/node_links/'.format(node_id=node_id), params={}, data=_data, )
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
         _content = _response.content
 
         # pprint(_response.json())
@@ -494,10 +528,10 @@ class GRDMClient(Namespace):
         print(f'Check config and authenticate by token')
         self._check_config(verbose=False)
 
-        try:
-            print(f'USE the template of projects: {self.template}')
-            _projects_dict = read_json_file(self.template)
+        print(f'USE the template of projects: {self.template}')
+        _projects_dict = read_json_file(self.template)
 
+        try:
             # check json schema
             print(f'USE the template of projects: {const.TEMPLATE_SCHEMA_PROJECTS}')
             check_json_schema(const.TEMPLATE_SCHEMA_PROJECTS, _projects_dict)
@@ -511,36 +545,57 @@ class GRDMClient(Namespace):
                 _project_links = _project_dict.get('project_links', [])
 
                 if _id:
-                    print(f'POINTER /projects/{idx}/id == {_id}')
-                    project = self._projects_load_project(_id, is_fake=True, verbose=True)
+                    print(f'JSONPOINTER /projects/{idx}/id == {_id}')
+                    project = self._projects_load_project(_id, is_fake=True, ignore_error=True, verbose=True)
                 elif _fork_id:
-                    print(f'POINTER /projects/{idx}/fork_id == {_fork_id}')
-                    project = self._projects_fork_project(_project_dict, verbose=True)
+                    print(f'JSONPOINTER /projects/{idx}/fork_id == {_fork_id}')
+                    project = self._projects_fork_project(_project_dict, ignore_error=True, verbose=True)
                 else:
-                    print(f'POINTER /projects/{idx}/')
-                    project = self._projects_create_project(_project_dict, verbose=True)
+                    print(f'JSONPOINTER /projects/{idx}/')
+                    project = self._projects_create_project(_project_dict, ignore_error=True, verbose=True)
 
-                # link a project (pointer)
+                    _project_dict['id'] = project.id
+
+                # link a project (JSONPOINTER)
                 for idx_nid, _node_id in enumerate(_project_links):
-                    print(f'POINTER ./project_links/{idx_nid}/')
-                    project_link = self._projects_link_project(project.id, _node_id, verbose=True)
+                    print(f'JSONPOINTER ./project_links/{idx_nid}/')
+                    project_link = self._projects_link_project(project.id, _node_id, ignore_error=True, verbose=True)
+
+                    _project_links[idx_nid] = project_link.id
 
                 # create Components
                 for idx_c, _comp_dict in enumerate(_children):
                     _comp_id = _comp_dict.get('id')
                     if _comp_id:
-                        print(f'POINTER ./children/{idx_c}/ ignored')
+                        print(f'JSONPOINTER ./children/{idx_c}/ ignored')
                         continue
 
-                    print(f'POINTER ./children/{idx_c}/')
-                    component = self._projects_add_component(project.id, _comp_dict, verbose=True)
-        except Exception as exce:
-            sys.exit(f'Exception {exce}')
+                    print(f'JSONPOINTER ./children/{idx_c}/')
+                    component = self._projects_add_component(project.id, _comp_dict, ignore_error=True, verbose=True)
+
+                    _comp_dict['id'] = component.id
+        except Exception as err:
+            sys.exit(f'Exception {err}')
         finally:
             if verbose:
                 print(f'Created projects. [{len(self.created_projects)}]')
                 for _project in self.created_projects:
                     print(f'\'{_project.id}\' - \'{_project.attributes.title}\' [{_project.type}][{_project.attributes.category}]')
+
+        print(f'USE the output result file: {self.output_result_file}')
+        write_json_file(self.output_result_file, _projects_dict)
+
+        sys.exit()
+
+    def _projects_contributors_list(self, ignore_error=True, verbose=True):
+        """For development"""
+        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
+        self._check_config()
+
+        print(f'GET List of contributors')
+        print(f'TODO {inspect.stack()[0][3]}')
+        return []
 
     def contributors_create(self, verbose=True):
         """  """
@@ -554,5 +609,35 @@ class GRDMClient(Namespace):
 
         self._check_config()
 
-        print(f'CREATE Following the template of contributors')
-        sys.exit(f'TODO {inspect.stack()[0][3]}')
+        print(f'USE the template of contributors: {self.template}')
+        _projects_dict = read_json_file(self.template)
+
+        try:
+            # check json schema
+            print(f'USE the template of projects: {const.TEMPLATE_SCHEMA_CONTRIBUTORS}')
+            check_json_schema(const.TEMPLATE_SCHEMA_CONTRIBUTORS, _projects_dict)
+
+            print(f'CREATE Following the template of contributors')
+            _projects = _projects_dict.get('projects', [])
+            for idx, _project_dict in enumerate(_projects):
+                _id = _project_dict.get('id')
+                _contributors = _project_dict.get('contributors', [])
+
+                if not _id:
+                    print(f'JSONPOINTER /projects/{idx}/')
+                    continue
+
+                _old_contributors = self._projects_contributors_list(_id, verbose=True)
+
+                # add contributors
+                for idx_u, _user_dict in enumerate(_contributors):
+                    print(f'JSONPOINTER ./contributors/{idx_u}/')
+                    self._projects_add_contributor(_id, _user_dict, verbose=True)
+
+        except Exception as err:
+            sys.exit(f'Exception {err}')
+        finally:
+            if verbose:
+                pass
+
+            sys.exit()
