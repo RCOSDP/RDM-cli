@@ -12,24 +12,26 @@
                         "$ref": "#/definitions/NodeIdOrNull"
                     },
                     "contributors": {
-                        "type": "object",
-                        "properties": {
-                            "id": {
-                                "$ref": "#/definitions/UserId"
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "$ref": "#/definitions/UserId"
+                                },
+                                "bibliographic": {
+                                    "type": "boolean",
+                                    "default": true
+                                },
+                                "permission": {
+                                    "$ref": "#/definitions/ContributorPermission"
+                                }
                             },
-                            "bibliographic": {
-                                "type": "boolean",
-                                "default": true
-                            },
-                            "permission": {
-                                "$ref": "#/definitions/ContributorPermission"
-                            }
-                        },
-                        "additionalProperties": false,
-                        "required": [
-                            "id",
-                            "contributors"
-                        ]
+                            "additionalProperties": false,
+                            "required": [
+                                "id"
+                            ]
+                        }
                     }
                 },
                 "additionalProperties": false,

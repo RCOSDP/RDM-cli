@@ -17,6 +17,10 @@ from grdmcli import constants as const
 from . import status
 from .utils import *
 
+here = os.path.abspath(os.path.dirname(__file__))
+IGNORE_PROJECTS = ['z6dne', 'ega24', 'm7ah9', '4hexc']
+is_clear = True
+
 
 class GRDMClient(Namespace):
     def __init__(self, **kwargs):
@@ -34,6 +38,15 @@ class GRDMClient(Namespace):
 
         self.projects = []
         self.created_projects = []
+        self.created_project_contributors = {}
+
+    @property
+    def template_schema_projects(self):
+        return os.path.abspath(os.path.join(os.path.dirname(here), const.TEMPLATE_SCHEMA_PROJECTS))
+
+    @property
+    def template_schema_contributors(self):
+        return os.path.abspath(os.path.join(os.path.dirname(here), const.TEMPLATE_SCHEMA_CONTRIBUTORS))
 
     def _request(self, method, url, params=None, data=None, headers=None):
         """  """
@@ -98,12 +111,17 @@ class GRDMClient(Namespace):
                 self.osf_token = config_dict.get(const.OSF_TOKEN_VAR_NAME.lower())
         else:
             self.config_file = None
+            print(f'Missing the config file {const.CONFIG_FILENAME}')
+            sys.exit(f'Missing the config file {const.CONFIG_FILENAME}')
 
         print(f'Try get from environment variable')
         if self.osf_api_url is None:
             self.osf_api_url = os.environ.get(const.OSF_API_URL_VAR_NAME)
         if self.osf_token is None:
             self.osf_token = os.environ.get(const.OSF_TOKEN_VAR_NAME)
+
+        if not self.osf_api_url:
+            sys.exit('Missing API URL')
 
         if isinstance(validators.url(self.osf_api_url, public=False), ValidationFailure):
             sys.exit('The API URL is invalid')
@@ -253,7 +271,7 @@ class GRDMClient(Namespace):
             print(f'[For development]List of projects are those which are public or which the user has access to view. [{_projects_numb}]')
             for project in self.projects:
                 print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]{project.attributes.tags}')
-                if project.id not in ['z6dne', '4hexc', 'm7ah9']:
+                if is_clear and project.id not in IGNORE_PROJECTS:
                     self._projects_delete_project(project.id, ignore_error=True, verbose=False)
 
         sys.exit()
@@ -537,8 +555,8 @@ class GRDMClient(Namespace):
         """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
-        if not os.path.exists(const.TEMPLATE_SCHEMA_PROJECTS):
-            sys.exit(f'Missing the template schema {const.TEMPLATE_SCHEMA_PROJECTS}')
+        if not os.path.exists(self.template_schema_projects):
+            sys.exit(f'Missing the template schema {self.template_schema_projects}')
 
         if not os.path.exists(self.template):
             sys.exit('Missing the template file')
@@ -551,8 +569,8 @@ class GRDMClient(Namespace):
 
         try:
             # check json schema
-            print(f'USE the template of projects: {const.TEMPLATE_SCHEMA_PROJECTS}')
-            check_json_schema(const.TEMPLATE_SCHEMA_PROJECTS, _projects_dict)
+            print(f'USE the template of projects: {self.template_schema_projects}')
+            check_json_schema(self.template_schema_projects, _projects_dict)
 
             print(f'CREATE Following the template of projects')
             _projects = _projects_dict.get('projects', [])
@@ -619,7 +637,9 @@ class GRDMClient(Namespace):
             # Delete None
             _projects_dict['projects'] = [_prj for _prj in _projects if _prj is not None]
         except Exception as err:
-            sys.exit(f'Exception {err}')
+            print(f'Exception {err}')
+            # sys.exit(f'Exception {err}')
+            raise err
         finally:
             if verbose:
                 print(f'Created projects. [{len(self.created_projects)}]')
@@ -631,57 +651,203 @@ class GRDMClient(Namespace):
 
         sys.exit()
 
-    def _projects_contributors_list(self, ignore_error=True, verbose=True):
-        """For development"""
+    def _projects_list_project_contributors(self, pk, ignore_error=True, verbose=True):
+        """  """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
-        self._check_config()
+        if not self.user:
+            sys.exit('Missing currently logged-in user')
 
         print(f'GET List of contributors')
-        print(f'TODO {inspect.stack()[0][3]}')
-        return []
+        params = {const.ORDERING_QUERY_PARAM: 'name'}
+        _response, _error_message = self._request('GET', 'nodes/{node_id}/contributors/'.format(node_id=pk), params=params, data={}, )
+        if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
+            sys.exit(_error_message)
+        _content = _response.content
+
+        # pprint(_response.json())
+        # Parse JSON into an object with attributes corresponding to dict keys.
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
+
+        contributors = response.data
+        _contributors_numb = response.links.meta.total
+
+        if verbose:
+            print(f'List of contributors in project. [{_contributors_numb}]')
+            for contributor in contributors:
+                users = contributor.embeds.users.data.attributes
+                attrs = contributor.attributes
+                print(f'\'{contributor.id}\' - \'{users.full_name}\' [{contributor.type}][{attrs.permission}][{attrs.index}]')
+
+        return contributors, json.loads(_content)['data']
+
+    def _projects_delete_project_contributor(self, pk, user_id, ignore_error=True, verbose=True):
+        """  """
+        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
+        print(f'DELETE Remove contributor \'{pk}-{user_id}\'')
+        _url = 'nodes/{node_id}/contributors/{user_id}'.format(node_id=pk, user_id=user_id)
+        _response, _error_message = self._request('DELETE', _url, params={}, data={}, )
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
+
+        if verbose:
+            print(f'Deleted contributor: \'{pk}-{user_id}\'')
+
+    def _projects_prepare_contributor_data(self, contributor_object, index, verbose=True):
+        """  """
+        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
+        _contributor = contributor_object
+
+        # initial
+        _user_id = _contributor.get('id')
+        _bibliographic = _contributor.get('bibliographic')
+        _permission = _contributor.get('permission', 'write')
+        _attributes = {
+                    "index": index,
+                    "bibliographic": _bibliographic,
+                    "permission": _permission
+                }
+        _relationships = {
+                    "user": {
+                        "data": {
+                            "type": "users",
+                            "id": _user_id
+                        }
+                    }
+                }
+
+        _data = {
+            "data": {
+                "type": "contributors",
+                "attributes": _attributes,
+                "relationships": _relationships
+            }
+        }
+
+        if verbose:
+            print(f'prepared contributor data: {_data}')
+
+        return _data
+
+    def _projects_add_contributor(self, pk, contributor_object, index, ignore_error=True, verbose=True):
+        """  """
+        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
+        _data = self._projects_prepare_contributor_data(contributor_object, index, verbose=True)
+        user_id = contributor_object['id']
+
+        print(f'CREATE Add contributor \'{pk}-{user_id}\'')
+        _url = 'nodes/{node_id}/contributors/'.format(node_id=pk)
+        _response, _error_message = self._request('POST', _url, params={}, data=_data, )
+        if _error_message and not ignore_error:
+            sys.exit(_error_message)
+        _content = _response.content
+
+        # pprint(_response.json())
+        # Parse JSON into an object with attributes corresponding to dict keys.
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
+
+        contributor = response.data
+
+        self.created_project_contributors[pk].append(contributor)
+
+        if verbose:
+            print(f'Created contributor: \'{pk}-{user_id}\'')
+            users = contributor.embeds.users.data.attributes
+            attrs = contributor.attributes
+            print(f'\'{contributor.id}\' - \'{users.full_name}\' [{contributor.type}][{attrs.permission}][{attrs.index}]')
+
+        return contributor, json.loads(_content)['data']
 
     def contributors_create(self, verbose=True):
         """  """
         print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
-        if not os.path.exists(const.TEMPLATE_SCHEMA_CONTRIBUTORS):
-            sys.exit(f'Missing the template schema {const.TEMPLATE_SCHEMA_CONTRIBUTORS}')
+        if not os.path.exists(self.template_schema_contributors):
+            sys.exit(f'Missing the template schema {self.template_schema_contributors}')
 
         if not os.path.exists(self.template):
             sys.exit('Missing the template file')
 
         print(f'Check config and authenticate by token')
-        self._check_config()
+        self._check_config(verbose=False)
 
         print(f'USE the template of contributors: {self.template}')
         _projects_dict = read_json_file(self.template)
 
         try:
             # check json schema
-            print(f'USE the template of projects: {const.TEMPLATE_SCHEMA_CONTRIBUTORS}')
-            check_json_schema(const.TEMPLATE_SCHEMA_CONTRIBUTORS, _projects_dict)
+            print(f'USE the template of projects: {self.template_schema_contributors}')
+            check_json_schema(self.template_schema_contributors, _projects_dict)
 
-            print(f'CREATE Following the template of contributors')
+            print(f'REMOVE/CREATE Following the template of contributors')
             _projects = _projects_dict.get('projects', [])
             for idx, _project_dict in enumerate(_projects):
                 _id = _project_dict.get('id')
                 _contributors = _project_dict.get('contributors', [])
 
                 if not _id:
-                    print(f'JSONPOINTER /projects/{idx}/')
+                    print(f'JSONPOINTER /projects/{idx}/id == {_id}')
+
+                    # update output object
+                    _projects[idx] = None
                     continue
 
-                _old_contributors = self._projects_contributors_list(_id, verbose=True)
+                self.created_project_contributors[_id] = []
+                current_user_contributor = None
+
+                print(f'JSONPOINTER /projects/{idx}/')
+                print(f'REMOVE Current contributors')
+                old_contributors, _old_contributors_dict = self._projects_list_project_contributors(_id, verbose=True)
+                for contributor in old_contributors:
+                    if contributor.embeds.users.data.id == self.user.id:
+                        self.created_project_contributors[_id].append(contributor)
+                        current_user_contributor = contributor
+                        continue
+                    self._projects_delete_project_contributor(_id, contributor.embeds.users.data.id, verbose=True)
 
                 # add contributors
-                for idx_u, _user_dict in enumerate(_contributors):
-                    print(f'JSONPOINTER ./contributors/{idx_u}/')
-                    self._projects_add_contributor(_id, _user_dict, verbose=True)
+                for idx_contr, _user_dict in enumerate(_contributors):
+                    if _user_dict['id'] == self.user.id:
+                        if current_user_contributor:
+                            # update output object
+                            _contributors[idx_contr]['id'] = current_user_contributor.id
+                            _contributors[idx_contr]['type'] = current_user_contributor.type
+                            _contributors[idx_contr]['index'] = current_user_contributor.attributes.index
+                            # _contributors[idx].update(contributor_dict)
+                        continue
+                    print(f'JSONPOINTER ./contributors/{idx_contr}/')
+                    contributor, contributor_dict = self._projects_add_contributor(_id, _user_dict, idx_contr, verbose=True)
+
+                    # update output object
+                    _contributors[idx_contr]['id'] = contributor.id
+                    _contributors[idx_contr]['type'] = contributor.type
+                    _contributors[idx_contr]['index'] = contributor.attributes.index
+                    # _contributors[idx].update(contributor_dict)
+
+                # Delete None
+                if _contributors:
+                    _project_dict['contributors'] = [_contributor for _contributor in _contributors if _contributor is not None]
+
+            # Delete None
+            _projects_dict['projects'] = [_prj for _prj in _projects if _prj is not None]
         except Exception as err:
-            sys.exit(f'Exception {err}')
+            print(f'Exception {err}')
+            # sys.exit(f'Exception {err}')
+            raise err
         finally:
             if verbose:
-                pass
+                for project_id, contributors in self.created_project_contributors.items():
+                    print(f'Created contributors for project \'{project_id}\'. [{len(contributors)}]')
+                    for contributor in contributors:
+                        users = contributor.embeds.users.data.attributes
+                        attrs = contributor.attributes
+                        print(f'\'{contributor.id}\' - \'{users.full_name}\' [{contributor.type}][{attrs.permission}][{attrs.index}]')
+
+            print(f'USE the output result file: {self.output_result_file}')
+            write_json_file(self.output_result_file, _projects_dict)
 
             sys.exit()
