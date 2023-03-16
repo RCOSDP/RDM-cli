@@ -45,7 +45,7 @@ def main():
     # dest=entity stores the name of the entity in a variable
     entity_subparsers = cli_parser.add_subparsers(dest='entity')
 
-    # START entity=projects
+    # [START] entity=projects
 
     projects_parser = _add_subparser(entity_subparsers, 'projects', 'projects entity')
     # dest=command stores the name of the command in a variable
@@ -70,7 +70,7 @@ def main():
     # to add config args
     _have_config_parsers.append(projects_create_parser)
 
-    # END entity=projects
+    # [END] entity=projects
 
     # [START] entity=contributors
 
@@ -127,7 +127,6 @@ def main():
                 print(f'ERROR: {exit_code}', file=sys.stderr, end=' ')
                 sys.exit(exit_code)
             print(f'End process')
-
     else:
         cli_parser.parse_args(_args)
 

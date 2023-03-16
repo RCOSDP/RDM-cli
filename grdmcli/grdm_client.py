@@ -1,10 +1,10 @@
 import configparser
-import inspect
+import inspect  # noqa
 import json
 import os
 import sys
 from argparse import Namespace
-from datetime import datetime
+from datetime import datetime  # noqa
 from pathlib import Path
 from pprint import pprint  # noqa
 from types import SimpleNamespace
@@ -18,8 +18,8 @@ from . import status
 from .utils import *
 
 here = os.path.abspath(os.path.dirname(__file__))
-IGNORE_PROJECTS = ['z6dne', 'ega24', 'm7ah9', '4hexc']
-is_clear = True
+IGNORE_PROJECTS = ['z6dne', 'ega24', 'm7ah9', '4hexc']  # For development
+is_clear = True  # For development
 
 
 class GRDMClient(Namespace):
@@ -33,8 +33,8 @@ class GRDMClient(Namespace):
 
         self.user = None
         self.is_authenticated = False
-        self.affiliated_institutions = []
-        self.affiliated_users = []
+        self.affiliated_institutions = []  # For development
+        self.affiliated_users = []  # For development
 
         self.projects = []
         self.created_projects = []
@@ -91,7 +91,7 @@ class GRDMClient(Namespace):
         - Config file attributes
         - Environment variables
         """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         if self.is_authenticated:
             return True
@@ -135,11 +135,12 @@ class GRDMClient(Namespace):
 
     def _users_me(self, ignore_error=True, verbose=True):
         """ Get the currently logged-in user """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         print('GET the currently logged-in user')
         _response, _error_message = self._request('GET', 'users/me/', params={}, data={})
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
         _content = _response.content
 
@@ -151,9 +152,10 @@ class GRDMClient(Namespace):
         self.user = response.data
 
         if verbose:
-            print(f'[For development]You are logged in as:')
+            print(f'You are logged in as:')
             print(f'\'{self.user.id}\' - {self.user.attributes.email} \'{self.user.attributes.full_name}\'')
 
+            # For development
             self._users_me_affiliated_institutions()
             self._users_me_affiliated_users()
             self._licenses()
@@ -169,6 +171,7 @@ class GRDMClient(Namespace):
         params = {const.ORDERING_QUERY_PARAM: 'name'}
         _response, _error_message = self._request('GET', self.user.relationships.institutions.links.related.href, params=params)
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
         _content = _response.content
 
@@ -201,6 +204,7 @@ class GRDMClient(Namespace):
             params = {const.ORDERING_QUERY_PARAM: 'full_name'}
             _response, _error_message = self._request('GET', inst.relationships.users.links.related.href, params=params)
             if _error_message and not ignore_error:
+                print(f'WARN {_error_message}')
                 sys.exit(_error_message)
             _content = _response.content
 
@@ -229,6 +233,7 @@ class GRDMClient(Namespace):
         params = {const.ORDERING_QUERY_PARAM: 'name'}
         _response, _error_message = self._request('GET', 'licenses/', params=params, data={}, )
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
         _content = _response.content
 
@@ -256,6 +261,7 @@ class GRDMClient(Namespace):
         params = {const.ORDERING_QUERY_PARAM: 'title'}
         _response, _error_message = self._request('GET', 'nodes/', params=params, data={}, )
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
         _content = _response.content
 
@@ -278,7 +284,7 @@ class GRDMClient(Namespace):
 
     def _projects_fake_project_content_data(self, pk, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _content = json.dumps({
             'data': {
@@ -299,7 +305,7 @@ class GRDMClient(Namespace):
 
     def _projects_prepare_project_data(self, node_object, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _project = node_object
 
@@ -311,7 +317,8 @@ class GRDMClient(Namespace):
         _title = _project.get('title')
         _attributes = {
             'category': _category,
-            'title': f'[{_today_str}] {_title}',
+            # 'title': _title,
+            'title': f'[{_today_str}] {_title}',  # For development
         }
         _relationships = {}
 
@@ -362,11 +369,12 @@ class GRDMClient(Namespace):
 
     def _projects_delete_project(self, pk, ignore_error=True, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         print(f'DELETE Remove project \'{pk}\'')
         _response, _error_message = self._request('DELETE', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
 
         if verbose:
@@ -374,7 +382,7 @@ class GRDMClient(Namespace):
 
     def _projects_load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _content = None
         _faked_or_loaded = f'[loaded nodes/{pk}/]'
@@ -387,6 +395,7 @@ class GRDMClient(Namespace):
         if not is_fake:
             _response, _error_message = self._request('GET', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
             if _error_message and not ignore_error:
+                print(f'WARN {_error_message}')
                 sys.exit(_error_message)
             _content = _response.content
 
@@ -403,7 +412,7 @@ class GRDMClient(Namespace):
         return project, json.loads(_content)['data']
 
     def _projects_fork_project(self, node_object, ignore_error=True, verbose=True):
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _data = self._projects_prepare_project_data(node_object, verbose=False)
         pk = node_object['fork_id']
@@ -411,6 +420,7 @@ class GRDMClient(Namespace):
         print(f'POST Fork a project from nodes/{pk}/')
         _response, _error_message = self._request('POST', 'nodes/{node_id}/forks/'.format(node_id=pk), params={}, data=_data, )
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
         _content = _response.content
 
@@ -430,13 +440,14 @@ class GRDMClient(Namespace):
 
     def _projects_create_project(self, node_object, ignore_error=True, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _data = self._projects_prepare_project_data(node_object, verbose=False)
 
         print(f'POST Create new project')
         _response, _error_message = self._request('POST', 'nodes/', params={}, data=_data, )
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
         _content = _response.content
 
@@ -456,7 +467,7 @@ class GRDMClient(Namespace):
 
     def _projects_add_component(self, parent_id, node_object, ignore_error=True, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _children = node_object.get('children', [])
         _project_links = node_object.get('project_links', [])
@@ -466,6 +477,7 @@ class GRDMClient(Namespace):
         print(f'POST Create new component to nodes/{parent_id}/')
         _response, _error_message = self._request('POST', 'nodes/{node_id}/children/'.format(node_id=parent_id), params={}, data=_data, )
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
         _content = _response.content
 
@@ -515,7 +527,7 @@ class GRDMClient(Namespace):
         return project, json.loads(_content)['data']
 
     def _projects_link_project(self, node_id, pointer_id, ignore_error=True, verbose=True):
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _data = {
             "data": {
@@ -533,6 +545,7 @@ class GRDMClient(Namespace):
 
         _response, _error_message = self._request('POST', 'nodes/{node_id}/node_links/'.format(node_id=node_id), params={}, data=_data, )
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
         _content = _response.content
 
@@ -553,7 +566,7 @@ class GRDMClient(Namespace):
     def projects_create(self, verbose=True):
         """ Create Projects/Components following the inputted template file
         """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         if not os.path.exists(self.template_schema_projects):
             sys.exit(f'Missing the template schema {self.template_schema_projects}')
@@ -653,7 +666,7 @@ class GRDMClient(Namespace):
 
     def _projects_list_project_contributors(self, pk, ignore_error=True, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         if not self.user:
             sys.exit('Missing currently logged-in user')
@@ -684,12 +697,13 @@ class GRDMClient(Namespace):
 
     def _projects_delete_project_contributor(self, pk, user_id, ignore_error=True, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         print(f'DELETE Remove contributor \'{pk}-{user_id}\'')
         _url = 'nodes/{node_id}/contributors/{user_id}'.format(node_id=pk, user_id=user_id)
         _response, _error_message = self._request('DELETE', _url, params={}, data={}, )
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
 
         if verbose:
@@ -697,7 +711,7 @@ class GRDMClient(Namespace):
 
     def _projects_prepare_contributor_data(self, contributor_object, index, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _contributor = contributor_object
 
@@ -734,7 +748,7 @@ class GRDMClient(Namespace):
 
     def _projects_add_contributor(self, pk, contributor_object, index, ignore_error=True, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         _data = self._projects_prepare_contributor_data(contributor_object, index, verbose=True)
         user_id = contributor_object['id']
@@ -743,6 +757,7 @@ class GRDMClient(Namespace):
         _url = 'nodes/{node_id}/contributors/'.format(node_id=pk)
         _response, _error_message = self._request('POST', _url, params={}, data=_data, )
         if _error_message and not ignore_error:
+            print(f'WARN {_error_message}')
             sys.exit(_error_message)
         _content = _response.content
 
@@ -764,7 +779,7 @@ class GRDMClient(Namespace):
 
     def contributors_create(self, verbose=True):
         """  """
-        print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         if not os.path.exists(self.template_schema_contributors):
             sys.exit(f'Missing the template schema {self.template_schema_contributors}')
