@@ -110,7 +110,7 @@ def main():
         _args.append(client.entity)
         if client.command:
             _args.append(client.command)
-    _args.append('-h')
+    _args.append('--help')
 
     if hasattr(client, 'func'):
         exit_code = None
@@ -119,14 +119,18 @@ def main():
         try:
             print(f'Start process')
             exit_code = client.__getattribute__(client.func)()
-        except (SystemExit, KeyboardInterrupt) as e:
+        except SystemExit as e:
             exit_code = e.code
+        except KeyboardInterrupt as e:
+            exit_code = KeyboardInterrupt.__name__
         finally:
-            if exit_code is not None:
-                cli_parser.parse_args(_args)
-                print(f'ERROR: {exit_code}', file=sys.stderr, end=' ')
-                sys.exit(exit_code)
             print(f'End process')
+            if exit_code:
+                print(f'ERROR: {exit_code}', file=sys.stderr)
+                _args_str = ' '.join(_args)
+                print(f'For help: {cli_parser.prog} {_args_str}')
+                # cli_parser.parse_args(_args)
+                sys.exit(exit_code)
     else:
         cli_parser.parse_args(_args)
 
