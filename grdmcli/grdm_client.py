@@ -558,93 +558,6 @@ class GRDMClient(Namespace):
 
         return project, json.loads(_content)['data']
 
-    def _projects_add_component(self, parent_id, node_object, ignore_error=True, verbose=True):
-        """Add a component into project by project's GUID, component's attributes such as title and category.\n
-        In scope of method, call component as 'project' and its child as 'component'.
-
-        :param parent_id: string - Project GUID
-        :param node_object: object includes new component's attributes
-        :param ignore_error: boolean
-        :param verbose: boolean
-        :return: component object, and component dictionary
-        """
-        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-
-        _children = node_object.get('children', [])
-        _project_links = node_object.get('project_links', [])
-
-        _data = self._projects_prepare_project_data(node_object, verbose=False)
-
-        print(f'POST Create new component to nodes/{parent_id}/')
-        _url = 'nodes/{node_id}/children/'.format(node_id=parent_id)
-        _response, _error_message = self._request('POST', _url, params={}, data=_data, )
-        if _error_message:
-            print(f'WARN {_error_message}')
-            if not ignore_error:
-                sys.exit(_error_message)
-            return None, None
-        _content = _response.content
-
-        # pprint(_response.json())
-        # Parse JSON into an object with attributes corresponding to dict keys.
-        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
-
-        project = response.data
-
-        self.created_projects.append(project)
-
-        if verbose:
-            print(f'Create component:')
-            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
-
-        # link a project to this node (parent_node_id = project.id)
-        for _node_id_idx, _node_id in enumerate(_project_links):
-            print(f'JSONPOINTER ./project_links/{_node_id_idx}/')
-            project_link, project_link_dict = self._projects_link_project(project.id, _node_id, ignore_error=True, verbose=True)
-
-            if project_link is None:
-                # has error, update output object
-                _project_links[_node_id_idx] = None
-                continue
-
-            # update output object
-            # can overwrite object by _project_links[_node_id_idx] = project_link_dict
-            _project_links[_node_id_idx] = project_link.id
-
-        # Delete None from project_links
-        if _project_links:
-            node_object['project_links'] = [_pointer for _pointer in _project_links if _pointer is not None]
-
-        # add Components to this node (parent_node_id = project.id)
-        for _component_idx, _component_dict in enumerate(_children):
-            _component_id = _component_dict.get('id')
-
-            if _component_id:
-                print(f'JSONPOINTER ./children/{_component_idx}/ ignored')
-
-                # update output object
-                _children[_component_idx] = None
-                continue
-
-            print(f'JSONPOINTER ./children/{_component_idx}/')
-            component, component_dict = self._projects_add_component(project.id, _component_dict, ignore_error=True, verbose=True)
-
-            if component is None:
-                # has error, update output object
-                _children[_component_idx] = None
-                continue
-
-            # update output object
-            # can overwrite object by _children[_component_idx].update(component_dict)
-            _children[_component_idx]['id'] = component.id
-            _children[_component_idx]['type'] = component.type
-
-        # Delete None from children
-        if _children:
-            node_object['children'] = [_child for _child in _children if _child is not None]
-
-        return project, json.loads(_content)['data']
-
     def _projects_link_project(self, node_id, pointer_id, ignore_error=True, verbose=True):
         """Add a link to another project into this project by project's GUID.\n
 
@@ -692,6 +605,111 @@ class GRDMClient(Namespace):
             print(f'Created Node Links:')
             print(f'\'{project_link.id}\' - [{project_link.type}]')
             print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+
+        return project, json.loads(_content)['data']
+
+    def _add_project_pointers(self, project_links, project):
+        """Link a project to this project from list of project_links in template file
+
+        :param project_links: list of existing project GUID
+        :param project: object of project
+        :return: None
+        """
+        for _node_id_idx, _node_id in enumerate(project_links):
+            print(f'JSONPOINTER ./project_links/{_node_id_idx}/')
+            project_link, project_link_dict = self._projects_link_project(project.id, _node_id, ignore_error=True, verbose=True)
+
+            if project_link is None:
+                # has error, update output object
+                project_links[_node_id_idx] = None
+                continue
+
+            # update output object
+            # can overwrite object by _project_links[_node_id_idx] = project_link_dict
+            project_links[_node_id_idx] = project_link.id
+
+    def _add_project_components(self, children, project):
+        """Add component to project from list of children in template file
+
+        :param children: object of component from template file
+        :param project: object of project
+        :return: None
+        """
+        for _component_idx, _component_dict in enumerate(children):
+            _component_id = _component_dict.get('id')
+
+            if _component_id:
+                print(f'JSONPOINTER ./children/{_component_idx}/ ignored')
+
+                # update output object
+                children[_component_idx] = None
+                continue
+
+            print(f'JSONPOINTER ./children/{_component_idx}/')
+            component, component_dict = self._projects_add_component(project.id, _component_dict, ignore_error=True, verbose=True)
+
+            if component is None:
+                # has error, update output object
+                children[_component_idx] = None
+                continue
+
+            # update output object
+            # can overwrite object by _children[_component_idx].update(component_dict)
+            children[_component_idx]['id'] = component.id
+            children[_component_idx]['type'] = component.type
+
+    def _projects_add_component(self, parent_id, node_object, ignore_error=True, verbose=True):
+        """Add a component into project by project's GUID, component's attributes such as title and category.\n
+        In scope of method, call component as 'project' and its child as 'component'.
+
+        :param parent_id: string - Project GUID
+        :param node_object: object includes new component's attributes
+        :param ignore_error: boolean
+        :param verbose: boolean
+        :return: component object, and component dictionary
+        """
+        # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+
+        _children = node_object.get('children', [])
+        _project_links = node_object.get('project_links', [])
+
+        _data = self._projects_prepare_project_data(node_object, verbose=False)
+
+        print(f'POST Create new component to nodes/{parent_id}/')
+        _url = 'nodes/{node_id}/children/'.format(node_id=parent_id)
+        _response, _error_message = self._request('POST', _url, params={}, data=_data, )
+        if _error_message:
+            print(f'WARN {_error_message}')
+            if not ignore_error:
+                sys.exit(_error_message)
+            return None, None
+        _content = _response.content
+
+        # pprint(_response.json())
+        # Parse JSON into an object with attributes corresponding to dict keys.
+        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
+
+        project = response.data
+
+        self.created_projects.append(project)
+
+        if verbose:
+            print(f'Create component:')
+            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+
+        # link a project to this node (parent_node_id = project.id)
+        self._add_project_pointers(_project_links, project)
+
+        # Delete None from project_links
+        if _project_links:
+            node_object['project_links'] = [_pointer for _pointer in _project_links if _pointer is not None]
+
+        # add Components to this node (parent_node_id = project.id)
+        self._add_project_components(_children, project)
+
+        # Delete None from children
+        if _children:
+            node_object['children'] = [_child for _child in _children if _child is not None]
 
         return project, json.loads(_content)['data']
 
@@ -773,46 +791,14 @@ class GRDMClient(Namespace):
                     _projects[_project_idx]['type'] = project.type
 
                 # link a project to this node (parent_node_id = project.id)
-                for _node_id_idx, _node_id in enumerate(_project_links):
-                    print(f'JSONPOINTER ./project_links/{_node_id_idx}/')
-                    project_link, project_link_dict = self._projects_link_project(project.id, _node_id, ignore_error=True, verbose=True)
-
-                    if project_link is None:
-                        # has error, update output object
-                        _project_links[_node_id_idx] = None
-                        continue
-
-                    # update output object
-                    # can overwrite object by _project_links[_node_id_idx] = project_link_dict
-                    _project_links[_node_id_idx] = project_link.id
+                self._add_project_pointers(_project_links, project)
 
                 # Delete None from project_links
                 if _project_links:
                     _project_dict['project_links'] = [_pointer for _pointer in _project_links if _pointer is not None]
 
                 # add Components to this node (parent_node_id = project.id)
-                for _component_idx, _component_dict in enumerate(_children):
-                    _component_id = _component_dict.get('id')
-
-                    if _component_id:
-                        print(f'JSONPOINTER ./children/{_component_idx}/ ignored')
-
-                        # update output object
-                        _children[_component_idx] = None
-                        continue
-
-                    print(f'JSONPOINTER ./children/{_component_idx}/')
-                    component, component_dict = self._projects_add_component(project.id, _component_dict, ignore_error=True, verbose=True)
-
-                    if component is None:
-                        # has error, update output object
-                        _children[_component_idx] = None
-                        continue
-
-                    # update output object
-                    # can overwrite object by _children[_component_idx].update(component_dict)
-                    _children[_component_idx]['id'] = component.id
-                    _children[_component_idx]['type'] = component.type
+                self._add_project_components(_children, project)
 
                 # Delete None from children
                 if _children:
@@ -980,6 +966,74 @@ class GRDMClient(Namespace):
 
         return contributor, json.loads(_content)['data']
 
+    def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids, current_user_contributor):
+        """Add all new contributors to this project
+
+        :param pk: string - Project GUID
+        :param contributors: list of new contributors
+        :param contributor_user_ids: list of the user GUID which is project contributor
+        :param current_user_contributor: object of contributor which is current user
+        :return: None
+        """
+        _invalid_user_obj_number = 0
+        for _user_idx, _user_dict in enumerate(contributors):
+            _user_id = _user_dict['id']
+
+            if _user_id == self.user.id:
+                print(f'WARN This member is the currently logged-in user, so skip creating/updating')
+                if current_user_contributor:
+                    # update output object
+                    # can overwrite object by _contributors[_user_idx].update(contributor_dict)
+                    contributors[_user_idx]['id'] = current_user_contributor.id
+                    contributors[_user_idx]['type'] = current_user_contributor.type
+                    contributors[_user_idx]['index'] = current_user_contributor.attributes.index
+                continue
+
+            if _user_id in contributor_user_ids:
+                print(f'WARN Duplicate member object in template file')
+                # update output object
+                contributors[_user_idx] = None
+                _invalid_user_obj_number += 1
+                continue
+
+            print(f'JSONPOINTER ./contributors/{_user_idx}/')
+            # Call API Create a contributor
+            _index = _user_idx - _invalid_user_obj_number
+            contributor, contributor_dict = self._projects_add_contributor(pk, _user_dict, _index, verbose=True)
+            if contributor is None:
+                # has error, update output object
+                contributors[_user_idx] = None
+                _invalid_user_obj_number += 1
+                continue
+
+            # update output object
+            # can overwrite object by _contributors[_user_idx].update(contributor_dict)
+            contributors[_user_idx]['id'] = contributor.id
+            contributors[_user_idx]['type'] = contributor.type
+            contributors[_user_idx]['index'] = contributor.attributes.index
+
+    def _clear_project_current_contributors(self, pk, contributor_user_ids, current_user_contributor):
+        """Clear list of current contributors from this project, except for the currently logged-in user
+
+        :param pk: string - Project GUID
+        :param contributor_user_ids: list of the user GUID which is project contributor
+        :param current_user_contributor: object of contributor which is current user
+        :return: object of contributor which is current user
+        """
+        # Get all current contributors from this project
+        old_contributors, _old_contributors_dict = self._projects_list_project_contributors(pk, verbose=True)
+        # Delete all current contributors from this project
+        for contributor in old_contributors:
+            # except for the currently logged-in user
+            if contributor.embeds.users.data.id == self.user.id:
+                self.created_project_contributors.append(contributor)
+                current_user_contributor = contributor
+                contributor_user_ids.append(self.user.id)
+                continue
+            # Delete current contributor
+            self._projects_delete_project_contributor(pk, contributor.embeds.users.data.id, verbose=True)
+        return current_user_contributor
+
     def contributors_create(self, verbose=True):
         """Overwrite the contributor list of a project following the structure and info which defined in a template JSON file.\n
         Delete contributors from the project; expect the current user as admin.\n
@@ -991,7 +1045,7 @@ class GRDMClient(Namespace):
         # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         print(f'Check config and authenticate by token')
-        # current_user_id = self.user.id
+        # the current_user_id is self.user.id
         self._check_config(verbose=False)
 
         if not os.path.exists(self.template_schema_contributors):
@@ -1026,56 +1080,10 @@ class GRDMClient(Namespace):
 
                 print(f'JSONPOINTER /projects/{idx}/')
                 print(f'REMOVE Current contributors')
-                # Get all current contributors from this project
-                old_contributors, _old_contributors_dict = self._projects_list_project_contributors(_id, verbose=True)
-                # Delete all current contributors from this project
-                for contributor in old_contributors:
-                    # except for the currently logged-in user
-                    if contributor.embeds.users.data.id == self.user.id:
-                        self.created_project_contributors.append(contributor)
-                        current_user_contributor = contributor
-                        current_project_contributor_user_ids.append(self.user.id)
-                        continue
-                    # Delete current contributor
-                    self._projects_delete_project_contributor(_id, contributor.embeds.users.data.id, verbose=True)
+                current_user_contributor = self._clear_project_current_contributors(_id, current_project_contributor_user_ids, current_user_contributor)
 
-                # Add all new contributors to this project
-                _invalid_user_obj_number = 0
-                for _user_idx, _user_dict in enumerate(_contributors):
-                    _user_id = _user_dict['id']
-
-                    if _user_id == self.user.id:
-                        print(f'WARN This member is the currently logged-in user, so skip creating/updating')
-                        if current_user_contributor:
-                            # update output object
-                            # can overwrite object by _contributors[_user_idx].update(contributor_dict)
-                            _contributors[_user_idx]['id'] = current_user_contributor.id
-                            _contributors[_user_idx]['type'] = current_user_contributor.type
-                            _contributors[_user_idx]['index'] = current_user_contributor.attributes.index
-                        continue
-
-                    if _user_id in current_project_contributor_user_ids:
-                        print(f'WARN Duplicate member object in template file')
-                        # update output object
-                        _contributors[_user_idx] = None
-                        _invalid_user_obj_number += 1
-                        continue
-
-                    print(f'JSONPOINTER ./contributors/{_user_idx}/')
-                    # Call API Create a contributor
-                    _index = _user_idx - _invalid_user_obj_number
-                    contributor, contributor_dict = self._projects_add_contributor(_id, _user_dict, _index, verbose=True)
-                    if contributor is None:
-                        # has error, update output object
-                        _contributors[_user_idx] = None
-                        _invalid_user_obj_number += 1
-                        continue
-
-                    # update output object
-                    # can overwrite object by _contributors[_user_idx].update(contributor_dict)
-                    _contributors[_user_idx]['id'] = contributor.id
-                    _contributors[_user_idx]['type'] = contributor.type
-                    _contributors[_user_idx]['index'] = contributor.attributes.index
+                print(f'OVERWRITE new contributors')
+                self._overwrite_project_contributors(_contributors, _id, current_project_contributor_user_ids, current_user_contributor)
 
                 # Delete None from contributors
                 if _contributors:
