@@ -617,7 +617,7 @@ class GRDMClient(Namespace):
         """
         for _node_id_idx, _node_id in enumerate(project_links):
             print(f'JSONPOINTER ./project_links/{_node_id_idx}/')
-            project_link, project_link_dict = self._projects_link_project(project.id, _node_id, ignore_error=True, verbose=True)
+            project_link, _ = self._projects_link_project(project.id, _node_id, ignore_error=True, verbose=True)
 
             if project_link is None:
                 # has error, update output object
@@ -625,7 +625,7 @@ class GRDMClient(Namespace):
                 continue
 
             # update output object
-            # can overwrite object by _project_links[_node_id_idx] = project_link_dict
+            # can overwrite object by dictionary _project_links[_node_id_idx] = _
             project_links[_node_id_idx] = project_link.id
 
     def _add_project_components(self, children, project):
@@ -646,7 +646,7 @@ class GRDMClient(Namespace):
                 continue
 
             print(f'JSONPOINTER ./children/{_component_idx}/')
-            component, component_dict = self._projects_add_component(project.id, _component_dict, ignore_error=True, verbose=True)
+            component, _ = self._projects_add_component(project.id, _component_dict, ignore_error=True, verbose=True)
 
             if component is None:
                 # has error, update output object
@@ -654,7 +654,7 @@ class GRDMClient(Namespace):
                 continue
 
             # update output object
-            # can overwrite object by _children[_component_idx].update(component_dict)
+            # can overwrite object by dictionary _children[_component_idx].update(_)
             children[_component_idx]['id'] = component.id
             children[_component_idx]['type'] = component.type
 
@@ -713,6 +713,59 @@ class GRDMClient(Namespace):
 
         return project, json.loads(_content)['data']
 
+    def _create_or_load_project(self, projects, project_idx):
+        """Create new project or fork project or load project
+
+        :param projects: list of project from template
+        :param project_idx: integer of project index base on it order in project list
+        :return: project object or None
+        """
+        _project_dict = projects[project_idx]
+        _id = _project_dict.get('id')
+        _fork_id = _project_dict.get('fork_id')
+
+        if _id:
+            print(f'JSONPOINTER /projects/{project_idx}/id == {_id}')
+            project, _ = self._projects_load_project(_id, is_fake=True, ignore_error=True, verbose=True)
+
+            if project is None:
+                # has error, update output object
+                projects[project_idx] = None
+                return None
+
+            # update output object
+            # can overwrite object by dictionary _projects[_project_idx].update(_)
+            _project_dict['id'] = project.id
+            _project_dict['type'] = project.type
+        elif _fork_id:
+            print(f'JSONPOINTER /projects/{project_idx}/fork_id == {_fork_id}')
+            project, _ = self._projects_fork_project(_project_dict, ignore_error=True, verbose=True)
+
+            if project is None:
+                # has error, update output object
+                projects[project_idx] = None
+                return None
+
+            # update output object
+            # can overwrite object by dictionary _projects[_project_idx].update(_)
+            _project_dict['id'] = project.id
+            _project_dict['type'] = project.type
+        else:
+            print(f'JSONPOINTER /projects/{project_idx}/')
+            project, _ = self._projects_create_project(_project_dict, ignore_error=True, verbose=True)
+
+            if project is None:
+                # has error, update output object
+                projects[project_idx] = None
+                return None
+
+            # update output object
+            # can overwrite object by dictionary _projects[_project_idx].update(_)
+            _project_dict['id'] = project.id
+            _project_dict['type'] = project.type
+
+        return project
+
     def projects_create(self, verbose=True):
         """Create Projects/Components following the structure and info which defined in a template JSON file.\n
         (1) For each project, you can create new with/without template form, fork from existing project.\n
@@ -750,45 +803,10 @@ class GRDMClient(Namespace):
                 _children = _project_dict.get('children', [])
                 _project_links = _project_dict.get('project_links', [])
 
-                if _id:
-                    print(f'JSONPOINTER /projects/{_project_idx}/id == {_id}')
-                    project, _ = self._projects_load_project(_id, is_fake=True, ignore_error=True, verbose=True)
-
-                    if project is None:
-                        # has error, update output object
-                        _projects[_project_idx] = None
-                        continue
-
-                    # update output object
-                    # can overwrite object by _projects[_project_idx].update(project_dict)
-                    _projects[_project_idx]['id'] = project.id
-                    _projects[_project_idx]['type'] = project.type
-                elif _fork_id:
-                    print(f'JSONPOINTER /projects/{_project_idx}/fork_id == {_fork_id}')
-                    project, project_dict = self._projects_fork_project(_project_dict, ignore_error=True, verbose=True)
-
-                    if project is None:
-                        # has error, update output object
-                        _projects[_project_idx] = None
-                        continue
-
-                    # update output object
-                    # can overwrite object by _projects[_project_idx].update(project_dict)
-                    _projects[_project_idx]['id'] = project.id
-                    _projects[_project_idx]['type'] = project.type
-                else:
-                    print(f'JSONPOINTER /projects/{_project_idx}/')
-                    project, project_dict = self._projects_create_project(_project_dict, ignore_error=True, verbose=True)
-
-                    if project is None:
-                        # has error, update output object
-                        _projects[_project_idx] = None
-                        continue
-
-                    # update output object
-                    # can overwrite object by _projects[_project_idx].update(project_dict)
-                    _projects[_project_idx]['id'] = project.id
-                    _projects[_project_idx]['type'] = project.type
+                # create new or fork project or load project
+                project = self._create_or_load_project(_projects, _project_idx)
+                if project is None:
+                    continue
 
                 # link a project to this node (parent_node_id = project.id)
                 self._add_project_pointers(_project_links, project)
@@ -984,9 +1002,13 @@ class GRDMClient(Namespace):
                 if current_user_contributor:
                     # update output object
                     # can overwrite object by _contributors[_user_idx].update(contributor_dict)
-                    contributors[_user_idx]['id'] = current_user_contributor.id
-                    contributors[_user_idx]['type'] = current_user_contributor.type
-                    contributors[_user_idx]['index'] = current_user_contributor.attributes.index
+                    _obj = contributors[_user_idx]
+                    _contributor_attr = current_user_contributor.attributes
+                    _obj['id'] = current_user_contributor.id
+                    _obj['type'] = current_user_contributor.type
+                    _obj['index'] = _contributor_attr.index
+                    _obj['bibliographic'] = _contributor_attr.bibliographic
+                    _obj['permission'] = _contributor_attr.permission
                 continue
 
             if _user_id in contributor_user_ids:
@@ -999,7 +1021,7 @@ class GRDMClient(Namespace):
             print(f'JSONPOINTER ./contributors/{_user_idx}/')
             # Call API Create a contributor
             _index = _user_idx - _invalid_user_obj_number
-            contributor, contributor_dict = self._projects_add_contributor(pk, _user_dict, _index, verbose=True)
+            contributor, _ = self._projects_add_contributor(pk, _user_dict, _index, verbose=True)
             if contributor is None:
                 # has error, update output object
                 contributors[_user_idx] = None
@@ -1007,10 +1029,14 @@ class GRDMClient(Namespace):
                 continue
 
             # update output object
-            # can overwrite object by _contributors[_user_idx].update(contributor_dict)
-            contributors[_user_idx]['id'] = contributor.id
-            contributors[_user_idx]['type'] = contributor.type
-            contributors[_user_idx]['index'] = contributor.attributes.index
+            # can overwrite object by _contributors[_user_idx].update(_)
+            _obj = contributors[_user_idx]
+            _contributor_attr = contributor.attributes
+            _obj['id'] = contributor.id
+            _obj['type'] = contributor.type
+            _obj['index'] = _contributor_attr.index
+            _obj['bibliographic'] = _contributor_attr.bibliographic
+            _obj['permission'] = _contributor_attr.permission
 
     def _clear_project_current_contributors(self, pk, contributor_user_ids, current_user_contributor):
         """Clear list of current contributors from this project, except for the currently logged-in user
@@ -1021,7 +1047,7 @@ class GRDMClient(Namespace):
         :return: object of contributor which is current user
         """
         # Get all current contributors from this project
-        old_contributors, _old_contributors_dict = self._projects_list_project_contributors(pk, verbose=True)
+        old_contributors, _ = self._projects_list_project_contributors(pk, verbose=True)
         # Delete all current contributors from this project
         for contributor in old_contributors:
             # except for the currently logged-in user
