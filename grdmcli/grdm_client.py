@@ -798,8 +798,6 @@ class GRDMClient(Namespace):
             print(f'LOOP Following the template of projects')
             _projects = _projects_dict.get('projects', [])
             for _project_idx, _project_dict in enumerate(_projects):
-                _id = _project_dict.get('id')
-                _fork_id = _project_dict.get('fork_id')
                 _children = _project_dict.get('children', [])
                 _project_links = _project_dict.get('project_links', [])
 
