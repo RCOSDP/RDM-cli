@@ -13,11 +13,10 @@ import requests
 import validators
 from validators import ValidationFailure
 
-from grdmcli import constants as const
-from . import status
-from .utils import *
+from . import constants as const, status, utils
 
 here = os.path.abspath(os.path.dirname(__file__))
+MSG_E001 = 'Missing currently logged-in user'
 
 # [For development]
 DEBUG = True
@@ -204,7 +203,7 @@ class GRDMClient(Namespace):
         # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         if not self.user:
-            sys.exit('Missing currently logged-in user')
+            sys.exit(MSG_E001)
 
         # users/{user.id}/institutions/
         params = {const.ORDERING_QUERY_PARAM: 'name'}
@@ -234,7 +233,7 @@ class GRDMClient(Namespace):
         # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         if not self.user:
-            sys.exit('Missing currently logged-in user')
+            sys.exit(MSG_E001)
 
         if not self.affiliated_institutions:
             sys.exit('Missing currently logged-in user\'s affiliated institutions')
@@ -271,7 +270,7 @@ class GRDMClient(Namespace):
         # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         if not self.user:
-            sys.exit('Missing currently logged-in user')
+            sys.exit(MSG_E001)
 
         print(f'[For development]GET List of licenses')
         params = {const.ORDERING_QUERY_PARAM: 'name'}
@@ -609,8 +608,8 @@ class GRDMClient(Namespace):
                 continue
 
             # update output object
+            # can overwrite object by _project_links[_node_id_idx] = project_link_dict
             _project_links[_node_id_idx] = project_link.id
-            # _project_links[_node_id_idx] = project_link_dict
 
         # Delete None from project_links
         if _project_links:
@@ -636,9 +635,9 @@ class GRDMClient(Namespace):
                 continue
 
             # update output object
+            # can overwrite object by _children[_component_idx].update(component_dict)
             _children[_component_idx]['id'] = component.id
             _children[_component_idx]['type'] = component.type
-            # _children[_component_idx].update(component_dict)
 
         # Delete None from children
         if _children:
@@ -718,12 +717,12 @@ class GRDMClient(Namespace):
             sys.exit('Missing the template file')
 
         print(f'USE the template of projects: {self.template}')
-        _projects_dict = read_json_file(self.template)
+        _projects_dict = utils.read_json_file(self.template)
 
         try:
             # check json schema
             print(f'VALIDATE BY the template of projects: {self.template_schema_projects}')
-            check_json_schema(self.template_schema_projects, _projects_dict)
+            utils.check_json_schema(self.template_schema_projects, _projects_dict)
 
             print(f'LOOP Following the template of projects')
             _projects = _projects_dict.get('projects', [])
@@ -743,9 +742,9 @@ class GRDMClient(Namespace):
                         continue
 
                     # update output object
+                    # can overwrite object by _projects[_project_idx].update(project_dict)
                     _projects[_project_idx]['id'] = project.id
                     _projects[_project_idx]['type'] = project.type
-                    # _projects[_project_idx].update(project_dict)
                 elif _fork_id:
                     print(f'JSONPOINTER /projects/{_project_idx}/fork_id == {_fork_id}')
                     project, project_dict = self._projects_fork_project(_project_dict, ignore_error=True, verbose=True)
@@ -756,9 +755,9 @@ class GRDMClient(Namespace):
                         continue
 
                     # update output object
+                    # can overwrite object by _projects[_project_idx].update(project_dict)
                     _projects[_project_idx]['id'] = project.id
                     _projects[_project_idx]['type'] = project.type
-                    # _projects[_project_idx].update(project_dict)
                 else:
                     print(f'JSONPOINTER /projects/{_project_idx}/')
                     project, project_dict = self._projects_create_project(_project_dict, ignore_error=True, verbose=True)
@@ -769,9 +768,9 @@ class GRDMClient(Namespace):
                         continue
 
                     # update output object
+                    # can overwrite object by _projects[_project_idx].update(project_dict)
                     _projects[_project_idx]['id'] = project.id
                     _projects[_project_idx]['type'] = project.type
-                    # _projects[_project_idx].update(project_dict)
 
                 # link a project to this node (parent_node_id = project.id)
                 for _node_id_idx, _node_id in enumerate(_project_links):
@@ -784,8 +783,8 @@ class GRDMClient(Namespace):
                         continue
 
                     # update output object
+                    # can overwrite object by _project_links[_node_id_idx] = project_link_dict
                     _project_links[_node_id_idx] = project_link.id
-                    # _project_links[_node_id_idx] = project_link_dict
 
                 # Delete None from project_links
                 if _project_links:
@@ -811,9 +810,9 @@ class GRDMClient(Namespace):
                         continue
 
                     # update output object
+                    # can overwrite object by _children[_component_idx].update(component_dict)
                     _children[_component_idx]['id'] = component.id
                     _children[_component_idx]['type'] = component.type
-                    # _children[_component_idx].update(component_dict)
 
                 # Delete None from children
                 if _children:
@@ -831,7 +830,7 @@ class GRDMClient(Namespace):
                     print(f'\'{_project.id}\' - \'{_project.attributes.title}\' [{_project.type}][{_project.attributes.category}]')
 
             print(f'USE the output result file: {self.output_result_file}')
-            write_json_file(self.output_result_file, _projects_dict)
+            utils.write_json_file(self.output_result_file, _projects_dict)
 
             sys.exit(0)
 
@@ -846,7 +845,7 @@ class GRDMClient(Namespace):
         # print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
 
         if not self.user:
-            sys.exit('Missing currently logged-in user')
+            sys.exit(MSG_E001)
 
         print(f'GET List of contributors')
         params = {const.ORDERING_QUERY_PARAM: 'name'}
@@ -1002,12 +1001,12 @@ class GRDMClient(Namespace):
             sys.exit('Missing the template file')
 
         print(f'USE the template of contributors: {self.template}')
-        _projects_dict = read_json_file(self.template)
+        _projects_dict = utils.read_json_file(self.template)
 
         try:
             # check json schema
             print(f'VALIDATE BY the template of projects: {self.template_schema_contributors}')
-            check_json_schema(self.template_schema_contributors, _projects_dict)
+            utils.check_json_schema(self.template_schema_contributors, _projects_dict)
 
             print(f'LOOP Following the template of contributors')
             _projects = _projects_dict.get('projects', [])
@@ -1049,10 +1048,10 @@ class GRDMClient(Namespace):
                         print(f'WARN This member is the currently logged-in user, so skip creating/updating')
                         if current_user_contributor:
                             # update output object
+                            # can overwrite object by _contributors[_user_idx].update(contributor_dict)
                             _contributors[_user_idx]['id'] = current_user_contributor.id
                             _contributors[_user_idx]['type'] = current_user_contributor.type
                             _contributors[_user_idx]['index'] = current_user_contributor.attributes.index
-                            # _contributors[_user_idx].update(contributor_dict)
                         continue
 
                     if _user_id in current_project_contributor_user_ids:
@@ -1073,10 +1072,10 @@ class GRDMClient(Namespace):
                         continue
 
                     # update output object
+                    # can overwrite object by _contributors[_user_idx].update(contributor_dict)
                     _contributors[_user_idx]['id'] = contributor.id
                     _contributors[_user_idx]['type'] = contributor.type
                     _contributors[_user_idx]['index'] = contributor.attributes.index
-                    # _contributors[_user_idx].update(contributor_dict)
 
                 # Delete None from contributors
                 if _contributors:
@@ -1096,6 +1095,6 @@ class GRDMClient(Namespace):
                     print(f'\'{contributor.id}\' - \'{users.full_name}\' [{contributor.type}][{attrs.permission}][{attrs.index}]')
 
             print(f'USE the output result file: {self.output_result_file}')
-            write_json_file(self.output_result_file, _projects_dict)
+            utils.write_json_file(self.output_result_file, _projects_dict)
 
             sys.exit(0)

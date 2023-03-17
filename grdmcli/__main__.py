@@ -6,9 +6,9 @@ import sys
 
 import six
 
-from grdmcli import __version__
-from grdmcli.grdm_client import GRDMClient
-from grdmcli.utils import inspect_info
+from . import __version__
+from .grdm_client import GRDMClient
+from .utils import inspect_info
 
 
 def _add_subparser(parser, name, desc, aliases=None):
@@ -45,19 +45,19 @@ def main():
     # dest=entity stores the name of the entity in a variable
     entity_subparsers = cli_parser.add_subparsers(dest='entity')
 
-    # [START] entity=projects
+    # [START] block entity=projects
 
     projects_parser = _add_subparser(entity_subparsers, 'projects', 'projects entity')
     # dest=command stores the name of the command in a variable
     projects_cmd_subparsers = projects_parser.add_subparsers(dest='command')
 
-    # [For development] command=list
+    # [For development] block command=list
     projects_list_parser = _add_subparser(projects_cmd_subparsers, 'list', 'projects list command', ['ls', ])
     projects_list_parser.set_defaults(func='projects_list')
     # to add config args
     _have_config_parsers.append(projects_list_parser)
 
-    # command=create
+    # block command=create
     projects_create_parser = _add_subparser(projects_cmd_subparsers, 'create', 'projects create command')
     projects_create_parser.set_defaults(func='projects_create')
     # to add template arg
@@ -70,15 +70,15 @@ def main():
     # to add config args
     _have_config_parsers.append(projects_create_parser)
 
-    # [END] entity=projects
+    # [END] block entity=projects
 
-    # [START] entity=contributors
+    # [START] block entity=contributors
 
     contributors_parser = _add_subparser(entity_subparsers, 'contributors', 'contributors entity')
     # dest=command stores the name of the command in a variable
     contributors_cmd_subparsers = contributors_parser.add_subparsers(dest='command')
 
-    # command=create
+    # block command=create
     contributors_create_parser = _add_subparser(contributors_cmd_subparsers, 'create', 'contributors create command')
     contributors_create_parser.set_defaults(func='contributors_create')
     # to add template arg
@@ -91,7 +91,7 @@ def main():
     # to add config args
     _have_config_parsers.append(contributors_create_parser)
 
-    # [END] entity=contributors
+    # [END] block entity=contributors
 
     for _parser in _have_config_parsers:
         _subparser_add_config_args(_parser)

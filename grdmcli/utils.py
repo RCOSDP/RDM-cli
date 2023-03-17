@@ -9,6 +9,8 @@ import json
 import jsonschema
 from jsonschema import validate
 
+from grdmcli.exceptions import GrdmCliException
+
 __all__ = [
     'inspect_info',
     'read_json_file',
@@ -39,7 +41,7 @@ def read_json_file(file_path):
             input_data = json.load(read_file)
             return input_data
         except Exception as exc:
-            raise Exception("Cannot read json file", exc)
+            raise GrdmCliException("Cannot read json file", exc)
 
 
 def write_json_file(file, data):
@@ -57,7 +59,7 @@ def write_json_file(file, data):
             json.dump(data, write_file, ensure_ascii=False, indent=4, sort_keys=False)
             print("File was written successfully: ", file)
         except Exception as exc:
-            raise Exception("Cannot write json file", exc)
+            raise GrdmCliException("Cannot write json file", exc)
 
 
 def check_json_schema(schema_file_path, data):
@@ -74,4 +76,4 @@ def check_json_schema(schema_file_path, data):
         schema = read_json_file(schema_file_path)
         validate(data, schema=schema)
     except jsonschema.exceptions.ValidationError as json_error:
-        raise Exception(json_error.__dict__)
+        raise GrdmCliException(json_error.__dict__)
