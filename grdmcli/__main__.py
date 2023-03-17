@@ -102,7 +102,6 @@ def main():
         cli_parser.print_help()
         return
 
-    print('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     cli_parser.parse_args(namespace=client)
 
     _args = []
