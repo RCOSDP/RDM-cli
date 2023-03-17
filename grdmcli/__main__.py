@@ -120,7 +120,7 @@ def main():
             exit_code = client.__getattribute__(client.func)()
         except SystemExit as e:
             exit_code = e.code
-        except KeyboardInterrupt as e:
+        except KeyboardInterrupt:
             exit_code = KeyboardInterrupt.__name__
         finally:
             print(f'End process')
