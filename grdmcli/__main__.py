@@ -8,7 +8,7 @@ import six
 
 from . import __version__
 from .grdm_client import GRDMClient
-from .utils import inspect_info
+from .utils import inspect_info  # noqa
 
 
 def _add_subparser(parser, name, desc, aliases=None):

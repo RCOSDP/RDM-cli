@@ -46,7 +46,7 @@
                     "project_links": {
                         "type": "array",
                         "items": {
-                        "$ref": "#/definitions/NodeId"
+                            "$ref": "#/definitions/NodeId"
                         }
                     }
                 },
@@ -170,7 +170,7 @@
                     "project_links": {
                         "type": "array",
                         "items": {
-                            "$ref": "#/definitions/NodeIdOrNull"
+                            "$ref": "#/definitions/NodeId"
                         }
                     }
                 },
