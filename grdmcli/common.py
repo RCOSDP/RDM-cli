@@ -12,7 +12,7 @@ import requests
 import validators
 from validators import ValidationFailure
 
-from . import constants as const, status
+from . import constants as const, status, utils  # noqa
 
 here = os.path.abspath(os.path.dirname(__file__))
 
