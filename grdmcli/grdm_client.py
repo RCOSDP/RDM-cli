@@ -2,12 +2,12 @@ import inspect  # noqa
 from datetime import datetime  # noqa
 
 from . import constants as utils  # noqa
-from .contributors import ContributorCli
-from .projects import ProjectCli
-from .projects_list import ProjectListCli
+from .contributors import ContributorsCLI
+from .projects import ProjectsCLI
+from .projects_list import ProjectsListCli
 
 
-class GRDMClient(ProjectCli, ContributorCli, ProjectListCli):
+class GRDMClient(ProjectsCLI, ContributorsCLI, ProjectsListCli):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

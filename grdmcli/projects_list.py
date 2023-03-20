@@ -6,7 +6,7 @@ from pprint import pprint  # noqa
 from types import SimpleNamespace
 
 from . import constants as const, constants as utils  # noqa
-from .common import CommonCli
+from .common import CommonCLI
 
 MSG_E001 = 'Missing currently logged-in user'
 
@@ -16,7 +16,7 @@ IS_CLEAR = True
 IGNORE_PROJECTS = ['z6dne', 'ega24', 'm7ah9', '4hexc']
 
 
-class ProjectListCli(CommonCli):
+class ProjectsListCli(CommonCLI):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.affiliated_institutions = []  # For development

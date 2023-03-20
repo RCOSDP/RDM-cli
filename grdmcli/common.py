@@ -17,7 +17,7 @@ from . import constants as const, status
 here = os.path.abspath(os.path.dirname(__file__))
 
 
-class CommonCli(Namespace):
+class CommonCLI(Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

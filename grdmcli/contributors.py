@@ -6,12 +6,12 @@ from pprint import pprint  # noqa
 from types import SimpleNamespace
 
 from . import constants as const, utils
-from .common import CommonCli
+from .common import CommonCLI
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 
-class ContributorCli(CommonCli):
+class ContributorsCLI(CommonCLI):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
