@@ -28,6 +28,7 @@ extra_files = [
     os.path.join(here, 'LICENSE'),
     os.path.join(here, 'requirements.txt'),
     os.path.join(here, 'VERSION'),
+    os.path.join(here, 'json_schema', 'projects_create_schema.json'),
 ]
 
 setup(

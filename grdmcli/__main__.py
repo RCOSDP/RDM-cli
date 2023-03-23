@@ -43,7 +43,28 @@ def main():
                             version=f'{__version__}')
 
     # dest=entity stores the name of the entity in a variable
-    # entity_subparsers = cli_parser.add_subparsers(dest='entity')
+    entity_subparsers = cli_parser.add_subparsers(dest='entity')
+
+    # [START] block entity=projects
+
+    projects_parser = _add_subparser(entity_subparsers, 'projects', 'projects entity')
+    # dest=command stores the name of the command in a variable
+    projects_cmd_subparsers = projects_parser.add_subparsers(dest='command')
+
+    # block command=create
+    projects_create_parser = _add_subparser(projects_cmd_subparsers, 'create', 'projects create command')
+    projects_create_parser.set_defaults(func='projects_create')
+    # to add template arg
+    projects_create_parser.add_argument('--template', required=True,
+                                        default='./template_file.json',
+                                        help='template file for projects/components')
+    projects_create_parser.add_argument('--output_result_file',
+                                        default='./output_result_file.json',
+                                        help='the output result file path')
+    # to add config args
+    _have_config_parsers.append(projects_create_parser)
+
+    # [END] block entity=projects
 
     for _parser in _have_config_parsers:
         _subparser_add_config_args(_parser)
