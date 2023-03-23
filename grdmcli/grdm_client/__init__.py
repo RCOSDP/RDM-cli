@@ -1,17 +1,66 @@
 import inspect  # noqa
 from datetime import datetime  # noqa
 
-from . import constants as utils  # noqa
-from .contributors import ContributorsCLI
-from .projects import ProjectsCLI
-from .projects_list import ProjectsListCli
+from .common import CommonCLI
+from .. import constants as utils  # noqa
 
 
-class GRDMClient(ProjectsCLI, ContributorsCLI, ProjectsListCli):
+class GRDMClient(CommonCLI):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # For development
+        self.affiliated_institutions = []
+        self.affiliated_users = []
+        self.projects = []
 
-    def _projects_prepare_project_data(self, node_object, verbose=True):
+        # For projects
+        self.created_projects = []
+
+        # For contributors
+        self.created_project_contributors = []
+
+    # Imported methods
+    from .users import (
+        _users_me,
+        _users_me_affiliated_institutions,
+        _users_me_affiliated_users,
+    )
+    from .licenses import (
+        _licenses,
+        _find_license_id_from_name,
+    )
+    from .develop import (
+        _delete_project,
+        projects_list,
+    )
+    from .projects import (
+        _get_template_schema_projects,
+        _fake_project_content_data,
+        _prepare_project_data,
+        _load_project,
+        _fork_project,
+        _create_project,
+        _link_project_to_project,
+        _add_project_pointers,
+        _add_project_components,
+        _projects_add_component,
+        _create_or_load_project,
+        projects_create,
+    )
+    template_schema_projects = property(_get_template_schema_projects)
+    from .contributors import (
+        _get_template_schema_contributors,
+        _list_project_contributors,
+        _delete_project_contributor,
+        _prepare_project_contributor_data,
+        _add_project_contributor,
+        _overwrite_project_contributors,
+        _clear_project_current_contributors,
+        contributors_create,
+    )
+    template_schema_contributors = property(_get_template_schema_contributors)
+
+    def _prepare_project_data(self, node_object, verbose=True):
         """Make a request body for the API Create new Node
 
         :param node_object: object of node
@@ -59,7 +108,7 @@ class GRDMClient(ProjectsCLI, ContributorsCLI, ProjectsListCli):
             _relationships['license'] = {
                 'data': {
                     'type': 'licenses',
-                    'id': _license.get('id')
+                    'id': self._find_license_id_from_name(_license.get('license_name'))
                 }
             }
             # required 'copyright_holders' and 'year'
