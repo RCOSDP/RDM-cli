@@ -12,7 +12,7 @@ import requests
 import validators
 from validators import ValidationFailure
 
-from . import constants as const, status, utils  # noqa
+from .. import constants as const, status, utils  # noqa
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -146,32 +146,3 @@ class CommonCLI(Namespace):
         if not self.is_authenticated:
             print('Check Personal Access Token')
             self._users_me(ignore_error=False, verbose=verbose)
-
-    def _users_me(self, ignore_error=True, verbose=True):
-        """Get the currently logged-in user
-
-        :param ignore_error: boolean
-        :param verbose: boolean
-        :return: None
-        """
-        # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
-
-        print('GET the currently logged-in user')
-        _response, _error_message = self._request('GET', 'users/me/', params={}, data={})
-        if _error_message:
-            print(f'WARN {_error_message}')
-            if not ignore_error:
-                sys.exit(_error_message)
-            return False
-        _content = _response.content
-
-        # pprint(_response.json())
-        # Parse JSON into an object with attributes corresponding to dict keys.
-        response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
-
-        self.is_authenticated = True
-        self.user = response.data
-
-        if verbose:
-            print(f'You are logged in as:')
-            print(f'\'{self.user.id}\' - {self.user.attributes.email} \'{self.user.attributes.full_name}\'')
