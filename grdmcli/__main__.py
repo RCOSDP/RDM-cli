@@ -43,7 +43,28 @@ def main():
                             version=f'{__version__}')
 
     # dest=entity stores the name of the entity in a variable
-    # entity_subparsers = cli_parser.add_subparsers(dest='entity')
+    entity_subparsers = cli_parser.add_subparsers(dest='entity')
+
+    # [START] block entity=contributors
+
+    contributors_parser = _add_subparser(entity_subparsers, 'contributors', 'contributors entity')
+    # dest=command stores the name of the command in a variable
+    contributors_cmd_subparsers = contributors_parser.add_subparsers(dest='command')
+
+    # block command=create
+    contributors_create_parser = _add_subparser(contributors_cmd_subparsers, 'create', 'contributors create command')
+    contributors_create_parser.set_defaults(func='contributors_create')
+    # to add template arg
+    contributors_create_parser.add_argument('--template', required=True,
+                                            default='./template_file.json',
+                                            help='template file for contributors')
+    contributors_create_parser.add_argument('--output_result_file',
+                                            default='./output_result_file.json',
+                                            help='the output result file path')
+    # to add config args
+    _have_config_parsers.append(contributors_create_parser)
+
+    # [END] block entity=contributors
 
     for _parser in _have_config_parsers:
         _subparser_add_config_args(_parser)

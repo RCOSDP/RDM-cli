@@ -12,6 +12,34 @@ python -m pip install .
 
 ### Usages
 
+Get help and see available commands, get help on a specific command
+```cmd
+grdmcli --help
+grdmcli contributors --help
+grdmcli contributors create --help
+```
+
+Example for contributors registration/overwrite function 
+```text
+$ grdmcli contributors create --help
+usage: grdmcli contributors create [-h] --template TEMPLATE
+                                   [--output_result_file OUTPUT_RESULT_FILE]
+                                   [--osf_token OSF_TOKEN]
+                                   [--osf_api_url OSF_API_URL]
+
+contributors create command
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --template TEMPLATE   template file for contributors
+  --output_result_file OUTPUT_RESULT_FILE
+                        the output result file path
+  --osf_token OSF_TOKEN
+                        the Personal Access Token
+  --osf_api_url OSF_API_URL
+                        the API URL
+```
+
 You need to provide your credentials as Personal Access Token (PAT), 
 by setting the `OSF_TOKEN` environment variable.  
 You also need to provide the server URL, by setting the `OSF_API_URL` environment variable.
