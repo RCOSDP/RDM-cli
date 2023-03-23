@@ -125,6 +125,50 @@ options:
   --verbose             Enable Verbose mode
 ```
 
+#### 参加メンバーの新規登録、上書き
+The following functions are possible:
+- Overwrite the project's contributor list
+
+**\* Notice** about the order of registration/overwrite contributors of a project/component:
+- Clear available contributors from the project. Except the current user. This member is project admin.
+- Add new contributors list. Except the current user
+
+##### Usages
+Get help and see available commands, get help on a specific command
+```cmd
+grdmcli --help
+grdmcli contributors --help
+grdmcli contributors create --help
+```
+
+Example for contributors registration/overwrite function 
+```text
+$ grdmcli contributors create --help
+usage: grdmcli contributors create [-h]
+                                   --template TEMPLATE
+                                   [--output_result_file OUTPUT_RESULT_FILE]
+                                   [--osf_token OSF_TOKEN]
+                                   [--osf_api_url OSF_API_URL]
+                                   [--disable_ssl_verify]
+                                   [--debug]
+                                   [--verbose]
+
+contributors create command
+
+options:
+  -h, --help            show this help message and exit
+  --template TEMPLATE   The template file for contributors
+  --output_result_file OUTPUT_RESULT_FILE
+                        The output result file path
+  --osf_token OSF_TOKEN
+                        The Personal Access Token
+  --osf_api_url OSF_API_URL
+                        The API URL
+  --disable_ssl_verify  Disable SSL verification
+  --debug               Enable Debug mode
+  --verbose             Enable Verbose mode
+```
+
 ### How to run UT TCs
 - To run test code in the `test` module,  
 Ensure the following packages in `requirements.txt` are installed:

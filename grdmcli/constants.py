@@ -21,6 +21,7 @@ ORDERING_BY = 'pk'
 IS_FAKE_LOAD_PROJECT = False
 
 TEMPLATE_SCHEMA_PROJECTS = './json_schema/projects_create_schema.json'
+TEMPLATE_SCHEMA_CONTRIBUTORS = './json_schema/contributors_create_schema.json'
 
 # For `requests.request` keyword arguments
 # verify: (optional) Either a boolean, in which case it controls whether we verify
