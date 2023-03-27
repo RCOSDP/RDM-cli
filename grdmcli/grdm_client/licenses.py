@@ -49,11 +49,19 @@ def _licenses(self, ignore_error=True, verbose=True):
 
 
 def _find_license_id_from_name(self, name, verbose=True):
+    """Find the licence in the available list of node license by name and return the id.\n
+    The name comparison is case-insensitive.
+
+    :param name: string of license name
+    :param verbose: boolean
+    :return: license id
+    :raise: GrdmCliException
+    """
     if not hasattr(self, 'licenses') or not self.licenses or len(self.licenses):
         self._licenses(ignore_error=True, verbose=False)
 
     for _license in self.licenses:
-        if _license.attributes.name == name:
+        if _license.attributes.name.casefold() == name.casefold():
             return _license.id
 
     raise GrdmCliException(f'License name \'{name}\' is not registered.')
