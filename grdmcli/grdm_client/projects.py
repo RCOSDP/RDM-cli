@@ -100,7 +100,7 @@ def _prepare_project_data(self, node_object, verbose=True):
         _relationships['license'] = {
             'data': {
                 'type': 'licenses',
-                'id': _license.get('id')
+                'id': self._find_license_id_from_name(_license.get('license_name'))
             }
         }
         # required 'copyright_holders' and 'year'

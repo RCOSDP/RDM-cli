@@ -77,10 +77,6 @@
     ],
     "additionalProperties": false,
     "definitions": {
-        "LicenseId": {
-            "type": "string",
-            "pattern": "^[0-9a-z]{24}$"
-        },
         "NodeId": {
             "type": "string",
             "pattern": "^[23456789abcdefghjkmnpqrstuvwxyz]{5}$"
@@ -112,8 +108,8 @@
         "NodeLicense": {
             "type": "object",
             "properties": {
-                "id": {
-                    "$ref": "#/definitions/LicenseId"
+                "license_name": {
+                    "type": "string"
                 },
                 "copyright_holders": {
                     "type": "array",
@@ -126,7 +122,7 @@
                 }
             },
             "required": [
-                "id",
+                "license_name",
                 "copyright_holders",
                 "year"
             ],

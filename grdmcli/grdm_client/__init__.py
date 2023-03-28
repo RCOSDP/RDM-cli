@@ -15,6 +15,10 @@ class GRDMClient(CommonCLI):
     from .users import (
         _users_me,
     )
+    from .licenses import (
+        _licenses,
+        _find_license_id_from_name,
+    )
     from .projects import (
         _get_template_schema_projects,
         _fake_project_content_data,
