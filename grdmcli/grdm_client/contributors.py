@@ -132,12 +132,13 @@ def _prepare_project_contributor_data(self, contributor_object, index, verbose=T
     return _data
 
 
-def _add_project_contributor(self, pk, contributor_object, index, ignore_error=True, verbose=True):
+def _add_project_contributor(self, pk, contributor_object, index, contributor_user_ids, ignore_error=True, verbose=True):
     """
 
     :param pk: string - Project GUID
     :param contributor_object: object includes user GUID and new contributor's attributes
     :param index: contributor's index attribute
+    :param contributor_user_ids: list of the user GUID which is project contributor
     :param ignore_error: boolean
     :param verbose: boolean
     :return: contributor object, and contributor dictionary
@@ -164,6 +165,7 @@ def _add_project_contributor(self, pk, contributor_object, index, ignore_error=T
     contributor = response.data
 
     self.created_project_contributors.append(contributor)
+    contributor_user_ids.append(user_id)
 
     if verbose:
         print(f'Created contributor: \'{pk}-{user_id}\'')
@@ -211,7 +213,7 @@ def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids
         print(f'JSONPOINTER ./contributors/{_user_idx}/')
         # Call API Create a contributor
         _index = _user_idx - _invalid_user_obj_number
-        contributor, _ = self._add_project_contributor(pk, _user_dict, _index, verbose=True)
+        contributor, _ = self._add_project_contributor(pk, _user_dict, _index, contributor_user_ids, verbose=True)
         if contributor is None:
             # has error, update output object
             contributors[_user_idx] = None
