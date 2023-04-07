@@ -7,7 +7,6 @@ import inspect
 import json
 
 import jsonschema
-from jsonschema import validate
 
 from grdmcli.exceptions import GrdmCliException
 
@@ -74,6 +73,6 @@ def check_json_schema(schema_file_path, data):
     """
     try:
         schema = read_json_file(schema_file_path)
-        validate(data, schema=schema)
+        jsonschema.validate(data, schema=schema)
     except jsonschema.exceptions.ValidationError as json_error:
         raise GrdmCliException(json_error.__dict__)
