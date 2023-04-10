@@ -186,6 +186,10 @@ class GRDMClientFactory(CommonCLIFactory):
         self.created_projects = []
         self.template_schema_projects = 'path-to-schema'
 
+        # For contributors functions
+        self.created_project_contributors = []
+        self.template_schema_contributors = 'path-to-schema'
+
     # For projects functions
 
     def _fake_project_content_data(self, pk, verbose=True):
@@ -222,4 +226,21 @@ class GRDMClientFactory(CommonCLIFactory):
         pass
 
     def _create_or_load_project(self, projects, project_idx):
+        pass
+
+    # For contributors functions
+
+    def _prepare_project_contributor_data(self, _contributor_object, _index, verbose=True):
+        pass
+
+    def _delete_project_contributor(self, pk, user_id, ignore_error=True, verbose=True):
+        pass
+
+    def _list_project_contributors(self, pk, ignore_error=True, verbose=True):
+        pass
+
+    def _add_project_contributor(self, pk, contributor_object, index, ignore_error=True, verbose=True):
+        pass
+
+    def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids, current_user_contributor):
         pass
