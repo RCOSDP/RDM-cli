@@ -218,6 +218,9 @@ def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids
             _invalid_user_obj_number += 1
             continue
 
+        # cache user id after adding
+        contributor_user_ids.append(_user_id)
+
         # update output object
         # can overwrite object by _contributors[_user_idx].update(_)
         _obj = contributors[_user_idx]
