@@ -1,7 +1,7 @@
 from grdmcli.exceptions import GrdmCliException
 
 
-def test_grdm_cli_exception():
+def test_grdm_cli__exception():
     error_msg = 'error message'
     exception = GrdmCliException(error_msg)
     assert isinstance(exception, GrdmCliException)

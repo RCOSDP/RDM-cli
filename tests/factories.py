@@ -1,7 +1,6 @@
 import json
-
-from types import SimpleNamespace
 from argparse import Namespace
+from types import SimpleNamespace
 
 
 class CommonCLIFactory(Namespace):
@@ -31,8 +30,11 @@ class CommonCLIFactory(Namespace):
     def _check_config(self, verbose=True):
         pass
 
+    def _users_me(self, ignore_error=True, verbose=True):
+        pass
 
-class GRDMClientFactory(CommonCLIFactory):
+
+class GRDMClientContributorsCreateFactory(CommonCLIFactory):
 
     def __init__(self):
         super().__init__()
@@ -40,9 +42,6 @@ class GRDMClientFactory(CommonCLIFactory):
                                object_hook=lambda d: SimpleNamespace(**d))
         self.created_project_contributors = []
         self.template_schema_contributors = 'path-to-schema'
-
-    def _users_me(self):
-        pass
 
     def _prepare_project_contributor_data(self, _contributor_object, _index, verbose=True):
         pass
