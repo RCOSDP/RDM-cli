@@ -17,3 +17,5 @@ def test_init__grdm_client():
     assert grdm_client.has_required_attributes
     # For projects functions
     assert grdm_client.created_projects == []
+    # For contributors functions
+    assert grdm_client.created_project_contributors == []
