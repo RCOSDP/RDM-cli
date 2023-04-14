@@ -2,3 +2,7 @@ validators~=0.20.0
 jsonschema~=2.6.0
 requests~=2.27.1
 six~=1.12.0
+
+# for testing
+pytest
+pytest-cov

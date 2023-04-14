@@ -76,7 +76,7 @@ def test_write_json_file__success(capfd):
 
 def test_write_json_file__exception():
     with mock.patch('builtins.open', mock.mock_open(read_data=json.dumps(data))):
-        with mock.patch("json.dump", side_effect=Exception()):
+        with mock.patch('json.dump', side_effect=Exception()):
             with pytest.raises(GrdmCliException) as ex_info:
                 utils.write_json_file(file_path, data)
             assert 'Cannot write json file' == ex_info.value.args[0]
