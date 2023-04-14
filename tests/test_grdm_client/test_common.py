@@ -2,12 +2,11 @@ import configparser
 import json
 import os
 from unittest import mock
-import pytest
 
+import pytest
 import requests
 
 from grdmcli.grdm_client.common import CommonCLI
-
 from tests.factories import CommonCLIFactory
 
 
@@ -143,28 +142,35 @@ class TestCommonCLI:
         CommonCLI._check_config(common_cli)
         assert common_cli.is_authenticated is True
 
-    def test_check_config__is_auth_false(self, common_cli):
-        with pytest.raises(Exception):
-            CommonCLI._check_config(common_cli)
-        common_cli.is_authenticated = False
+    def test_check_config__is_auth_false(self, common_cli, capfd):
+        CommonCLI._check_config(common_cli)
+        assert common_cli.is_authenticated is False
+        lines = capfd.readouterr().out.split('\n')
+        assert lines[0] == f'Check Personal Access Token'
+        assert len(lines) == 2
 
-    @mock.patch('sys.exit', return_value=Exception())
-    def test_check_config__has_not_osf_api_url(self, mocker_exit, common_cli):
+    def test_check_config__has_not_osf_api_url(self, common_cli, capfd):
         common_cli.osf_api_url = None
-        with pytest.raises(Exception):
+        with pytest.raises(SystemExit) as ex_info:
             CommonCLI._check_config(common_cli)
-        mocker_exit.assert_called_once_with('Missing API URL')
+        lines = capfd.readouterr().out.split('\n')
+        assert lines[0] == f'Try get from config property'
+        assert lines[1] == f'Try get from environment variable'
+        assert len(lines) == 3
+        assert ex_info.value.code == 'Missing API URL'
 
-    @mock.patch('sys.exit', return_value=Exception())
-    def test_check_config__has_osf_api_url_invalid(self, mocker_exit, common_cli):
+    def test_check_config__has_osf_api_url_invalid(self, common_cli):
         common_cli.osf_api_url = 'osf_api_url'
-        with pytest.raises(Exception):
+        with pytest.raises(SystemExit) as ex_info:
             CommonCLI._check_config(common_cli)
-        mocker_exit.assert_called_once_with('The API URL is invalid')
+        assert ex_info.value.code == 'The API URL is invalid'
 
-    @mock.patch('sys.exit', return_value=Exception())
-    def test_check_config__has_not_osf_token(self, mocker_exit, common_cli):
+    def test_check_config__has_not_osf_token(self, common_cli, capfd):
         common_cli.osf_token = None
-        with pytest.raises(Exception):
+        with pytest.raises(SystemExit) as ex_info:
             CommonCLI._check_config(common_cli)
-        mocker_exit.assert_called_once_with('Missing Personal Access Token')
+        lines = capfd.readouterr().out.split('\n')
+        assert lines[0] == f'Try get from config property'
+        assert lines[1] == f'Try get from environment variable'
+        assert len(lines) == 3
+        assert ex_info.value.code == 'Missing Personal Access Token'

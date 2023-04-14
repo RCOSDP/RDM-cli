@@ -30,8 +30,11 @@ class CommonCLIFactory(Namespace):
     def _check_config(self, verbose=True):
         pass
 
+    def _users_me(self, ignore_error=True, verbose=True):
+        pass
 
-class GRDMClientFactory(CommonCLIFactory):
+
+class GRDMClientForProjectCreateFactory(CommonCLIFactory):
 
     def __init__(self):
         super().__init__()
@@ -39,9 +42,6 @@ class GRDMClientFactory(CommonCLIFactory):
                                object_hook=lambda d: SimpleNamespace(**d))
         self.created_projects = []
         self.template_schema_projects = 'path-to-schema'
-
-    def _users_me(self):
-        pass
 
     def _fake_project_content_data(self, pk, verbose=True):
         pass
