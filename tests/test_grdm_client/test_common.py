@@ -12,7 +12,7 @@ from tests.factories import CommonCLIFactory
 
 @pytest.fixture
 def common_cli():
-    args = {'osf_token': 'access-token', 'osf_api_url': 'http://localhost:8000/v2/'}
+    args = {'osf_token': 'osf-token', 'osf_api_url': 'http://localhost:8000/v2/'}
     return CommonCLIFactory(**args)
 
 
@@ -120,7 +120,8 @@ class TestCommonCLI:
         with mock.patch("configparser.ConfigParser", new=mock_parser):
             CommonCLI._load_required_attributes_from_config_file(common_cli)
             assert common_cli.osf_api_url == 'http://localhost:8000/v2/'
-            assert common_cli.osf_token == 'access-token'
+            assert common_cli.osf_token == 'osf-token'
+            assert capfd.readouterr().out == f'Read config_file: {common_cli.config_file}\n'
 
     def test_load_required_attributes_from_environment__update(self, common_cli):
         common_cli.osf_token = None
@@ -133,7 +134,7 @@ class TestCommonCLI:
 
     def test_load_required_attributes_from_environment__not_update(self, common_cli):
         CommonCLI._load_required_attributes_from_environment(common_cli)
-        assert common_cli.osf_token == 'access-token'
+        assert common_cli.osf_token == 'osf-token'
         assert common_cli.osf_api_url == 'http://localhost:8000/v2/'
 
     def test_check_config__is_auth_true(self, common_cli):

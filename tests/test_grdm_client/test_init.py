@@ -8,7 +8,7 @@ def test_init__grdm_client():
     assert grdm_client._meta == {}
     assert grdm_client.template == './template_file.json'
     assert grdm_client.output_result_file == './output_result_file.json'
-    assert grdm_client.is_authenticated is False
+    assert not grdm_client.is_authenticated
     assert grdm_client.config_file
     assert grdm_client.has_required_attributes
     # contributors create
