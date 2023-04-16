@@ -1,10 +1,21 @@
 import json
+from types import SimpleNamespace
 from unittest import mock
+
 import pytest
 import requests
-from types import SimpleNamespace
 
-from grdmcli.grdm_client import contributors
+from grdmcli.exceptions import GrdmCliException
+from grdmcli.grdm_client.contributors import (
+    _get_template_schema_contributors,
+    _list_project_contributors,
+    _delete_project_contributor,
+    _prepare_project_contributor_data,
+    _add_project_contributor,
+    _overwrite_project_contributors,
+    _clear_project_current_contributors,
+    contributors_create
+)
 from tests.factories import GRDMClientFactory
 
 get_str = """{
@@ -352,67 +363,65 @@ def grdm_client():
     return GRDMClientFactory()
 
 
-def test_get_template_schema_contributors():
-    actual = contributors._get_template_schema_contributors(grdm_client)
+def test_get_template_schema_contributors__normal():
+    actual = _get_template_schema_contributors(grdm_client)
     assert type(actual) is str
     assert actual.__contains__('contributors_create_schema.json')
 
 
-@mock.patch('sys.exit', side_effect=Exception())
-def test_list_project_contributors_auth_false(mocker, grdm_client):
+def test_list_project_contributors__auth_false(grdm_client):
     mock.patch.object(grdm_client, '_request', return_value=(None, error_message))
     grdm_client.user = None
-    with pytest.raises(Exception):
-        contributors._list_project_contributors(grdm_client, pk)
-    mocker.assert_called_once_with('Missing currently logged-in user')
+    with pytest.raises(SystemExit) as ex_info:
+        _list_project_contributors(grdm_client, pk)
+    assert ex_info.value.code == 'Missing currently logged-in user'
 
 
-@mock.patch('sys.exit', side_effect=Exception())
-def test_list_project_contributors_send_request_error_ignore_error_true(mocker, grdm_client):
+def test_list_project_contributors__send_request_error_and_ignore_error_false_sys_exit(grdm_client):
     with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        with pytest.raises(Exception):
-            contributors._list_project_contributors(grdm_client, pk, ignore_error=False)
-        mocker.assert_called_once_with(error_message)
+        with pytest.raises(SystemExit) as ex_info:
+            _list_project_contributors(grdm_client, pk, ignore_error=False)
+        assert ex_info.value.code == error_message
 
 
-def test_list_project_contributors_send_request_error_ignore_error_false(grdm_client):
+def test_list_project_contributors__send_request_error_and_ignore_error_true_return_list_empty(grdm_client):
     with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        data_dict, data_json = contributors._list_project_contributors(grdm_client, pk, ignore_error=True)
+        data_dict, data_json = _list_project_contributors(grdm_client, pk, ignore_error=True)
         assert data_dict == []
         assert data_json == []
 
 
-def test_list_project_contributors_verbose_true(grdm_client):
+def test_list_project_contributors__verbose_true(grdm_client):
     resp = requests.Response()
     resp._content = get_str
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
-        list_contributor, data_json = contributors._list_project_contributors(grdm_client, pk)
+        list_contributor, data_json = _list_project_contributors(grdm_client, pk)
         assert len(list_contributor) > 0
         assert len(data_json) > 0
         assert type(list_contributor) is list
 
 
-def test_list_project_contributors_verbose_false(grdm_client):
+def test_list_project_contributors__verbose_false(grdm_client):
     resp = requests.Response()
     resp._content = get_str
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
-        list_contributor, data_json = contributors._list_project_contributors(grdm_client, pk, verbose=False)
+        list_contributor, data_json = _list_project_contributors(grdm_client, pk, verbose=False)
         assert len(list_contributor) > 0
         assert len(data_json) > 0
         assert type(list_contributor) is list
 
 
 @mock.patch('sys.exit', side_effect=Exception())
-def test_delete_project_contributor_error_and_ignore_error_false(mocker, grdm_client):
+def test_delete_project_contributor__send_request_error_and_ignore_error_false_sys_exit(mocker, grdm_client):
     with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
         with pytest.raises(Exception):
-            contributors._delete_project_contributor(grdm_client, pk, user_id, ignore_error=False)
+            _delete_project_contributor(grdm_client, pk, user_id, ignore_error=False)
         mocker.assert_called_once_with(error_message)
 
 
-def test_delete_project_contributor_error(grdm_client, capfd):
+def test_delete_project_contributor__send_request_error_and_ignore_error_true(grdm_client, capfd):
     with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        contributors._delete_project_contributor(grdm_client, pk, user_id)
+        _delete_project_contributor(grdm_client, pk, user_id)
         captured = capfd.readouterr()
         lines = captured.out.split('\n')
         assert lines[0] == f'DELETE Remove contributor \'{pk}-{user_id}\''
@@ -420,52 +429,51 @@ def test_delete_project_contributor_error(grdm_client, capfd):
         assert lines[2] == f'Deleted contributor: \'{pk}-{user_id}\''
 
 
-def test_delete_project_contributor_success(grdm_client, capfd):
+def test_delete_project_contributor__success(grdm_client, capfd):
     with mock.patch.object(grdm_client, '_request', return_value=(None, None)):
-        contributors._delete_project_contributor(grdm_client, pk, user_id)
+        _delete_project_contributor(grdm_client, pk, user_id)
         captured = capfd.readouterr()
         lines = captured.out.split('\n')
         assert lines[0] == f'DELETE Remove contributor \'{pk}-{user_id}\''
         assert lines[1] == f'Deleted contributor: \'{pk}-{user_id}\''
 
 
-def test_prepare_project_contributor_data_verbose_false(capfd):
-    actual = contributors._prepare_project_contributor_data(grdm_client, contributor_object, index, verbose=False)
+def test_prepare_project_contributor_data__verbose_false(capfd):
+    actual = _prepare_project_contributor_data(grdm_client, contributor_object, index, verbose=False)
     captured = capfd.readouterr()
     assert captured.out is ''
     assert type(actual) is dict
     assert actual['data']['attributes']['permission'] == contributor_object['permission']
 
 
-def test_prepare_project_contributor_data_verbose_true(capfd):
-    actual = contributors._prepare_project_contributor_data(grdm_client, contributor_object, index)
+def test_prepare_project_contributor_data__verbose_true(capfd):
+    actual = _prepare_project_contributor_data(grdm_client, contributor_object, index)
     captured = capfd.readouterr()
     assert captured.out.__contains__('Prepared contributor data')
     assert type(actual) is dict
     assert actual['data']['attributes']['permission'] == contributor_object['permission']
 
 
-@mock.patch('sys.exit', side_effect=Exception())
-def test_add_project_contributor_error_ignore_error_false(mocker, grdm_client):
+def test_add_project_contributor__send_request_error_and_ignore_error_false_sys_exit(grdm_client):
     with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        with pytest.raises(Exception):
-            contributors._add_project_contributor(grdm_client, pk, contributor_object, index, ignore_error=False)
-        mocker.assert_called_once_with(error_message)
+        with pytest.raises(SystemExit) as ex_info:
+            _add_project_contributor(grdm_client, pk, contributor_object, index, ignore_error=False)
+        assert ex_info.value.code == error_message
 
 
-def test_add_project_contributor_error_ignore_error_true(capfd, grdm_client):
+def test_add_project_contributor__send_request_error_and_ignore_error_true_return_none(capfd, grdm_client):
     with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        actual1, actual2 = contributors._add_project_contributor(grdm_client, pk, contributor_object, index)
+        actual1, actual2 = _add_project_contributor(grdm_client, pk, contributor_object, index)
         captured = capfd.readouterr()
         assert captured.out.__contains__(f'WARN {error_message}')
         assert actual2 == actual1 is None
 
 
-def test_add_project_contributor_success(capfd, grdm_client):
+def test_add_project_contributor__success(capfd, grdm_client):
     resp = requests.Response()
     resp._content = post_str
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
-        actual1, actual2 = contributors._add_project_contributor(grdm_client, pk, contributor_object, index)
+        actual1, actual2 = _add_project_contributor(grdm_client, pk, contributor_object, index)
         captured = capfd.readouterr()
         _user_id = contributor_object['id']
         assert captured.out.__contains__(f'Created contributor: \'{pk}-{_user_id}\'')
@@ -474,34 +482,34 @@ def test_add_project_contributor_success(capfd, grdm_client):
         assert len(grdm_client.created_project_contributors) > 0
 
 
-def test_clear_project_current_contributors(grdm_client):
+def test_clear_project_current_contributors_success(grdm_client):
     data = get_obj.data
     with mock.patch.object(grdm_client, '_list_project_contributors', return_value=(data, None)):
-        current_user_contributor = contributors._clear_project_current_contributors(grdm_client, pk, [], None)
+        current_user_contributor = _clear_project_current_contributors(grdm_client, pk, [], None)
         assert type(current_user_contributor) is SimpleNamespace
         assert len(grdm_client.created_project_contributors) == 1
         assert current_user_contributor == data[1]
 
 
-def test_overwrite_project_contributors_current_user_in_contributors(grdm_client, capfd):
+def test_overwrite_project_contributors__current_user_in_contributors(grdm_client, capfd):
     _contributors = [project_dict["projects"][0]["contributors"][0]]
     _id = project_dict.get('id')
     contributor_user_ids = [grdm_client.user.id]
     current_user_contributor = get_obj.data[1]
-    contributors._overwrite_project_contributors(grdm_client, _contributors, _id, contributor_user_ids,
-                                                 current_user_contributor)
+    _overwrite_project_contributors(grdm_client, _contributors, _id, contributor_user_ids,
+                                    current_user_contributor)
     captured = capfd.readouterr()
     assert captured.out == f'WARN This member is the currently logged-in user, so skip creating/updating\n'
 
 
-def test_overwrite_project_contributors_add_project_success(grdm_client, capfd):
+def test_overwrite_project_contributors__add_project_success(grdm_client, capfd):
     with mock.patch.object(grdm_client, '_add_project_contributor', return_value=(post_obj.data, None)):
         _contributors = [project_dict['projects'][0]['contributors'][1]]
         _id = project_dict.get('id')
         current_project_contributor_user_ids = [grdm_client.user.id]
         current_user_contributor = get_obj.data[0]
-        contributors._overwrite_project_contributors(grdm_client, _contributors, _id,
-                                                     current_project_contributor_user_ids, current_user_contributor)
+        _overwrite_project_contributors(grdm_client, _contributors, _id,
+                                        current_project_contributor_user_ids, current_user_contributor)
         captured = capfd.readouterr()
         _user_idx = 0
         assert captured.out == f'JSONPOINTER ./contributors/{_user_idx}/\n'
@@ -512,27 +520,27 @@ def test_overwrite_project_contributors_add_project_success(grdm_client, capfd):
         assert _contributors[0]['bibliographic'] == post_obj.data.attributes.bibliographic
 
 
-def test_overwrite_project_contributors_add_project_none(grdm_client, capfd):
+def test_overwrite_project_contributors__add_project_none(grdm_client, capfd):
     with mock.patch.object(grdm_client, '_add_project_contributor', return_value=(None, None)):
         _contributors = [project_dict['projects'][0]['contributors'][1]]
         _id = project_dict.get('id')
         current_project_contributor_user_ids = [grdm_client.user.id]
         current_user_contributor = get_obj.data[0]
-        contributors._overwrite_project_contributors(grdm_client, _contributors, _id,
-                                                     current_project_contributor_user_ids, current_user_contributor)
+        _overwrite_project_contributors(grdm_client, _contributors, _id,
+                                        current_project_contributor_user_ids, current_user_contributor)
         captured = capfd.readouterr()
         _user_idx = 0
         assert captured.out == f'JSONPOINTER ./contributors/{_user_idx}/\n'
 
 
-def test_overwrite_project_contributors_user_is_duplicate(grdm_client, capfd):
+def test_overwrite_project_contributors__user_is_duplicate(grdm_client, capfd):
     _contributors = project_dict.get('projects')[1].get('contributors')
     with mock.patch.object(grdm_client, '_add_project_contributor', return_value=(post_obj.data, None)):
         _id = project_dict.get('id')
         contributor_user_ids = [grdm_client.user.id]
         current_user_contributor = post_obj.data
-        contributors._overwrite_project_contributors(grdm_client, _contributors, _id, contributor_user_ids,
-                                                     current_user_contributor)
+        _overwrite_project_contributors(grdm_client, _contributors, _id, contributor_user_ids,
+                                        current_user_contributor)
         captured = capfd.readouterr()
         lines = captured.out.split('\n')
         _user_idx = 1
@@ -541,30 +549,28 @@ def test_overwrite_project_contributors_user_is_duplicate(grdm_client, capfd):
         assert lines[2] == f'WARN Duplicate member object in template file'
 
 
-@mock.patch('sys.exit', side_effect=Exception())
-def test_contributors_create_schema_not_exist(mocker, grdm_client):
+def test_contributors_create__file_path_schema_not_exist(grdm_client):
     with mock.patch('os.path.exists', return_value=False):
-        with pytest.raises(Exception):
-            contributors.contributors_create(grdm_client)
-        mocker.assert_called_once_with(f'Missing the template schema {grdm_client.template_schema_contributors}')
+        with pytest.raises(SystemExit) as ex_info:
+            contributors_create(grdm_client)
+        assert ex_info.value.code == f'Missing the template schema {grdm_client.template_schema_contributors}'
 
 
-@mock.patch('sys.exit', side_effect=Exception())
-def test_contributors_create_template_not_exist(mocker, grdm_client):
+def test_contributors_create__file_path_template_not_exist(grdm_client):
     with mock.patch('os.path.exists', side_effect=[True, False]):
-        with pytest.raises(Exception):
-            contributors.contributors_create(grdm_client)
-        mocker.assert_called_once_with(f'Missing the template file')
+        with pytest.raises(SystemExit) as ex_info:
+            contributors_create(grdm_client)
+        assert ex_info.value.code == f'Missing the template file'
 
 
 @mock.patch('os.path.exists', side_effect=[True, True])
 @mock.patch('sys.exit')
-def test_contributors_create_project_verbose_false(mocker, grdm_client, capfd):
+def test_contributors_create__success_verbose_false(mocker, grdm_client, capfd):
     _projects = project_dict["projects"][0]
-    with mock.patch('grdmcli.utils.read_json_file', return_value={"projects":[_projects]}):
+    with mock.patch('grdmcli.utils.read_json_file', return_value={"projects": [_projects]}):
         with mock.patch('grdmcli.utils.check_json_schema'):
             with mock.patch('grdmcli.utils.write_json_file'):
-                contributors.contributors_create(grdm_client, verbose=False)
+                contributors_create(grdm_client, verbose=False)
             captured = capfd.readouterr()
             lines = captured.out.split('\n')
             assert lines[4] == 'JSONPOINTER /projects/0/'
@@ -575,13 +581,13 @@ def test_contributors_create_project_verbose_false(mocker, grdm_client, capfd):
 
 @mock.patch('os.path.exists', side_effect=[True, True])
 @mock.patch('sys.exit')
-def test_contributors_create_project_verbose_true_created_project_contributors_none(mocker, grdm_client, capfd):
+def test_contributors_create__created_project_contributors_empty(mocker, grdm_client, capfd):
     grdm_client.created_project_contributors = []
     _projects = project_dict["projects"][1]
     with mock.patch('grdmcli.utils.read_json_file', return_value={"projects": [_projects]}):
         with mock.patch('grdmcli.utils.check_json_schema'):
             with mock.patch('grdmcli.utils.write_json_file'):
-                contributors.contributors_create(grdm_client, verbose=True)
+                contributors_create(grdm_client, verbose=True)
             captured = capfd.readouterr()
             lines = captured.out.split('\n')
             assert lines[4] == 'JSONPOINTER /projects/0/'
@@ -593,44 +599,46 @@ def test_contributors_create_project_verbose_true_created_project_contributors_n
 
 @mock.patch('os.path.exists', side_effect=[True, True])
 @mock.patch('sys.exit')
-def test_contributors_create_project_verbose_true_created_project_contributors_exists(mocker, grdm_client, capfd):
+def test_contributors_create__created_project_contributors_exists(mocker, grdm_client, capfd):
     grdm_client.created_project_contributors = get_obj.data
     _projects = project_dict["projects"][1]
+    mocker.patch('grdmcli.utils.write_json_file')
+    mocker.patch('grdmcli.utils.check_json_schema')
     with mock.patch('grdmcli.utils.read_json_file', return_value={"projects": [_projects]}):
-        with mock.patch('grdmcli.utils.check_json_schema'):
-            with mock.patch('grdmcli.utils.write_json_file'):
-                contributors.contributors_create(grdm_client, verbose=True)
-            captured = capfd.readouterr()
-            lines = captured.out.split('\n')
-            prj_created = len(grdm_client.created_project_contributors)
-            assert lines[4] == 'JSONPOINTER /projects/0/'
-            assert lines[5] == 'REMOVE Current contributors'
-            assert lines[6] == 'OVERWRITE new contributors'
-            assert lines[7] == f'Created contributors for projects. [{prj_created}]'
-            assert lines[8 + prj_created] == f'USE the output result file: {grdm_client.output_result_file}'
+        contributors_create(grdm_client, verbose=True)
+        lines = capfd.readouterr().out.split('\n')
+        prj_created = len(grdm_client.created_project_contributors)
+        assert lines[4] == 'JSONPOINTER /projects/0/'
+        assert lines[5] == 'REMOVE Current contributors'
+        assert lines[6] == 'OVERWRITE new contributors'
+        assert lines[7] == f'Created contributors for projects. [{prj_created}]'
+        assert lines[8 + prj_created] == f'USE the output result file: {grdm_client.output_result_file}'
+
+
+@mock.patch('os.path.exists', side_effect=[True, True])
+@mock.patch('grdmcli.utils.read_json_file', return_value=project_dict)
+@mock.patch('grdmcli.utils.write_json_file')
+def test_contributors_create__verbose_false_check_schema_raise_error(mocker_write, mocker_read, grdm_client, capfd):
+    err = 'check schema error'
+    with pytest.raises(SystemExit) as ex_sys:
+        with mock.patch('grdmcli.utils.check_json_schema', side_effect=GrdmCliException(err)):
+            contributors_create(grdm_client, verbose=False)
+    assert ex_sys.value.code == 0
+    lines = capfd.readouterr().out.split('\n')
+    assert lines[2] == f'VALIDATE BY the template of projects: {grdm_client.template_schema_contributors}'
+    assert lines[3] == f'Exception {err}'
+    assert lines[4] == f'USE the output result file: {grdm_client.output_result_file}'
 
 
 @mock.patch('os.path.exists', side_effect=[True, True])
 @mock.patch('sys.exit')
-def test_contributors_create_project_verbose_true_created_project_contributors(mocker, grdm_client):
-    grdm_client.created_project_contributors = get_obj.data
-    with mock.patch('grdmcli.utils.read_json_file', return_value=project_dict):
-        with mock.patch('grdmcli.utils.check_json_schema', side_effect=Exception("check schema error")):
-            with pytest.raises(Exception):
-                with mock.patch('grdmcli.utils.write_json_file'):
-                    contributors.contributors_create(grdm_client, verbose=False)
-                mocker.assert_called_once_with("check schema error")
-
-
-@mock.patch('os.path.exists', side_effect=[True, True])
-@mock.patch('sys.exit')
-def test_contributors_create_project_not_id(mocker, grdm_client, capfd):
+def test_contributors_create__project_not_id(mocker, grdm_client, capfd):
     contributor = {"contributors": project_dict['projects'][0]['contributors']}
     _projects_dict = {'projects': [contributor]}
     with mock.patch('grdmcli.utils.read_json_file', return_value=_projects_dict):
         with mock.patch('grdmcli.utils.check_json_schema'):
             with mock.patch('grdmcli.utils.write_json_file'):
-                contributors.contributors_create(grdm_client, verbose=False)
+                contributors_create(grdm_client, verbose=False)
             captured = capfd.readouterr()
             lines = captured.out.split('\n')
             assert lines[4] == f'JSONPOINTER /projects/0/id == None'

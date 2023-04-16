@@ -37,6 +37,7 @@ python -m pip install git+https://github.com/RCOSDP/RDM-cli.git@feature/202303-c
 ##### Usages
 Get help and see available commands, get help on a specific command
 ```cmd
+grdmcli --help
 grdmcli projects --help
 grdmcli projects create --help
 ```
@@ -67,6 +68,7 @@ optional arguments:
 ##### Usages
 Get help and see available commands, get help on a specific command
 ```cmd
+grdmcli --help
 grdmcli contributors --help
 grdmcli contributors create --help
 ```
@@ -91,6 +93,31 @@ optional arguments:
   --osf_api_url OSF_API_URL
                         the API URL
 ```
+
+### How to run UT TCs
+- To run test code in the `test` module,  
+Ensure the following packages in `requirements.txt` are installed:
+```
+# for testing
+pytest
+pytest-cov
+```
+
+- Run TC
+  ```cmd
+  coverage run -m --source=./ pytest ./tests/
+  ```
+  Run `pytest` module with all test cases under `./tests/` directory and measure on `./` all directories of code
+
+- Create an HTML report, `htmlcov` folder will be exported
+  ```cmd
+  coverage html
+  ```
+
+- Show report coverage stats on modules.
+  ```cmd
+  coverage report -m
+  ```
 
 ## Working in “development mode” (a.k.a. “Editable Installs”)
 Change directory to the root of the project directory and run:

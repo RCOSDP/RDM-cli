@@ -8,30 +8,34 @@ from .. import constants as utils  # noqa
 class GRDMClient(CommonCLI):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # For development
+
+        # For development functions
         self.affiliated_institutions = []
         self.affiliated_users = []
         self.projects = []
 
-        # For projects
+        # For projects functions
         self.created_projects = []
 
-        # For contributors
+        # For contributors functions
         self.created_project_contributors = []
 
-    # Imported methods
+    # # Imported methods
+
     from .users import (
         _users_me,
+        # For development
         _users_me_affiliated_institutions,
         _users_me_affiliated_users,
+    )
+    # For development
+    from .develop import (
+        _delete_project,
+        projects_list,
     )
     from .licenses import (
         _licenses,
         _find_license_id_from_name,
-    )
-    from .develop import (
-        _delete_project,
-        projects_list,
     )
     from .projects import (
         _get_template_schema_projects,
@@ -48,6 +52,7 @@ class GRDMClient(CommonCLI):
         projects_create,
     )
     template_schema_projects = property(_get_template_schema_projects)
+    # For contributors functions
     from .contributors import (
         _get_template_schema_contributors,
         _list_project_contributors,
@@ -59,6 +64,8 @@ class GRDMClient(CommonCLI):
         contributors_create,
     )
     template_schema_contributors = property(_get_template_schema_contributors)
+
+    # # Overwrite methods
 
     def _prepare_project_data(self, node_object, verbose=True):
         """Make a request body for the API Create new Node

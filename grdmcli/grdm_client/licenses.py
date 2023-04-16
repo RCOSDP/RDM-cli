@@ -18,7 +18,11 @@ MSG_E001 = 'Missing currently logged-in user'
 
 
 def _licenses(self, ignore_error=True, verbose=True):
-    """For development"""
+    """Get list of project's license and store in the licenses property
+
+    :param ignore_error: boolean
+    :param verbose: boolean
+    """
     # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     if not self.user:
