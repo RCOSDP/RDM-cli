@@ -1,8 +1,10 @@
 # RDM-cli
 コマンドラインツールによるGakuNin RDMの一括処理機能
 
-## Python (dev in 3.6)
-This CLI tool needs Python at least version 3.3.
+## Python version
+Let using the supported Python versions. Refer to https://devguide.python.org/versions/  
+Recommend using the latest stable Python version (Python 3.11.3 - April 5, 2023).  
+**\* Note that Python 3.9+ cannot be used on Windows 7 or earlier.**
 
 ## Install and Usages
 
@@ -99,8 +101,8 @@ optional arguments:
 Ensure the following packages in `requirements.txt` are installed:
 ```
 # for testing
-pytest
-pytest-cov
+pytest==7.3.1
+pytest-cov==4.0.0
 ```
 
 - Run TC
