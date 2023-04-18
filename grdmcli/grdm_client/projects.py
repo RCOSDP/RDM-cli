@@ -506,16 +506,22 @@ def projects_create(self, verbose=True):
 
         # Delete None from projects
         _projects_dict['projects'] = [_prj for _prj in _projects if _prj is not None]
+
+        _length = len(self.created_projects)
+        if _length:
+            # prepare output file
+            print(f'USE the output result file: {self.output_result_file}')
+            self._prepare_output_file()
+            # write output file
+            utils.write_json_file(self.output_result_file, _projects_dict)
+
+        sys.exit(0)
     except Exception as err:
-        print(f'Exception {err}')
-        raise err
+        # print(f'Exception {err}')
+        sys.exit(err)
     finally:
-        if verbose:
+        _length = len(self.created_projects)
+        if verbose and _length:
             print(f'Created projects. [{len(self.created_projects)}]')
             for _project in self.created_projects:
                 print(f'\'{_project.id}\' - \'{_project.attributes.title}\' [{_project.type}][{_project.attributes.category}]')
-
-        print(f'USE the output result file: {self.output_result_file}')
-        utils.write_json_file(self.output_result_file, _projects_dict)
-
-        sys.exit(0)

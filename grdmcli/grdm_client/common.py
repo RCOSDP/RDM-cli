@@ -24,8 +24,8 @@ class CommonCLI(Namespace):
         super().__init__(**kwargs)
 
         self._meta = {}
-        self.template = './template_file.json'
-        self.output_result_file = './output_result_file.json'
+        self.template = const.TEMPLATE_FILE_NAME_DEFAULT
+        self.output_result_file = const.OUTPUT_RESULT_FILE_NAME_DEFAULT
 
         self.user = None
         self.is_authenticated = False
@@ -148,3 +148,15 @@ class CommonCLI(Namespace):
         if not self.is_authenticated:
             print('Check Personal Access Token')
             self._users_me(ignore_error=False, verbose=verbose)
+
+    def _prepare_output_file(self):
+        """Create directory for output result if it's not existing
+
+        :return: None
+        """
+        # prepare output file
+        if not os.path.exists(self.output_result_file):
+            _directory = os.path.abspath(os.path.join(self.output_result_file, os.pardir))
+            if not os.path.isdir(_directory):
+                Path(_directory).mkdir(parents=True, exist_ok=True)
+                print(f'The new directory \'{_directory}\' is created.')
