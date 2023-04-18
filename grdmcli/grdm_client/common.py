@@ -9,11 +9,13 @@ from pprint import pprint  # noqa
 from types import SimpleNamespace
 
 import requests
+import urllib3
 import validators
 from validators import ValidationFailure
 
 from .. import constants as const, status, utils  # noqa
 
+urllib3.disable_warnings()
 here = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -70,7 +72,7 @@ class CommonCLI(Namespace):
             "Content-Type": "application/json",
         })
 
-        _response = requests.request(method, url, params=_params, data=json.dumps(data), headers=headers)
+        _response = requests.request(method, url, params=_params, data=json.dumps(data), headers=headers,  verify=False)
 
         if not status.is_success(_response.status_code):
             # pprint(_response.json())
