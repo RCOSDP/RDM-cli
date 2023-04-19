@@ -64,7 +64,7 @@ python -m pip install .
 
 Or install via specific branch
 ```cmd
-python -m pip install git+https://github.com/RCOSDP/RDM-cli.git@feature/202303-cli/4.2.cli_new_project
+python -m pip install git+https://github.com/RCOSDP/RDM-cli.git@feature/202303-cli/4.2.cli_add_member
 ```
 
 #### プロジェクト/コンポーネントの新規作成
