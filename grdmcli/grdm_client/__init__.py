@@ -11,7 +11,8 @@ class GRDMClient(CommonCLI):
         # For projects.py
         self.created_projects = []
 
-    # Imported methods
+    # # Imported methods
+
     from .users import (
         _users_me,
     )
@@ -34,3 +35,5 @@ class GRDMClient(CommonCLI):
         projects_create,
     )
     template_schema_projects = property(_get_template_schema_projects)
+
+    # # Overwrite methods
