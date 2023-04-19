@@ -217,6 +217,8 @@ def _create_project(self, node_object, ignore_error=True, verbose=True):
     _response, _error_message = self._request('POST', 'nodes/', params={}, data=_data, )
     if _error_message:
         print(f'WARN {_error_message}')
+        if 'licence' in _error_message:
+            print(f'WARN Project can be created. Please check manually.')
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -278,12 +280,19 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
     response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 
     project_link = response.data
-    project = project_link.embeds.target_node.data
+    project = None
+    target_node = project_link.embeds.target_node
+    if not hasattr(target_node, 'errors'):
+        project = project_link.embeds.target_node.data
 
     if verbose:
-        print(f'Created Node Links:')
-        print(f'\'{project_link.id}\' - [{project_link.type}]')
-        print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        if project:
+            print(f'Created Node Links:')
+            print(f'\'{project_link.id}\' - [{project_link.type}]')
+            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        else:
+            errors = target_node.errors
+            print(f'ERROR when link to {pointer_id}: {errors[0].detail}')
 
     return project, json.loads(_content)['data']
 
@@ -362,6 +371,8 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     _response, _error_message = self._request('POST', _url, params={}, data=_data, )
     if _error_message:
         print(f'WARN {_error_message}')
+        if 'licence' in _error_message:
+            print(f'WARN Project can be created. Please check manually.')
         if not ignore_error:
             sys.exit(_error_message)
         return None, None

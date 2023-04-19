@@ -79,7 +79,11 @@ class CommonCLI(Namespace):
             # Parse JSON into an object with attributes corresponding to dict keys.
             response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
             # print(f'WARN Exception: {response.errors[0].detail}')
-            return None, response.errors[0].detail
+            error = response.errors[0]
+            error_msg = error.detail
+            if hasattr(error, 'source'):
+                error_msg = f'{error_msg} {error.source.pointer}'
+            return None, error_msg
 
         return _response, None
 

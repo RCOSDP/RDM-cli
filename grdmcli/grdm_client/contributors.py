@@ -102,7 +102,7 @@ def _prepare_project_contributor_data(self, contributor_object, index, verbose=T
 
     # initial
     _user_id = _contributor.get('id')
-    _bibliographic = _contributor.get('bibliographic')
+    _bibliographic = _contributor.get('bibliographic', True)
     _permission = _contributor.get('permission', 'write')
     _attributes = {
         "index": index,
