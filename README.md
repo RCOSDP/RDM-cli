@@ -22,6 +22,10 @@ osf_token = <Your Personal Access Token>
 osf_api_url = http://localhost:8000/v2/
 ```
 
+#### Required scopes of the token:
+From all publicly documented scopes, please select:  
+- `osf.full_write` : View and edit all information associated with this account, including for private projects.
+
 ### Install as package
 Change directory to the root of the project directory and run:
 ```cmd

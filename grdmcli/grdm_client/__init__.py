@@ -11,7 +11,8 @@ class GRDMClient(CommonCLI):
         # For contributors
         self.created_project_contributors = []
 
-    # Imported methods
+    # # Imported methods
+
     from .users import (
         _users_me,
     )
@@ -26,3 +27,5 @@ class GRDMClient(CommonCLI):
         contributors_create,
     )
     template_schema_contributors = property(_get_template_schema_contributors)
+
+    # # Overwrite methods
