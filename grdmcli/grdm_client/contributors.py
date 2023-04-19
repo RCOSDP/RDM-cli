@@ -102,7 +102,7 @@ def _prepare_project_contributor_data(self, contributor_object, index, verbose=T
 
     # initial
     _user_id = _contributor.get('id')
-    _bibliographic = _contributor.get('bibliographic')
+    _bibliographic = _contributor.get('bibliographic', True)
     _permission = _contributor.get('permission', 'write')
     _attributes = {
         "index": index,
@@ -312,18 +312,24 @@ def contributors_create(self, verbose=True):
 
         # Delete None from projects
         _projects_dict['projects'] = [_prj for _prj in _projects if _prj is not None]
+
+        _length = len(self.created_project_contributors)
+        if _length:
+            # prepare output file
+            print(f'USE the output result file: {self.output_result_file}')
+            self._prepare_output_file()
+            # write output file
+            utils.write_json_file(self.output_result_file, _projects_dict)
+
+        sys.exit(0)
     except Exception as err:
-        print(f'Exception {err}')
-        raise err
+        # print(f'Exception {err}')
+        sys.exit(err)
     finally:
-        if verbose:
-            print(f'Created contributors for projects. [{len(self.created_project_contributors)}]')
+        _length = len(self.created_project_contributors)
+        if verbose and _length:
+            print(f'Created contributors for projects. [{_length}]')
             for contributor in self.created_project_contributors:
                 users = contributor.embeds.users.data.attributes
                 attrs = contributor.attributes
                 print(f'\'{contributor.id}\' - \'{users.full_name}\' [{contributor.type}][{attrs.permission}][{attrs.index}]')
-
-        print(f'USE the output result file: {self.output_result_file}')
-        utils.write_json_file(self.output_result_file, _projects_dict)
-
-        sys.exit(0)
