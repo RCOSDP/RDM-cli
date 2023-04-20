@@ -1,14 +1,17 @@
 import inspect  # noqa
+import logging
 
 from .common import CommonCLI
 from .. import constants as utils  # noqa
+
+logger = logging.getLogger(__name__)
 
 
 class GRDMClient(CommonCLI):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # For contributors
+        # For contributors functions
         self.created_project_contributors = []
 
     # # Imported methods
@@ -16,6 +19,7 @@ class GRDMClient(CommonCLI):
     from .users import (
         _users_me,
     )
+    # For contributors functions
     from .contributors import (
         _get_template_schema_contributors,
         _list_project_contributors,

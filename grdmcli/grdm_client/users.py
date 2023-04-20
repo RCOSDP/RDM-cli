@@ -1,5 +1,6 @@
 import inspect  # noqa
 import json
+import logging
 import sys
 from datetime import datetime  # noqa
 from pprint import pprint  # noqa
@@ -12,6 +13,8 @@ __all__ = [
 ]
 MSG_E001 = 'Missing currently logged-in user'
 
+logger = logging.getLogger(__name__)
+
 
 def _users_me(self, ignore_error=True, verbose=True):
     """Get the currently logged-in user
@@ -20,12 +23,12 @@ def _users_me(self, ignore_error=True, verbose=True):
     :param verbose: boolean
     :return: None
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    print('GET the currently logged-in user')
+    logger.info('GET the currently logged-in user')
     _response, _error_message = self._request('GET', 'users/me/', params={}, data={})
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(_error_message)
         if not ignore_error:
             sys.exit(_error_message)
         return False
@@ -39,5 +42,4 @@ def _users_me(self, ignore_error=True, verbose=True):
     self.user = response.data
 
     if verbose:
-        print(f'You are logged in as:')
-        print(f'\'{self.user.id}\' - {self.user.attributes.email} \'{self.user.attributes.full_name}\'')
+        logger.debug(f'You are logged in as: \'{self.user.id}\' - \'{self.user.attributes.full_name}\'')
