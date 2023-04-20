@@ -2,13 +2,24 @@ from __future__ import print_function
 
 import argparse
 import inspect  # noqa
+import logging
 import sys
 
 import six
 
 from . import __version__
+from . import constants as const  # noqa
 from .grdm_client import GRDMClient
 from .utils import inspect_info  # noqa
+
+# config logging
+handler = logging.StreamHandler()
+formatter = logging.Formatter(const.LOGGING_DEBUG_FORMAT if const.DEBUG else const.LOGGING_FORMAT)
+handler.setFormatter(formatter)
+logger = logging.getLogger()
+logger.propagate = False
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG if const.DEBUG else logging.INFO)
 
 
 def _add_subparser(parser, name, desc, aliases=None):
@@ -71,7 +82,7 @@ def main():
 
     # Python2 argparse exits with an error when no command is given
     if six.PY2 and len(sys.argv) == 1:
-        print(f'Python2 argparse exits with an error when no command is given')
+        logger.warning('Python2 argparse exits with an error when no command is given')
         cli_parser.print_help()
         return
 
@@ -89,23 +100,26 @@ def main():
         # give functions a chance to influence the exit code this setup is,
         # so we can print usage for the sub command even if there was an error further down
         try:
-            print(f'Start process')
+            logger.info('Start process')
             exit_code = client.__getattribute__(client.func)()
         except SystemExit as e:
             exit_code = e.code
         except KeyboardInterrupt:
             exit_code = KeyboardInterrupt.__name__
+        except Exception as e:
+            exit_code = e
         finally:
-            print(f'End process')
+            logger.info('End process')
             if exit_code:
-                print(f'ERROR: {exit_code}', file=sys.stderr)
+                logger.error(exit_code)
                 _args_str = ' '.join(_args)
-                print(f'For help: {cli_parser.prog} {_args_str}')
+                logger.info(f'For help: {cli_parser.prog} {_args_str}')
                 # cli_parser.parse_args(_args)
+                print('\n')
                 sys.exit(exit_code)
     else:
         cli_parser.parse_args(_args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
