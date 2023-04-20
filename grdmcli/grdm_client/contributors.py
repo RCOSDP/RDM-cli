@@ -40,12 +40,12 @@ def _list_project_contributors(self, pk, ignore_error=True, verbose=True):
     if not self.user:
         sys.exit('Missing currently logged-in user')
 
-    logger.info(f'GET List of contributors')
+    logger.info('GET List of contributors')
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _url = 'nodes/{node_id}/contributors/'.format(node_id=pk)
     _response, _error_message = self._request('GET', _url, params=params, data={}, )
     if _error_message:
-        logger.warning(f'{_error_message}')
+        logger.warning(_error_message)
         if not ignore_error:
             sys.exit(_error_message)
         return [], []
@@ -154,7 +154,7 @@ def _add_project_contributor(self, pk, contributor_object, index, ignore_error=T
     _url = 'nodes/{node_id}/contributors/'.format(node_id=pk)
     _response, _error_message = self._request('POST', _url, params={}, data=_data, )
     if _error_message:
-        logger.warning(f'{_error_message}')
+        logger.warning(_error_message)
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -191,7 +191,7 @@ def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids
         _user_id = _user_dict['id']
 
         if _user_id == self.user.id:
-            logger.warning(f'This member is the currently logged-in user, so skip creating/updating')
+            logger.warning('This member is the currently logged-in user, so skip creating/updating')
             if current_user_contributor:
                 # update output object
                 # can overwrite object by _contributors[_user_idx].update(contributor_dict)
@@ -205,7 +205,7 @@ def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids
             continue
 
         if _user_id in contributor_user_ids:
-            logger.warning(f'Duplicate member object in template file')
+            logger.warning('Duplicate member object in template file')
             # update output object
             contributors[_user_idx] = None
             _invalid_user_obj_number += 1
@@ -268,7 +268,7 @@ def contributors_create(self, verbose=True):
     """
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    logger.info(f'Check config and authenticate by token')
+    logger.info('Check config and authenticate by token')
     # the current_user_id is self.user.id
     self._check_config(verbose=verbose)
 
@@ -286,7 +286,7 @@ def contributors_create(self, verbose=True):
         logger.info(f'VALIDATE BY the template of projects: {self.template_schema_contributors}')
         utils.check_json_schema(self.template_schema_contributors, _projects_dict)
 
-        logger.info(f'LOOP Following the template of contributors')
+        logger.info('LOOP Following the template of contributors')
         _projects = _projects_dict.get('projects', [])
         for idx, _project_dict in enumerate(_projects):
             _id = _project_dict.get('id')
@@ -303,10 +303,10 @@ def contributors_create(self, verbose=True):
             current_project_contributor_user_ids = []
 
             logger.info(f'JSONPOINTER /projects/{idx}/')
-            logger.info(f'REMOVE Current contributors')
+            logger.info('REMOVE Current contributors')
             current_user_contributor = self._clear_project_current_contributors(_id, current_project_contributor_user_ids, current_user_contributor, verbose=verbose)
 
-            logger.info(f'OVERWRITE new contributors')
+            logger.info('OVERWRITE new contributors')
             self._overwrite_project_contributors(_contributors, _id, current_project_contributor_user_ids, current_user_contributor, verbose=verbose)
 
             # Delete None from contributors
@@ -324,11 +324,11 @@ def contributors_create(self, verbose=True):
             # write output file
             utils.write_json_file(self.output_result_file, _projects_dict)
         else:
-            logger.warning(f'The \'projects\' object is empty')
+            logger.warning('The \'projects\' object is empty')
 
         sys.exit(0)
     except Exception as err:
-        # logger.error(f'Exception {err}')
+        # logger.error(err)
         sys.exit(err)
     finally:
         _length = len(self.created_project_contributors)

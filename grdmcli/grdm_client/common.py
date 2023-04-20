@@ -20,7 +20,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 logger = logging.getLogger(__name__)
 
-logging.getLogger("urllib3").setLevel(logging.DEBUG if const.DEBUG else logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.DEBUG if const.DEBUG else logging.WARNING)
 if const.DEBUG:
     # disable urllib3 logs
     urllib3.disable_warnings()
@@ -102,7 +102,7 @@ class CommonCLI(Namespace):
                 error_msg = error.detail
                 if hasattr(error, 'source'):
                     error_msg = f'{error_msg} {error.source.pointer}'
-            except Exception as e:
+            except Exception:
                 error_msg = f'{_response.status_code} {_response.reason}'
             return None, error_msg
 
@@ -114,7 +114,7 @@ class CommonCLI(Namespace):
         :return: None
         """
         if not os.path.exists(self.config_file):
-            logger.info(f'Missing the config file {self.config_file}')
+            logger.warning(f'Missing the config file {self.config_file}')
             return False
 
         logger.info(f'Read config_file: {self.config_file}')
@@ -154,11 +154,11 @@ class CommonCLI(Namespace):
             return True
 
         if not self.has_required_attributes:
-            logger.info(f'Try get from config property')
+            logger.info('Try get from config property')
             self._load_required_attributes_from_config_file()
 
         if not self.has_required_attributes:
-            logger.info(f'Try get from environment variable')
+            logger.info('Try get from environment variable')
             self._load_required_attributes_from_environment()
 
         if not self.osf_api_url:

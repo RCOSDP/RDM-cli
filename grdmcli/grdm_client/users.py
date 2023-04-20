@@ -30,7 +30,7 @@ def _users_me(self, ignore_error=True, verbose=True):
     logger.info('GET the currently logged-in user')
     _response, _error_message = self._request('GET', 'users/me/', params={}, data={})
     if _error_message:
-        logger.warning(f'WARN {_error_message}')
+        logger.warning(_error_message)
         if not ignore_error:
             sys.exit(_error_message)
         return False
@@ -58,7 +58,7 @@ def _users_me_affiliated_institutions(self, ignore_error=True, verbose=True):
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _response, _error_message = self._request('GET', self.user.relationships.institutions.links.related.href, params=params)
     if _error_message:
-        logger.warning(f'{_error_message}')
+        logger.warning(_error_message)
         if not ignore_error:
             sys.exit(_error_message)
         return False
@@ -95,7 +95,7 @@ def _users_me_affiliated_users(self, ignore_error=True, verbose=True):
         params = {const.ORDERING_QUERY_PARAM: 'full_name'}
         _response, _error_message = self._request('GET', inst.relationships.users.links.related.href, params=params)
         if _error_message:
-            logger.warning(f'{_error_message}')
+            logger.warning(_error_message)
             if not ignore_error:
                 sys.exit(_error_message)
             return False

@@ -39,12 +39,12 @@ def read_json_file(file_path):
     Raises:
         Exception: message "Cannot read json file"
     """
-    with open(file_path, "r", encoding='utf-8') as read_file:
+    with open(file_path, 'r', encoding='utf-8') as read_file:
         try:
             input_data = json.load(read_file)
             return input_data
         except Exception as exc:
-            raise GrdmCliException("Cannot read json file", exc)
+            raise GrdmCliException('Cannot read json file', exc)
 
 
 def write_json_file(file, data):

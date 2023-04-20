@@ -31,11 +31,11 @@ def _licenses(self, ignore_error=True, verbose=True):
     if not self.user:
         sys.exit(MSG_E001)
 
-    logger.info(f'GET List of licenses')
+    logger.info('GET List of licenses')
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _response, _error_message = self._request('GET', 'licenses/', params=params, data={}, )
     if _error_message:
-        logger.warning(f'{_error_message}')
+        logger.warning(_error_message)
         if not ignore_error:
             sys.exit(_error_message)
         return False

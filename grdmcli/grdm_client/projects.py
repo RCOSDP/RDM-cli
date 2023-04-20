@@ -148,7 +148,7 @@ def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
     if not is_fake:
         _response, _error_message = self._request('GET', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
         if _error_message:
-            logger.warning(f'{_error_message}')
+            logger.warning(_error_message)
             if not ignore_error:
                 sys.exit(_error_message)
             return None, None
@@ -161,9 +161,8 @@ def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
     project = response.data
 
     if verbose:
-        logger.debug(f'Loaded project:')
-        logger.debug(
-            f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        logger.debug('Loaded project:')
+        logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
 
@@ -182,10 +181,10 @@ def _fork_project(self, node_object, ignore_error=True, verbose=True):
     pk = node_object['fork_id']
 
     logger.info(f'POST Fork a project from nodes/{pk}/')
-    _response, _error_message = self._request('POST', 'nodes/{node_id}/forks/'.format(node_id=pk), params={},
-                                              data=_data, )
+    _response, _error_message = self._request('POST', 'nodes/{node_id}/forks/'.format(node_id=pk),
+                                              params={}, data=_data, )
     if _error_message:
-        logger.warning(f'{_error_message}')
+        logger.warning(_error_message)
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -200,9 +199,8 @@ def _fork_project(self, node_object, ignore_error=True, verbose=True):
     self.created_projects.append(project)
 
     if verbose:
-        logger.debug(f'Forked project:')
-        logger.debug(
-            f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        logger.debug('Forked project:')
+        logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
 
@@ -219,12 +217,12 @@ def _create_project(self, node_object, ignore_error=True, verbose=True):
 
     _data = self._prepare_project_data(node_object, verbose=verbose)
 
-    logger.info(f'POST Create new project')
+    logger.info('POST Create new project')
     _response, _error_message = self._request('POST', 'nodes/', params={}, data=_data, )
     if _error_message:
-        logger.warning(f'{_error_message}')
+        logger.warning(_error_message)
         if 'licence' in _error_message:
-            logger.warning(f'Project can be created. Please check manually.')
+            logger.warning('Project can be created. Please check manually.')
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -239,9 +237,8 @@ def _create_project(self, node_object, ignore_error=True, verbose=True):
     self.created_projects.append(project)
 
     if verbose:
-        logger.debug(f'Created project:')
-        logger.debug(
-            f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        logger.debug('Created project:')
+        logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
 
@@ -276,7 +273,7 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
     _url = 'nodes/{node_id}/node_links/'.format(node_id=node_id)
     _response, _error_message = self._request('POST', _url, params={}, data=_data, )
     if _error_message:
-        logger.warning(f'{_error_message}')
+        logger.warning(_error_message)
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -294,10 +291,9 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
 
     if verbose:
         if project:
-            logger.debug(f'Created Node Links:')
+            logger.debug('Created Node Links:')
             logger.debug(f'\'{project_link.id}\' - [{project_link.type}]')
-            logger.debug(
-                f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+            logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
         else:
             errors = target_node.errors
             logger.debug(f'ERROR when link to {pointer_id}: {errors[0].detail}')
@@ -378,9 +374,9 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     _url = 'nodes/{node_id}/children/'.format(node_id=parent_id)
     _response, _error_message = self._request('POST', _url, params={}, data=_data, )
     if _error_message:
-        logger.warning(f'{_error_message}')
+        logger.warning(_error_message)
         if 'licence' in _error_message:
-            logger.warning(f'Project can be created. Please check manually.')
+            logger.warning('Project can be created. Please check manually.')
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -395,9 +391,8 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     self.created_projects.append(project)
 
     if verbose:
-        logger.debug(f'Create component:')
-        logger.debug(
-            f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        logger.debug('Create component:')
+        logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     # link a project to this node (parent_node_id = project.id)
     self._add_project_pointers(_project_links, project, verbose=verbose)
@@ -482,7 +477,7 @@ def projects_create(self, verbose=True):
     """
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    logger.info(f'Check config and authenticate by token')
+    logger.info('Check config and authenticate by token')
     self._check_config(verbose=verbose)
 
     if not os.path.exists(self.template_schema_projects):
@@ -499,7 +494,7 @@ def projects_create(self, verbose=True):
         logger.info(f'VALIDATE BY the template of projects: {self.template_schema_projects}')
         utils.check_json_schema(self.template_schema_projects, _projects_dict)
 
-        logger.info(f'LOOP Following the template of projects')
+        logger.info('LOOP Following the template of projects')
         _projects = _projects_dict.get('projects', [])
         for _project_idx, _project_dict in enumerate(_projects):
             _children = _project_dict.get('children', [])
@@ -535,7 +530,7 @@ def projects_create(self, verbose=True):
             # write output file
             utils.write_json_file(self.output_result_file, _projects_dict)
         else:
-            logger.warning(f'The \'projects\' object is empty')
+            logger.warning('The \'projects\' object is empty')
 
         sys.exit(0)
     except Exception as err:

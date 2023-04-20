@@ -7,10 +7,10 @@ import sys
 
 import six
 
-from grdmcli import __version__
-from grdmcli import constants as const  # noqa
-from grdmcli.grdm_client import GRDMClient
-from grdmcli.utils import inspect_info  # noqa
+from . import __version__
+from . import constants as const  # noqa
+from .grdm_client import GRDMClient
+from .utils import inspect_info  # noqa
 
 # config logging
 handler = logging.StreamHandler()
@@ -109,7 +109,7 @@ def main():
 
     # Python2 argparse exits with an error when no command is given
     if six.PY2 and len(sys.argv) == 1:
-        logger.warning(f'Python2 argparse exits with an error when no command is given')
+        logger.warning('Python2 argparse exits with an error when no command is given')
         cli_parser.print_help()
         return
 
@@ -127,7 +127,7 @@ def main():
         # give functions a chance to influence the exit code this setup is,
         # so we can print usage for the sub command even if there was an error further down
         try:
-            logger.info(f'Start process')
+            logger.info('Start process')
             exit_code = client.__getattribute__(client.func)()
         except SystemExit as e:
             exit_code = e.code
@@ -136,7 +136,7 @@ def main():
         except Exception as e:
             exit_code = e
         finally:
-            logger.info(f'End process')
+            logger.info('End process')
             if exit_code:
                 logger.error(exit_code)
                 _args_str = ' '.join(_args)
@@ -148,5 +148,5 @@ def main():
         cli_parser.parse_args(_args)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
