@@ -1,6 +1,7 @@
 import configparser
 import inspect  # noqa
 import json
+import logging
 import os
 import sys
 from argparse import Namespace
@@ -9,14 +10,20 @@ from pprint import pprint  # noqa
 from types import SimpleNamespace
 
 import requests
-import urllib3
+import urllib3  # noqa
 import validators
 from validators import ValidationFailure
 
 from .. import constants as const, status, utils  # noqa
 
-urllib3.disable_warnings()
 here = os.path.abspath(os.path.dirname(__file__))
+
+logger = logging.getLogger(__name__)
+
+logging.getLogger("urllib3").setLevel(logging.DEBUG if const.DEBUG else logging.WARNING)
+if const.DEBUG:
+    # disable urllib3 logs
+    urllib3.disable_warnings()
 
 
 class CommonCLI(Namespace):
@@ -48,7 +55,7 @@ class CommonCLI(Namespace):
         :param headers: dictionary of request headers
         :return: response data, and the first error message
         """
-        # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+        # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
         if isinstance(validators.url(url, public=False), ValidationFailure):
             url = f'{self.osf_api_url}{url}'
@@ -71,18 +78,32 @@ class CommonCLI(Namespace):
             "Authorization": f"Bearer {self.osf_token}",
             "Content-Type": "application/json",
         })
+        ssl_options = {
+            'verify': False
+        }
+        if const.SSL_CERT_VERIFY:
+            ssl_options['verify'] = const.SSL_CERT_VERIFY
+            if const.SSL_CERT_FILE:
+                ssl_options['cert'] = const.SSL_CERT_FILE
+                if const.SSL_KEY_FILE:
+                    ssl_options['cert'] = (const.SSL_CERT_VERIFY, const.SSL_KEY_FILE)
 
-        _response = requests.request(method, url, params=_params, data=json.dumps(data), headers=headers,  verify=False)
+        _response = requests.request(method, url,
+                                     params=_params, data=json.dumps(data), headers=headers,
+                                     **ssl_options)
 
         if not status.is_success(_response.status_code):
-            # pprint(_response.json())
-            # Parse JSON into an object with attributes corresponding to dict keys.
-            response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
-            # print(f'WARN Exception: {response.errors[0].detail}')
-            error = response.errors[0]
-            error_msg = error.detail
-            if hasattr(error, 'source'):
-                error_msg = f'{error_msg} {error.source.pointer}'
+            try:
+                # pprint(_response.json())
+                # Parse JSON into an object with attributes corresponding to dict keys.
+                response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
+                logger.warning(f'Exception: {response.errors[0].detail}')
+                error = response.errors[0]
+                error_msg = error.detail
+                if hasattr(error, 'source'):
+                    error_msg = f'{error_msg} {error.source.pointer}'
+            except Exception as e:
+                error_msg = f'{_response.status_code} {_response.reason}'
             return None, error_msg
 
         return _response, None
@@ -93,10 +114,10 @@ class CommonCLI(Namespace):
         :return: None
         """
         if not os.path.exists(self.config_file):
-            print(f'Missing the config file {self.config_file}')
+            logger.info(f'Missing the config file {self.config_file}')
             return False
 
-        print(f'Read config_file: {self.config_file}')
+        logger.info(f'Read config_file: {self.config_file}')
         config = configparser.ConfigParser()
         config.read(self.config_file)
         config_dict = dict(config.items(const.CONFIG_SECTION))
@@ -126,18 +147,18 @@ class CommonCLI(Namespace):
         :param verbose:
         :return: None
         """
-        # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+        # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
         # ignore if user is authenticated
         if self.is_authenticated:
             return True
 
         if not self.has_required_attributes:
-            print(f'Try get from config property')
+            logger.info(f'Try get from config property')
             self._load_required_attributes_from_config_file()
 
         if not self.has_required_attributes:
-            print(f'Try get from environment variable')
+            logger.info(f'Try get from environment variable')
             self._load_required_attributes_from_environment()
 
         if not self.osf_api_url:
@@ -150,7 +171,7 @@ class CommonCLI(Namespace):
             sys.exit('Missing Personal Access Token')
 
         if not self.is_authenticated:
-            print('Check Personal Access Token')
+            logger.info('Check Personal Access Token')
             self._users_me(ignore_error=False, verbose=verbose)
 
     def _prepare_output_file(self):
@@ -163,4 +184,4 @@ class CommonCLI(Namespace):
             _directory = os.path.abspath(os.path.join(self.output_result_file, os.pardir))
             if not os.path.isdir(_directory):
                 Path(_directory).mkdir(parents=True, exist_ok=True)
-                print(f'The new directory \'{_directory}\' is created.')
+                logger.info(f'The new directory \'{_directory}\' is created.')

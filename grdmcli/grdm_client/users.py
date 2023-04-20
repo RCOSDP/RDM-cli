@@ -1,5 +1,6 @@
 import inspect  # noqa
 import json
+import logging
 import sys
 from datetime import datetime  # noqa
 from pprint import pprint  # noqa
@@ -14,6 +15,8 @@ __all__ = [
 ]
 MSG_E001 = 'Missing currently logged-in user'
 
+logger = logging.getLogger(__name__)
+
 
 def _users_me(self, ignore_error=True, verbose=True):
     """Get the currently logged-in user
@@ -22,12 +25,12 @@ def _users_me(self, ignore_error=True, verbose=True):
     :param verbose: boolean
     :return: None
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    print('GET the currently logged-in user')
+    logger.info('GET the currently logged-in user')
     _response, _error_message = self._request('GET', 'users/me/', params={}, data={})
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(f'WARN {_error_message}')
         if not ignore_error:
             sys.exit(_error_message)
         return False
@@ -41,13 +44,12 @@ def _users_me(self, ignore_error=True, verbose=True):
     self.user = response.data
 
     if verbose:
-        print(f'You are logged in as:')
-        print(f'\'{self.user.id}\' - {self.user.attributes.email} \'{self.user.attributes.full_name}\'')
+        logger.debug(f'You are logged in as: \'{self.user.id}\' - \'{self.user.attributes.full_name}\'')
 
 
 def _users_me_affiliated_institutions(self, ignore_error=True, verbose=True):
     """For development"""
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     if not self.user:
         sys.exit(MSG_E001)
@@ -56,7 +58,7 @@ def _users_me_affiliated_institutions(self, ignore_error=True, verbose=True):
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _response, _error_message = self._request('GET', self.user.relationships.institutions.links.related.href, params=params)
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(f'{_error_message}')
         if not ignore_error:
             sys.exit(_error_message)
         return False
@@ -71,14 +73,14 @@ def _users_me_affiliated_institutions(self, ignore_error=True, verbose=True):
     self._meta.update({'_institutions': _institutions_numb})
 
     if verbose:
-        print(f'[For development]List of affiliated institutions. [{_institutions_numb}]')
+        logger.debug(f'[For development]List of affiliated institutions. [{_institutions_numb}]')
         for inst in self.affiliated_institutions:
-            print(f'\'{inst.id}\' - \'{inst.attributes.name}\' [{inst.type}][{inst.attributes.description[:10]}...]')
+            logger.debug(f'\'{inst.id}\' - \'{inst.attributes.name}\' [{inst.type}][{inst.attributes.description[:10]}...]')
 
 
 def _users_me_affiliated_users(self, ignore_error=True, verbose=True):
     """For development"""
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     if not self.user:
         sys.exit(MSG_E001)
@@ -93,7 +95,7 @@ def _users_me_affiliated_users(self, ignore_error=True, verbose=True):
         params = {const.ORDERING_QUERY_PARAM: 'full_name'}
         _response, _error_message = self._request('GET', inst.relationships.users.links.related.href, params=params)
         if _error_message:
-            print(f'WARN {_error_message}')
+            logger.warning(f'{_error_message}')
             if not ignore_error:
                 sys.exit(_error_message)
             return False
@@ -109,6 +111,6 @@ def _users_me_affiliated_users(self, ignore_error=True, verbose=True):
     self._meta.update({'_users': _users_numb})
 
     if verbose:
-        print(f'[For development]List of affiliated institutions\' users. [{_users_numb}]')
+        logger.debug(f'[For development]List of affiliated institutions\' users. [{_users_numb}]')
         for user in self.affiliated_users:
-            print(f'\'{user.id}\' - \'{user.attributes.full_name}\'')
+            logger.debug(f'\'{user.id}\' - \'{user.attributes.full_name}\'')

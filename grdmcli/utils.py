@@ -5,10 +5,12 @@ Helpers and other assorted functions.
 
 import inspect
 import json
+import logging
 
 import jsonschema
 
 from grdmcli.exceptions import GrdmCliException
+from . import constants as const  # noqa
 
 __all__ = [
     'inspect_info',
@@ -16,6 +18,8 @@ __all__ = [
     'write_json_file',
     'check_json_schema',
 ]
+
+logger = logging.getLogger(__name__)
 
 
 def inspect_info(current_frame, stack_info):
@@ -56,9 +60,9 @@ def write_json_file(file, data):
     with open(file, "w", encoding='utf-8') as write_file:
         try:
             json.dump(data, write_file, ensure_ascii=False, indent=4, sort_keys=False)
-            print("File was written successfully: ", file)
+            logger.info(f'File was written successfully: {file}')
         except Exception as exc:
-            raise GrdmCliException("Cannot write json file", exc)
+            raise GrdmCliException('Cannot write json file', exc)
 
 
 def check_json_schema(schema_file_path, data):

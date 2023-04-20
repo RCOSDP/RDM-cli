@@ -1,5 +1,6 @@
 import inspect  # noqa
 import json
+import logging
 import sys
 from datetime import datetime  # noqa
 from pprint import pprint  # noqa
@@ -14,7 +15,6 @@ __all__ = [
 MSG_E001 = 'Missing currently logged-in user'
 
 # [For development]
-DEBUG = True
 IS_CLEAR = True
 IGNORE_PROJECTS = [
     'z6dne', 'ega24', 'm7ah9', '4hexc',
@@ -24,41 +24,43 @@ IGNORE_PROJECTS = [
     'zgpjs', 'be43a',  # template by 004 private
 ]
 
+logger = logging.getLogger(__name__)
+
 
 def _delete_project(self, pk, ignore_error=True, verbose=True):
     """For development"""
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    print(f'DELETE Remove project \'{pk}\'')
+    logger.info(f'DELETE Remove project \'{pk}\'')
     _response, _error_message = self._request('DELETE', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(f'{_error_message}')
         if not ignore_error:
             sys.exit(_error_message)
         return False
 
     if verbose:
-        print(f'Deleted project: \'{pk}\'')
+        logger.debug(f'Deleted project: \'{pk}\'')
 
 
 def projects_list(self, ignore_error=True, verbose=True):
     """For development"""
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    print(f'Check config and authenticate by token')
+    logger.info(f'Check config and authenticate by token')
     self._check_config()
 
     # [For development]
-    if DEBUG:
-        self._users_me_affiliated_institutions(ignore_error=True, verbose=True)
-        self._users_me_affiliated_users(ignore_error=True, verbose=True)
-        self._licenses(ignore_error=True, verbose=True)
+    if const.DEBUG:
+        self._users_me_affiliated_institutions(ignore_error=True, verbose=verbose)
+        self._users_me_affiliated_users(ignore_error=True, verbose=verbose)
+        self._licenses(ignore_error=True, verbose=verbose)
 
-    print(f'[For development]GET List of projects')
+    logger.info(f'[For development]GET List of projects')
     params = {const.ORDERING_QUERY_PARAM: 'title'}
     _response, _error_message = self._request('GET', 'nodes/', params=params, data={}, )
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(f'{_error_message}')
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -73,10 +75,10 @@ def projects_list(self, ignore_error=True, verbose=True):
     self._meta.update({'_projects': _projects_numb})
 
     if verbose:
-        print(f'[For development]List of projects are those which are public or which the user has access to view. [{_projects_numb}]')
+        logger.debug(f'[For development]List of projects are those which are public or which the user has access to view. [{_projects_numb}]')
         for project in self.projects:
-            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]{project.attributes.tags}')
+            logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]{project.attributes.tags}')
             if IS_CLEAR and project.id not in IGNORE_PROJECTS:
-                self._delete_project(project.id, ignore_error=True, verbose=False)
+                self._delete_project(project.id, ignore_error=True, verbose=verbose)
 
     sys.exit(0)

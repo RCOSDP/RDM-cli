@@ -1,5 +1,6 @@
 import inspect  # noqa
 import json
+import logging
 import sys
 from datetime import datetime  # noqa
 from pprint import pprint  # noqa
@@ -16,6 +17,8 @@ __all__ = [
 
 MSG_E001 = 'Missing currently logged-in user'
 
+logger = logging.getLogger(__name__)
+
 
 def _licenses(self, ignore_error=True, verbose=True):
     """Get list of project's license and store in the licenses property
@@ -23,16 +26,16 @@ def _licenses(self, ignore_error=True, verbose=True):
     :param ignore_error: boolean
     :param verbose: boolean
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     if not self.user:
         sys.exit(MSG_E001)
 
-    print(f'GET List of licenses')
+    logger.info(f'GET List of licenses')
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _response, _error_message = self._request('GET', 'licenses/', params=params, data={}, )
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(f'{_error_message}')
         if not ignore_error:
             sys.exit(_error_message)
         return False
@@ -47,9 +50,9 @@ def _licenses(self, ignore_error=True, verbose=True):
     self._meta.update({'_licenses': _licenses_numb})
 
     if verbose:
-        print(f'[For development]List of licenses. [{_licenses_numb}]')
+        logger.debug(f'[For development]List of licenses. [{_licenses_numb}]')
         for _license in self.licenses:
-            print(f'\'{_license.id}\' - \'{_license.attributes.name}\' [{_license.type}]')
+            logger.debug(f'\'{_license.id}\' - \'{_license.attributes.name}\' [{_license.type}]')
 
 
 def _find_license_id_from_name(self, name, verbose=True):
@@ -62,7 +65,7 @@ def _find_license_id_from_name(self, name, verbose=True):
     :raise: GrdmCliException
     """
     if not hasattr(self, 'licenses') or not self.licenses or len(self.licenses):
-        self._licenses(ignore_error=True, verbose=False)
+        self._licenses(ignore_error=True, verbose=verbose)
 
     for _license in self.licenses:
         if _license.attributes.name.casefold() == name.casefold():

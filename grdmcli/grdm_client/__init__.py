@@ -1,8 +1,11 @@
 import inspect  # noqa
+import logging
 from datetime import datetime  # noqa
 
 from .common import CommonCLI
 from .. import constants as utils  # noqa
+
+logger = logging.getLogger(__name__)
 
 
 class GRDMClient(CommonCLI):
@@ -74,7 +77,7 @@ class GRDMClient(CommonCLI):
         :param verbose: boolean
         :return: object of request body
         """
-        # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+        # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
         _project = node_object
 
@@ -133,6 +136,6 @@ class GRDMClient(CommonCLI):
         }
 
         if verbose:
-            print(f'Prepared project data: {_data}')
+            logger.debug(f'Prepared project data: {_data}')
 
         return _data

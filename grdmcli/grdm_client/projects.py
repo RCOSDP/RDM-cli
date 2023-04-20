@@ -1,5 +1,6 @@
 import inspect  # noqa
 import json
+import logging
 import os
 import sys
 from pprint import pprint  # noqa
@@ -23,6 +24,8 @@ __all__ = [
 ]
 here = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
+logger = logging.getLogger(__name__)
+
 
 def _get_template_schema_projects(self):
     return os.path.abspath(os.path.join(os.path.dirname(here), const.TEMPLATE_SCHEMA_PROJECTS))
@@ -36,7 +39,7 @@ def _fake_project_content_data(self, pk, verbose=True):
     :param verbose: boolean
     :return: string of object
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     _content = json.dumps({
         'data': {
@@ -51,7 +54,7 @@ def _fake_project_content_data(self, pk, verbose=True):
     })
 
     if verbose:
-        print(f'prepared project data: {_content}')
+        logger.debug(f'Prepared project data: {_content}')
 
     return _content
 
@@ -63,7 +66,7 @@ def _prepare_project_data(self, node_object, verbose=True):
     :param verbose: boolean
     :return: object of request body
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     _project = node_object
 
@@ -118,7 +121,7 @@ def _prepare_project_data(self, node_object, verbose=True):
     }
 
     if verbose:
-        print(f'Prepared project data: {_data}')
+        logger.debug(f'Prepared project data: {_data}')
 
     return _data
 
@@ -132,20 +135,20 @@ def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
     :param verbose: boolean
     :return: project object, and project dictionary
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     _content = None
     _faked_or_loaded = f'[loaded nodes/{pk}/]'
 
     if is_fake:
         _faked_or_loaded = '[faked]'
-        _content = self._fake_project_content_data(pk, verbose=False)
+        _content = self._fake_project_content_data(pk, verbose=verbose)
 
-    print(f'GET Retrieve project {_faked_or_loaded}')
+    logger.info(f'GET Retrieve project {_faked_or_loaded}')
     if not is_fake:
         _response, _error_message = self._request('GET', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
         if _error_message:
-            print(f'WARN {_error_message}')
+            logger.warning(f'{_error_message}')
             if not ignore_error:
                 sys.exit(_error_message)
             return None, None
@@ -158,8 +161,9 @@ def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
     project = response.data
 
     if verbose:
-        print(f'Loaded project:')
-        print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        logger.debug(f'Loaded project:')
+        logger.debug(
+            f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
 
@@ -172,15 +176,16 @@ def _fork_project(self, node_object, ignore_error=True, verbose=True):
     :param verbose: boolean
     :return: project object, and project dictionary
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    _data = self._prepare_project_data(node_object, verbose=False)
+    _data = self._prepare_project_data(node_object, verbose=verbose)
     pk = node_object['fork_id']
 
-    print(f'POST Fork a project from nodes/{pk}/')
-    _response, _error_message = self._request('POST', 'nodes/{node_id}/forks/'.format(node_id=pk), params={}, data=_data, )
+    logger.info(f'POST Fork a project from nodes/{pk}/')
+    _response, _error_message = self._request('POST', 'nodes/{node_id}/forks/'.format(node_id=pk), params={},
+                                              data=_data, )
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(f'{_error_message}')
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -195,8 +200,9 @@ def _fork_project(self, node_object, ignore_error=True, verbose=True):
     self.created_projects.append(project)
 
     if verbose:
-        print(f'Forked project:')
-        print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        logger.debug(f'Forked project:')
+        logger.debug(
+            f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
 
@@ -209,16 +215,16 @@ def _create_project(self, node_object, ignore_error=True, verbose=True):
     :param verbose: boolean
     :return: project object, and project dictionary
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    _data = self._prepare_project_data(node_object, verbose=False)
+    _data = self._prepare_project_data(node_object, verbose=verbose)
 
-    print(f'POST Create new project')
+    logger.info(f'POST Create new project')
     _response, _error_message = self._request('POST', 'nodes/', params={}, data=_data, )
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(f'{_error_message}')
         if 'licence' in _error_message:
-            print(f'WARN Project can be created. Please check manually.')
+            logger.warning(f'Project can be created. Please check manually.')
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -233,8 +239,9 @@ def _create_project(self, node_object, ignore_error=True, verbose=True):
     self.created_projects.append(project)
 
     if verbose:
-        print(f'Created project:')
-        print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        logger.debug(f'Created project:')
+        logger.debug(
+            f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
 
@@ -248,7 +255,7 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
     :param verbose: boolean
     :return: component object, and component dictionary
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     # prepare request data
     _data = {
@@ -265,11 +272,11 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
         }
     }
 
-    print(f'POST Create a link to nodes/{node_id}/')
+    logger.info(f'POST Create a link to nodes/{node_id}/')
     _url = 'nodes/{node_id}/node_links/'.format(node_id=node_id)
     _response, _error_message = self._request('POST', _url, params={}, data=_data, )
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(f'{_error_message}')
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -287,17 +294,18 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
 
     if verbose:
         if project:
-            print(f'Created Node Links:')
-            print(f'\'{project_link.id}\' - [{project_link.type}]')
-            print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+            logger.debug(f'Created Node Links:')
+            logger.debug(f'\'{project_link.id}\' - [{project_link.type}]')
+            logger.debug(
+                f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
         else:
             errors = target_node.errors
-            print(f'ERROR when link to {pointer_id}: {errors[0].detail}')
+            logger.debug(f'ERROR when link to {pointer_id}: {errors[0].detail}')
 
     return project, json.loads(_content)['data']
 
 
-def _add_project_pointers(self, project_links, project):
+def _add_project_pointers(self, project_links, project, verbose=True):
     """Link a project to this project from list of project_links in template file
 
     :param project_links: list of existing project GUID
@@ -305,8 +313,8 @@ def _add_project_pointers(self, project_links, project):
     :return: None
     """
     for _node_id_idx, _node_id in enumerate(project_links):
-        print(f'JSONPOINTER ./project_links/{_node_id_idx}/')
-        project_link, _ = self._link_project_to_project(project.id, _node_id, ignore_error=True, verbose=True)
+        logger.info(f'JSONPOINTER ./project_links/{_node_id_idx}/')
+        project_link, _ = self._link_project_to_project(project.id, _node_id, ignore_error=True, verbose=verbose)
 
         if project_link is None:
             # has error, update output object
@@ -318,7 +326,7 @@ def _add_project_pointers(self, project_links, project):
         project_links[_node_id_idx] = project_link.id
 
 
-def _add_project_components(self, children, project):
+def _add_project_components(self, children, project, verbose=True):
     """Add component to project from list of children in template file
 
     :param children: object of component from template file
@@ -329,14 +337,14 @@ def _add_project_components(self, children, project):
         _component_id = _component_dict.get('id')
 
         if _component_id:
-            print(f'JSONPOINTER ./children/{_component_idx}/ ignored')
+            logger.info(f'JSONPOINTER ./children/{_component_idx}/ ignored')
 
             # update output object
             children[_component_idx] = None
             continue
 
-        print(f'JSONPOINTER ./children/{_component_idx}/')
-        component, _ = self._projects_add_component(project.id, _component_dict, ignore_error=True, verbose=True)
+        logger.info(f'JSONPOINTER ./children/{_component_idx}/')
+        component, _ = self._projects_add_component(project.id, _component_dict, ignore_error=True, verbose=verbose)
 
         if component is None:
             # has error, update output object
@@ -359,20 +367,20 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     :param verbose: boolean
     :return: component object, and component dictionary
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     _children = node_object.get('children', [])
     _project_links = node_object.get('project_links', [])
 
-    _data = self._prepare_project_data(node_object, verbose=False)
+    _data = self._prepare_project_data(node_object, verbose=verbose)
 
-    print(f'POST Create new component to nodes/{parent_id}/')
+    logger.info(f'POST Create new component to nodes/{parent_id}/')
     _url = 'nodes/{node_id}/children/'.format(node_id=parent_id)
     _response, _error_message = self._request('POST', _url, params={}, data=_data, )
     if _error_message:
-        print(f'WARN {_error_message}')
+        logger.warning(f'{_error_message}')
         if 'licence' in _error_message:
-            print(f'WARN Project can be created. Please check manually.')
+            logger.warning(f'Project can be created. Please check manually.')
         if not ignore_error:
             sys.exit(_error_message)
         return None, None
@@ -387,18 +395,19 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     self.created_projects.append(project)
 
     if verbose:
-        print(f'Create component:')
-        print(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+        logger.debug(f'Create component:')
+        logger.debug(
+            f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     # link a project to this node (parent_node_id = project.id)
-    self._add_project_pointers(_project_links, project)
+    self._add_project_pointers(_project_links, project, verbose=verbose)
 
     # Delete None from project_links
     if _project_links:
         node_object['project_links'] = [_pointer for _pointer in _project_links if _pointer is not None]
 
     # add Components to this node (parent_node_id = project.id)
-    self._add_project_components(_children, project)
+    self._add_project_components(_children, project, verbose=verbose)
 
     # Delete None from children
     if _children:
@@ -407,7 +416,7 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     return project, json.loads(_content)['data']
 
 
-def _create_or_load_project(self, projects, project_idx):
+def _create_or_load_project(self, projects, project_idx, verbose=True):
     """Create new project or fork project or load project
 
     :param projects: list of project from template
@@ -419,8 +428,8 @@ def _create_or_load_project(self, projects, project_idx):
     _fork_id = _project_dict.get('fork_id')
 
     if _id:
-        print(f'JSONPOINTER /projects/{project_idx}/id == {_id}')
-        project, _ = self._load_project(_id, is_fake=True, ignore_error=True, verbose=True)
+        logger.info(f'JSONPOINTER /projects/{project_idx}/id == {_id}')
+        project, _ = self._load_project(_id, is_fake=True, ignore_error=True, verbose=verbose)
 
         if project is None:
             # has error, update output object
@@ -432,8 +441,8 @@ def _create_or_load_project(self, projects, project_idx):
         _project_dict['id'] = project.id
         _project_dict['type'] = project.type
     elif _fork_id:
-        print(f'JSONPOINTER /projects/{project_idx}/fork_id == {_fork_id}')
-        project, _ = self._fork_project(_project_dict, ignore_error=True, verbose=True)
+        logger.info(f'JSONPOINTER /projects/{project_idx}/fork_id == {_fork_id}')
+        project, _ = self._fork_project(_project_dict, ignore_error=True, verbose=verbose)
 
         if project is None:
             # has error, update output object
@@ -445,8 +454,8 @@ def _create_or_load_project(self, projects, project_idx):
         _project_dict['id'] = project.id
         _project_dict['type'] = project.type
     else:
-        print(f'JSONPOINTER /projects/{project_idx}/')
-        project, _ = self._create_project(_project_dict, ignore_error=True, verbose=True)
+        logger.info(f'JSONPOINTER /projects/{project_idx}/')
+        project, _ = self._create_project(_project_dict, ignore_error=True, verbose=verbose)
 
         if project is None:
             # has error, update output object
@@ -471,10 +480,10 @@ def projects_create(self, verbose=True):
     :param verbose: boolean
     :return: None
     """
-    # print('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    print(f'Check config and authenticate by token')
-    self._check_config(verbose=False)
+    logger.info(f'Check config and authenticate by token')
+    self._check_config(verbose=verbose)
 
     if not os.path.exists(self.template_schema_projects):
         sys.exit(f'Missing the template schema {self.template_schema_projects}')
@@ -482,34 +491,34 @@ def projects_create(self, verbose=True):
     if not os.path.exists(self.template):
         sys.exit('Missing the template file')
 
-    print(f'USE the template of projects: {self.template}')
+    logger.info(f'USE the template of projects: {self.template}')
     _projects_dict = utils.read_json_file(self.template)
 
     try:
         # check json schema
-        print(f'VALIDATE BY the template of projects: {self.template_schema_projects}')
+        logger.info(f'VALIDATE BY the template of projects: {self.template_schema_projects}')
         utils.check_json_schema(self.template_schema_projects, _projects_dict)
 
-        print(f'LOOP Following the template of projects')
+        logger.info(f'LOOP Following the template of projects')
         _projects = _projects_dict.get('projects', [])
         for _project_idx, _project_dict in enumerate(_projects):
             _children = _project_dict.get('children', [])
             _project_links = _project_dict.get('project_links', [])
 
             # create new or fork project or load project
-            project = self._create_or_load_project(_projects, _project_idx)
+            project = self._create_or_load_project(_projects, _project_idx, verbose=verbose)
             if project is None:
                 continue
 
             # link a project to this node (parent_node_id = project.id)
-            self._add_project_pointers(_project_links, project)
+            self._add_project_pointers(_project_links, project, verbose=verbose)
 
             # Delete None from project_links
             if _project_links:
                 _project_dict['project_links'] = [_pointer for _pointer in _project_links if _pointer is not None]
 
             # add Components to this node (parent_node_id = project.id)
-            self._add_project_components(_children, project)
+            self._add_project_components(_children, project, verbose=verbose)
 
             # Delete None from children
             if _children:
@@ -521,18 +530,21 @@ def projects_create(self, verbose=True):
         _length = len(self.created_projects)
         if _length:
             # prepare output file
-            print(f'USE the output result file: {self.output_result_file}')
+            logger.info(f'USE the output result file: {self.output_result_file}')
             self._prepare_output_file()
             # write output file
             utils.write_json_file(self.output_result_file, _projects_dict)
+        else:
+            logger.warning(f'The \'projects\' object is empty')
 
         sys.exit(0)
     except Exception as err:
-        # print(f'Exception {err}')
+        # logger.error(err)
         sys.exit(err)
     finally:
         _length = len(self.created_projects)
         if verbose and _length:
-            print(f'Created projects. [{len(self.created_projects)}]')
+            logger.debug(f'Created projects. [{len(self.created_projects)}]')
             for _project in self.created_projects:
-                print(f'\'{_project.id}\' - \'{_project.attributes.title}\' [{_project.type}][{_project.attributes.category}]')
+                logger.debug(
+                    f'\'{_project.id}\' - \'{_project.attributes.title}\' [{_project.type}][{_project.attributes.category}]')
