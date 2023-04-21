@@ -43,9 +43,10 @@ def _delete_project(self, pk, ignore_error=True, verbose=True):
         logger.debug(f'Deleted project: \'{pk}\'')
 
 
-def projects_list(self, ignore_error=True, verbose=True):
+def projects_list(self, ignore_error=True):
     """For development"""
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    verbose = self.verbose
 
     logger.info(f'Check config and authenticate by token')
     self._check_config()

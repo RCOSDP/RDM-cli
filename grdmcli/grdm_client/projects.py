@@ -424,7 +424,7 @@ def _create_or_load_project(self, projects, project_idx, verbose=True):
 
     if _id:
         logger.info(f'JSONPOINTER /projects/{project_idx}/id == {_id}')
-        project, _ = self._load_project(_id, is_fake=True, ignore_error=True, verbose=verbose)
+        project, _ = self._load_project(_id, is_fake=False, ignore_error=True, verbose=verbose)
 
         if project is None:
             # has error, update output object
@@ -465,7 +465,7 @@ def _create_or_load_project(self, projects, project_idx, verbose=True):
     return project
 
 
-def projects_create(self, verbose=True):
+def projects_create(self):
     """Create Projects/Components following the structure and info which defined in a template JSON file.\n
     (1) For each project, you can create new with/without template form, fork from existing project.\n
     (2) You also can create new components and link other projects to a project/component.
@@ -476,6 +476,7 @@ def projects_create(self, verbose=True):
     :return: None
     """
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    verbose = self.verbose
 
     logger.info('Check config and authenticate by token')
     self._check_config(verbose=verbose)
@@ -503,6 +504,10 @@ def projects_create(self, verbose=True):
             # create new or fork project or load project
             project = self._create_or_load_project(_projects, _project_idx, verbose=verbose)
             if project is None:
+                logger.warning(f'Project is not found')
+
+                # update output object and ignore it
+                _projects[_project_idx] = None
                 continue
 
             # link a project to this node (parent_node_id = project.id)
