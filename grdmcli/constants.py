@@ -16,7 +16,7 @@ ORDERING_BY = 'pk'
 
 TEMPLATE_SCHEMA_PROJECTS = './json_schema/projects_create_schema.json'
 
-DEBUG = True
+DEBUG = False
 
 # For request keyword arguments
 # verify: (optional) Either a boolean, in which case it controls whether we verify
