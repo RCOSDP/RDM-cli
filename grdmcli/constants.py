@@ -22,7 +22,7 @@ ORDERING_BY = 'pk'
 TEMPLATE_SCHEMA_PROJECTS = './json_schema/projects_create_schema.json'
 TEMPLATE_SCHEMA_CONTRIBUTORS = './json_schema/contributors_create_schema.json'
 
-# For request keyword arguments
+# For `requests.request` keyword arguments
 # verify: (optional) Either a boolean, in which case it controls whether we verify
 # the server's TLS certificate, or a string, in which case it must be a path
 # to a CA bundle to use. Defaults to `True`.

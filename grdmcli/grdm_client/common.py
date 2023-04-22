@@ -128,7 +128,6 @@ class CommonCLI(Namespace):
             logger.warning(f'Missing the config file {self.config_file}')
             return False
 
-        logger.info(f'Read config_file: {self.config_file}')
         config = configparser.ConfigParser()
         config.read(self.config_file)
         if const.CONFIG_SECTION in config:
@@ -152,6 +151,8 @@ class CommonCLI(Namespace):
 
         :return: None
         """
+        logger.info(f'Read config_file: {self.config_file}')
+
         # get osf_api_url
         if self.osf_api_url is None:
             self.osf_api_url = self.config_default.get(const.OSF_API_URL_VAR_NAME.lower())

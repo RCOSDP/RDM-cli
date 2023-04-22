@@ -70,10 +70,10 @@ def main():
     # to add template arg
     projects_create_parser.add_argument('--template', required=True,
                                         default='./template_file.json',
-                                        help='template file for projects/components')
+                                        help='The template file for projects/components')
     projects_create_parser.add_argument('--output_result_file',
                                         default='./output_result_file.json',
-                                        help='the output result file path')
+                                        help='The output result file path')
     # to add config args
     _have_config_parsers.append(projects_create_parser)
 
