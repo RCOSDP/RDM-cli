@@ -19,6 +19,7 @@ class GRDMClient(CommonCLI):
     from .users import (
         _users_me,
     )
+    # For projects functions
     from .licenses import (
         _licenses,
         _find_license_id_from_name,

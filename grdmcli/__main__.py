@@ -12,14 +12,7 @@ from . import constants as const  # noqa
 from .grdm_client import GRDMClient
 from .utils import inspect_info  # noqa
 
-# config logging
-handler = logging.StreamHandler()
-formatter = logging.Formatter(const.LOGGING_DEBUG_FORMAT if const.DEBUG else const.LOGGING_FORMAT)
-handler.setFormatter(formatter)
-logger = logging.getLogger()
-logger.propagate = False
-logger.addHandler(handler)
-logger.setLevel(logging.DEBUG if const.DEBUG else logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def _add_subparser(parser, name, desc, aliases=None):
@@ -38,8 +31,11 @@ def _add_subparser(parser, name, desc, aliases=None):
 
 
 def _subparser_add_config_args(parser):
-    parser.add_argument('--osf_token', help='the Personal Access Token')
-    parser.add_argument('--osf_api_url', help='the API URL')
+    parser.add_argument('--osf_token', help='The Personal Access Token')
+    parser.add_argument('--osf_api_url', help='The API URL')
+    parser.add_argument('--disable_ssl_verify', action='store_true', help='Disable SSL verification')
+    parser.add_argument('--debug', action='store_true', dest='enable_debug', help='Enable Debug mode')
+    parser.add_argument('--verbose', action='store_true', dest='enable_verbose', help='Enable Verbose mode')
 
 
 def main():
@@ -67,11 +63,11 @@ def main():
     projects_create_parser.set_defaults(func='projects_create')
     # to add template arg
     projects_create_parser.add_argument('--template', required=True,
-                                        default='./template_file.json',
-                                        help='template file for projects/components')
+                                        default=const.TEMPLATE_FILE_NAME_DEFAULT,
+                                        help='The template file for projects/components')
     projects_create_parser.add_argument('--output_result_file',
-                                        default='./output_result_file.json',
-                                        help='the output result file path')
+                                        default=const.OUTPUT_RESULT_FILE_NAME_DEFAULT,
+                                        help='The output result file path')
     # to add config args
     _have_config_parsers.append(projects_create_parser)
 
@@ -87,6 +83,7 @@ def main():
         return
 
     cli_parser.parse_args(namespace=client)
+    client.force_update_config()
 
     _args = []
     if client.entity:
