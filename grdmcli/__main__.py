@@ -7,10 +7,10 @@ import sys
 
 import six
 
-from grdmcli import __version__
-from grdmcli import constants as const  # noqa
-from grdmcli.grdm_client import GRDMClient
-from grdmcli.utils import inspect_info  # noqa
+from . import __version__
+from . import constants as const  # noqa
+from .grdm_client import GRDMClient
+from .utils import inspect_info  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -69,10 +69,10 @@ def main():
     projects_create_parser.set_defaults(func='projects_create')
     # to add template arg
     projects_create_parser.add_argument('--template', required=True,
-                                        default='./template_file.json',
+                                        default=const.TEMPLATE_FILE_NAME_DEFAULT,
                                         help='The template file for projects/components')
     projects_create_parser.add_argument('--output_result_file',
-                                        default='./output_result_file.json',
+                                        default=const.OUTPUT_RESULT_FILE_NAME_DEFAULT,
                                         help='The output result file path')
     # to add config args
     _have_config_parsers.append(projects_create_parser)
@@ -91,10 +91,10 @@ def main():
     # to add template arg
     contributors_create_parser.add_argument('--template', required=True,
                                             default=const.TEMPLATE_FILE_NAME_DEFAULT,
-                                            help='template file for contributors')
+                                            help='The template file for contributors')
     contributors_create_parser.add_argument('--output_result_file',
                                             default=const.OUTPUT_RESULT_FILE_NAME_DEFAULT,
-                                            help='the output result file path')
+                                            help='The output result file path')
     # to add config args
     _have_config_parsers.append(contributors_create_parser)
 

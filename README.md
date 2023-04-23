@@ -23,6 +23,11 @@ Create `.grdmcli.config` and set
 osf_token = <Your Personal Access Token>
 osf_api_url = http://localhost:8000/v2/
 ```
+
+##### Required scopes of the token:
+From all publicly documented scopes, please select:  
+- `osf.full_write` : View and edit all information associated with this account, including for private projects.
+
 #### Optional configuration
 - `SSL certificate verify` is required in Production environment.  
   It is set `True` as default in the `constants.py`  
@@ -86,8 +91,6 @@ usage: grdmcli projects create [-h]
 
 projects create command
 
-projects create command
-
 options:
   -h, --help            show this help message and exit
   --template TEMPLATE   The template file for projects/components
@@ -128,9 +131,9 @@ contributors create command
 
 options:
   -h, --help            show this help message and exit
-  --template TEMPLATE   template file for contributors
+  --template TEMPLATE   The template file for contributors
   --output_result_file OUTPUT_RESULT_FILE
-                        the output result file path
+                        The output result file path
   --osf_token OSF_TOKEN
                         The Personal Access Token
   --osf_api_url OSF_API_URL
