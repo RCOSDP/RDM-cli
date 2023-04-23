@@ -79,4 +79,4 @@ def check_json_schema(schema_file_path, data):
         schema = read_json_file(schema_file_path)
         jsonschema.validate(data, schema=schema)
     except jsonschema.exceptions.ValidationError as json_error:
-        raise GrdmCliException(json_error.__dict__)
+        raise GrdmCliException(f'ValidationError: {json_error.__dict__}')
