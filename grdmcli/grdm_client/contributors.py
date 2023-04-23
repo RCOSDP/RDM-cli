@@ -245,6 +245,10 @@ def _clear_project_current_contributors(self, pk, contributor_user_ids, current_
     """
     # Get all current contributors from this project
     old_contributors, _ = self._list_project_contributors(pk, verbose=verbose)
+
+    if not old_contributors:
+        return None
+
     # Delete all current contributors from this project
     for contributor in old_contributors:
         # except for the currently logged-in user
@@ -258,15 +262,15 @@ def _clear_project_current_contributors(self, pk, contributor_user_ids, current_
     return current_user_contributor
 
 
-def contributors_create(self, verbose=True):
+def contributors_create(self):
     """Overwrite the contributor list of a project following the structure and info which defined in a template JSON file.\n
     Delete contributors from the project; expect the current user as admin.\n
     Add contributors in order from template into the project.
 
-    :param verbose: boolean
     :return: None
     """
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    verbose = self.verbose
 
     logger.info('Check config and authenticate by token')
     # the current_user_id is self.user.id
@@ -305,6 +309,13 @@ def contributors_create(self, verbose=True):
             logger.info(f'JSONPOINTER /projects/{idx}/')
             logger.info('REMOVE Current contributors')
             current_user_contributor = self._clear_project_current_contributors(_id, current_project_contributor_user_ids, current_user_contributor, verbose=verbose)
+
+            if current_user_contributor is None:
+                logger.warning(f'Project is not found')
+
+                # update output object and ignore it
+                _projects[idx] = None
+                continue
 
             logger.info('OVERWRITE new contributors')
             self._overwrite_project_contributors(_contributors, _id, current_project_contributor_user_ids, current_user_contributor, verbose=verbose)

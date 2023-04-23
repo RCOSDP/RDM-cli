@@ -84,11 +84,11 @@ def main():
     contributors_create_parser.set_defaults(func='contributors_create')
     # to add template arg
     contributors_create_parser.add_argument('--template', required=True,
-                                            default='./template_file.json',
-                                            help='template file for contributors')
+                                            default=const.TEMPLATE_FILE_NAME_DEFAULT,
+                                            help='The template file for contributors')
     contributors_create_parser.add_argument('--output_result_file',
-                                            default='./output_result_file.json',
-                                            help='the output result file path')
+                                            default=const.OUTPUT_RESULT_FILE_NAME_DEFAULT,
+                                            help='The output result file path')
     # to add config args
     _have_config_parsers.append(contributors_create_parser)
 
