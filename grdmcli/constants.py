@@ -18,6 +18,7 @@ MAX_PAGE_SIZE = 1000
 PAGE_SIZE_QUERY_PARAM = 'page[size]'
 ORDERING_QUERY_PARAM = 'sort'
 ORDERING_BY = 'pk'
+IS_FAKE_LOAD_PROJECT = False
 
 TEMPLATE_SCHEMA_PROJECTS = './json_schema/projects_create_schema.json'
 

@@ -15,6 +15,7 @@ __all__ = [
     '_load_project',
     '_fork_project',
     '_create_project',
+    '_update_project',
     '_link_project_to_project',
     '_add_project_pointers',
     '_add_project_components',
@@ -120,6 +121,10 @@ def _prepare_project_data(self, node_object, verbose=True):
         }
     }
 
+    node_id = _project.get('id')
+    if node_id:
+        _data['data']['id'] = node_id
+
     if verbose:
         logger.debug(f'Prepared project data: {_data}')
 
@@ -160,6 +165,8 @@ def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
 
     project = response.data
 
+    self.created_projects.append(project)
+
     if verbose:
         logger.debug('Loaded project:')
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
@@ -196,11 +203,17 @@ def _fork_project(self, node_object, ignore_error=True, verbose=True):
 
     project = response.data
 
-    self.created_projects.append(project)
+    # skip to add when update
+    # self.created_projects.append(project)
 
     if verbose:
         logger.debug('Forked project:')
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+
+    # update fork project
+    node_object.pop('fork_id')
+    node_object['id'] = project.id
+    self._update_project(project.id, node_object, ignore_error=ignore_error, verbose=verbose)
 
     return project, json.loads(_content)['data']
 
@@ -238,6 +251,44 @@ def _create_project(self, node_object, ignore_error=True, verbose=True):
 
     if verbose:
         logger.debug('Created project:')
+        logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
+
+    return project, json.loads(_content)['data']
+
+
+def _update_project(self, node_id, node_object, ignore_error=True, verbose=True):
+    """Update a project
+
+    :param node_id: string - Project GUID
+    :param node_object: object includes new project's attributes
+    :param ignore_error: boolean
+    :param verbose: boolean
+    :return: project object, and project dictionary
+    """
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+
+    _data = self._prepare_project_data(node_object, verbose=verbose)
+
+    logger.info(f'PUT Update specific project {node_id}')
+    _url = 'nodes/{node_id}/'.format(node_id=node_id)
+    _response, _error_message = self._request('PUT', _url, params={}, data=_data, )
+    if _error_message:
+        logger.warning(_error_message)
+        if not ignore_error:
+            sys.exit(_error_message)
+        return None, None
+    _content = _response.content
+
+    # pprint(_response.json())
+    # Parse JSON into an object with attributes corresponding to dict keys.
+    response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
+
+    project = response.data
+
+    self.created_projects.append(project)
+
+    if verbose:
+        logger.debug('Updated project:')
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
@@ -296,7 +347,7 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
             logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
         else:
             errors = target_node.errors
-            logger.debug(f'ERROR when link to {pointer_id}: {errors[0].detail}')
+            logger.warning(f'When link to {pointer_id}: {errors[0].detail}')
 
     return project, json.loads(_content)['data']
 
@@ -424,7 +475,7 @@ def _create_or_load_project(self, projects, project_idx, verbose=True):
 
     if _id:
         logger.info(f'JSONPOINTER /projects/{project_idx}/id == {_id}')
-        project, _ = self._load_project(_id, is_fake=False, ignore_error=True, verbose=verbose)
+        project, _ = self._load_project(_id, is_fake=const.IS_FAKE_LOAD_PROJECT, ignore_error=True, verbose=verbose)
 
         if project is None:
             # has error, update output object

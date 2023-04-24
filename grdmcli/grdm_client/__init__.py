@@ -31,6 +31,7 @@ class GRDMClient(CommonCLI):
         _load_project,
         _fork_project,
         _create_project,
+        _update_project,
         _link_project_to_project,
         _add_project_pointers,
         _add_project_components,
