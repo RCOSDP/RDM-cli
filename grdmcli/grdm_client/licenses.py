@@ -64,7 +64,7 @@ def _find_license_id_from_name(self, name, verbose=True):
     :return: license id
     :raise: GrdmCliException
     """
-    if not hasattr(self, 'licenses') or not self.licenses or len(self.licenses):
+    if not (hasattr(self, 'licenses') and self.licenses):
         self._licenses(ignore_error=True, verbose=verbose)
 
     for _license in self.licenses:

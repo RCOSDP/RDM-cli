@@ -68,6 +68,25 @@ python -m pip install git+https://github.com/RCOSDP/RDM-cli.git@feature/202303-c
 ```
 
 #### プロジェクト/コンポーネントの新規作成
+The following functions are possible
+- Create new projects
+- Create new components for each specific project
+- Create new projects from an available template
+- Creates a fork of an available project
+- Link an available other projects to each specific project
+
+The impossible ones:
+- Update available projects
+
+**\* Notice** about the order of creating a project/component:
+- Create project (includes `category`, `title`, `description`, `public`, `tags`)
+- Add license (as `node_license`)
+- Create components for the created project
+- Link to other projects (as `project_links`)
+
+**\* Notice** about forking from a project/component:  
+When forking, the following information will be changed: `category`, `title`.  
+The other properties will be ignored.
 
 ##### Usages
 Get help and see available commands, get help on a specific command
