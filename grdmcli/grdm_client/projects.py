@@ -160,6 +160,8 @@ def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
 
     project = response.data
 
+    self.created_projects.append(project)
+
     if verbose:
         logger.debug('Loaded project:')
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
@@ -296,7 +298,7 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
             logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
         else:
             errors = target_node.errors
-            logger.debug(f'ERROR when link to {pointer_id}: {errors[0].detail}')
+            logger.warning(f'When link to {pointer_id}: {errors[0].detail}')
 
     return project, json.loads(_content)['data']
 
@@ -424,7 +426,7 @@ def _create_or_load_project(self, projects, project_idx, verbose=True):
 
     if _id:
         logger.info(f'JSONPOINTER /projects/{project_idx}/id == {_id}')
-        project, _ = self._load_project(_id, is_fake=False, ignore_error=True, verbose=verbose)
+        project, _ = self._load_project(_id, is_fake=const.IS_FAKE_LOAD_PROJECT, ignore_error=True, verbose=verbose)
 
         if project is None:
             # has error, update output object
