@@ -72,11 +72,12 @@ The following functions are possible
 - Create new projects
 - Create new components for each specific project
 - Create new projects from an available template
+- Create new components from an available template (don't support on the website UI)
 - Creates a fork of an available project
 - Link an available other projects to each specific project
 
 The impossible ones:
-- Update available projects
+- Update attributes for available projects
 
 **\* Notice** about the order of creating a project/component:
 - Create project (includes `category`, `title`, `description`, `public`, `tags`)
@@ -85,8 +86,8 @@ The impossible ones:
 - Link to other projects (as `project_links`)
 
 **\* Notice** about forking from a project/component:  
-When forking, the following information will be changed: `category`, `title`.  
-The other properties will be ignored.
+When forking, the following information will be changed: `title`.  
+The other properties will be ignored: `category`, `description`, `public`, `tags`, `node_license`.
 
 ##### Usages
 Get help and see available commands, get help on a specific command
