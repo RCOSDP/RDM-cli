@@ -40,7 +40,7 @@ def _list_project_contributors(self, pk, ignore_error=True, verbose=True):
     if not self.user:
         sys.exit('Missing currently logged-in user')
 
-    logger.info('GET List of contributors')
+    logger.info('GET list of contributors')
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _url = 'nodes/{node_id}/contributors/'.format(node_id=pk)
     _response, _error_message = self._request('GET', _url, params=params, data={}, )
@@ -61,9 +61,16 @@ def _list_project_contributors(self, pk, ignore_error=True, verbose=True):
     if verbose:
         logger.debug(f'List of contributors in project. [{_contributors_numb}]')
         for contributor in contributors:
-            users = contributor.embeds.users.data.attributes
             attrs = contributor.attributes
-            logger.debug(f'\'{contributor.id}\' - \'{users.full_name}\' [{contributor.type}][{attrs.permission}][{attrs.index}]')
+            bibliographic_text = '[visible]' if attrs.bibliographic else ''
+            tags_info = f'[{contributor.type}][{attrs.permission}][{attrs.index}]{bibliographic_text}'
+            users = contributor.embeds.users
+            if not hasattr(users, 'errors'):
+                user = users.data.attributes
+                logger.debug(f'\'{contributor.id}\' - \'{user.full_name}\' {tags_info}')
+            else:
+                errors = users.errors
+                logger.debug(f'\'{contributor.id}\' - \'{errors[0].detail}\' {tags_info }')
 
     return contributors, json.loads(_content)['data']
 
@@ -75,20 +82,23 @@ def _delete_project_contributor(self, pk, user_id, ignore_error=True, verbose=Tr
     :param user_id: string - User GUID of a contributor
     :param ignore_error: boolean
     :param verbose: boolean
-    :return: None
+    :return: tuple of user_id, is_deleted
     """
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    logger.info(f'DELETE Remove contributor \'{pk}-{user_id}\'')
+    logger.info(f'Remove contributor \'{pk}-{user_id}\'')
     _url = 'nodes/{node_id}/contributors/{user_id}'.format(node_id=pk, user_id=user_id)
     _response, _error_message = self._request('DELETE', _url, params={}, data={}, )
+    is_deleted = not bool(_error_message)
     if _error_message:
         logger.warning(f'{_error_message}')
         if not ignore_error:
             sys.exit(_error_message)
 
-    if verbose:
+    if verbose and is_deleted:
         logger.debug(f'Deleted contributor: \'{pk}-{user_id}\'')
+
+    return user_id, is_deleted
 
 
 def _prepare_project_contributor_data(self, contributor_object, index, verbose=True):
@@ -150,7 +160,7 @@ def _add_project_contributor(self, pk, contributor_object, index, ignore_error=T
     _data = self._prepare_project_contributor_data(contributor_object, index, verbose=verbose)
     user_id = contributor_object['id']
 
-    logger.info(f'CREATE Add contributor \'{pk}-{user_id}\'')
+    logger.info(f'Add contributor \'{pk}-{user_id}\'')
     _url = 'nodes/{node_id}/contributors/'.format(node_id=pk)
     _response, _error_message = self._request('POST', _url, params={}, data=_data, )
     if _error_message:
@@ -195,11 +205,12 @@ def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids
             if current_user_contributor:
                 # update output object
                 # can overwrite object by _contributors[_user_idx].update(contributor_dict)
+                _index = _user_idx - _invalid_user_obj_number
                 _obj = contributors[_user_idx]
                 _contributor_attr = current_user_contributor.attributes
                 _obj['id'] = current_user_contributor.id
                 _obj['type'] = current_user_contributor.type
-                _obj['index'] = _contributor_attr.index
+                _obj['index'] = _index
                 _obj['bibliographic'] = _contributor_attr.bibliographic
                 _obj['permission'] = _contributor_attr.permission
             continue
@@ -251,14 +262,27 @@ def _clear_project_current_contributors(self, pk, contributor_user_ids, current_
 
     # Delete all current contributors from this project
     for contributor in old_contributors:
+        users = contributor.embeds.users
+        if hasattr(users, 'errors'):
+            continue
+
         # except for the currently logged-in user
-        if contributor.embeds.users.data.id == self.user.id:
+        if users.data.id == self.user.id:
+            logger.debug(f'Ignore currently logged-in user {self.user.id}')
             self.created_project_contributors.append(contributor)
             current_user_contributor = contributor
             contributor_user_ids.append(self.user.id)
             continue
-        # Delete current contributor
-        self._delete_project_contributor(pk, contributor.embeds.users.data.id, verbose=verbose)
+
+        # Delete available contributor
+        user_id = users.data.id
+        _, is_deleted = self._delete_project_contributor(pk, user_id, verbose=verbose)
+
+        # in case cannot delete
+        if not is_deleted:
+            self.created_project_contributors.append(contributor)
+            contributor_user_ids.append(user_id)
+
     return current_user_contributor
 
 
@@ -320,6 +344,12 @@ def contributors_create(self):
             logger.info('OVERWRITE new contributors')
             self._overwrite_project_contributors(_contributors, _id, current_project_contributor_user_ids, current_user_contributor, verbose=verbose)
 
+            # update all current contributors of this project
+            current_project_contributors, _ = self._list_project_contributors(_id, verbose=verbose)
+            _length_all = len(self.created_project_contributors)
+            _length_prj = len(current_project_contributors)
+            self.created_project_contributors[-_length_prj:] = current_project_contributors
+
             # Delete None from contributors
             if _contributors:
                 _project_dict['contributors'] = [_contributor for _contributor in _contributors if _contributor is not None]
@@ -346,6 +376,8 @@ def contributors_create(self):
         if verbose and _length:
             logger.debug(f'Created contributors for projects. [{_length}]')
             for contributor in self.created_project_contributors:
-                users = contributor.embeds.users.data.attributes
                 attrs = contributor.attributes
-                logger.debug(f'\'{contributor.id}\' - \'{users.full_name}\' [{contributor.type}][{attrs.permission}][{attrs.index}]')
+                bibliographic_text = '[visible]' if attrs.bibliographic else ''
+                tags_info = f'[{contributor.type}][{attrs.permission}][{attrs.index}]{bibliographic_text}'
+                users = contributor.embeds.users.data.attributes
+                logger.debug(f'\'{contributor.id}\' - \'{users.full_name}\' {tags_info}')
