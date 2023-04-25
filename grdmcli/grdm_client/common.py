@@ -97,7 +97,7 @@ class CommonCLI(Namespace):
             if const.SSL_CERT_FILE:
                 ssl_options['cert'] = const.SSL_CERT_FILE
                 if const.SSL_KEY_FILE:
-                    ssl_options['cert'] = (const.SSL_CERT_VERIFY, const.SSL_KEY_FILE)
+                    ssl_options['cert'] = (const.SSL_CERT_FILE, const.SSL_KEY_FILE)
 
         _response = requests.request(method, url,
                                      params=_params, data=json.dumps(data), headers=headers,
@@ -111,7 +111,7 @@ class CommonCLI(Namespace):
                 error = response.errors[0]
                 error_msg = error.detail
                 if hasattr(error, 'source'):
-                    error_msg = f'{error_msg} {error.source.pointer}'
+                    error_msg = f'{error_msg}. The pointer is {error.source.pointer}'
             except Exception:
                 error_msg = f'{_response.status_code} {_response.reason}'
 
