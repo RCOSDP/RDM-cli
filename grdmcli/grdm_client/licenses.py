@@ -8,8 +8,6 @@ from types import SimpleNamespace
 
 from .. import constants as const, utils  # noqa
 
-from ..exceptions import GrdmCliException
-
 __all__ = [
     '_licenses',
     '_find_license_id_from_name',
@@ -50,7 +48,7 @@ def _licenses(self, ignore_error=True, verbose=True):
     self._meta.update({'_licenses': _licenses_numb})
 
     if verbose:
-        logger.debug(f'[For development]List of licenses. [{_licenses_numb}]')
+        logger.debug(f'List of licenses. [{_licenses_numb}]')
         for _license in self.licenses:
             logger.debug(f'\'{_license.id}\' - \'{_license.attributes.name}\' [{_license.type}]')
 
@@ -71,5 +69,6 @@ def _find_license_id_from_name(self, name, verbose=True):
         if _license.attributes.name.casefold() == name.casefold():
             return _license.id
 
-    raise GrdmCliException(f'License name \'{name}\' is not registered.')
+    logger.warning(f'License name \'{name}\' is not registered.')
 
+    return None

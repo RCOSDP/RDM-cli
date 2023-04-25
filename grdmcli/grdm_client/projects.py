@@ -99,11 +99,15 @@ def _prepare_project_data(self, node_object, verbose=True):
     # update node_license
     _license = _project.get('node_license')
     if _license:
+        _license_id = self._find_license_id_from_name(_license.get('license_name'))
+        if _license_id is None:
+            return None  # to ignore creating node
+
         # required 'id'
         _relationships['license'] = {
             'data': {
                 'type': 'licenses',
-                'id': self._find_license_id_from_name(_license.get('license_name'))
+                'id': _license_id
             }
         }
         # required 'copyright_holders' and 'year'
@@ -219,6 +223,9 @@ def _create_project(self, node_object, ignore_error=True, verbose=True):
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     _data = self._prepare_project_data(node_object, verbose=verbose)
+    # ignore if licence not found
+    if _data is None:
+        return None, None
 
     logger.info('POST Create new project')
     _response, _error_message = self._request('POST', 'nodes/', params={}, data=_data, )
@@ -372,6 +379,9 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     _project_links = node_object.get('project_links', [])
 
     _data = self._prepare_project_data(node_object, verbose=verbose)
+    # ignore if licence not found
+    if _data is None:
+        return None, None
 
     logger.info(f'POST Create new component to nodes/{parent_id}/')
     _url = 'nodes/{node_id}/children/'.format(node_id=parent_id)
