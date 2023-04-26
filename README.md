@@ -126,6 +126,12 @@ options:
 ```
 
 #### 参加メンバーの新規登録、上書き
+The following functions are possible:
+- Overwrite the project's contributor list
+
+**\* Notice** about the order of registration/overwrite contributors of a project/component:
+- Clear available contributors from the project. Except the current user. This member is project admin.
+- Add new contributors list. Except the current user
 
 ##### Usages
 Get help and see available commands, get help on a specific command
