@@ -281,7 +281,7 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
         }
     }
 
-    logger.info(f'POST Create a link to nodes/{node_id}/')
+    logger.info(f'Create a link to nodes/{node_id}/')
     _url = 'nodes/{node_id}/node_links/'.format(node_id=node_id)
     _response, _error_message = self._request('POST', _url, params={}, data=_data, )
     if _error_message:
