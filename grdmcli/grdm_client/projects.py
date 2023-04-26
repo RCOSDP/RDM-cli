@@ -144,13 +144,13 @@ def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
     _content = None
-    _faked_or_loaded = f'[loaded nodes/{pk}/]'
+    _faked_or_loaded = f'[loaded]'
 
     if is_fake:
         _faked_or_loaded = '[faked]'
         _content = self._fake_project_content_data(pk, verbose=verbose)
 
-    logger.info(f'GET Retrieve project {_faked_or_loaded}')
+    logger.info(f'Retrieve project nodes/{pk}/ {_faked_or_loaded}')
     if not is_fake:
         _response, _error_message = self._request('GET', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
         if _error_message:
@@ -168,8 +168,8 @@ def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
 
     self.created_projects.append(project)
 
+    logger.debug(f'Loaded project nodes/{project.id}/')
     if verbose:
-        logger.debug('Loaded project:')
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
@@ -188,7 +188,7 @@ def _fork_project(self, node_object, ignore_error=True, verbose=True):
     _data = self._prepare_project_data(node_object, verbose=verbose)
     pk = node_object['fork_id']
 
-    logger.info(f'POST Fork a project from nodes/{pk}/')
+    logger.info(f'Fork a project from nodes/{pk}/')
     logger.warning('Ignore the following attributes: \'category\', \'description\', \'node_license\', \'public\', \'tags\'')
     _response, _error_message = self._request('POST', 'nodes/{node_id}/forks/'.format(node_id=pk),
                                               params={}, data=_data, )
@@ -207,8 +207,8 @@ def _fork_project(self, node_object, ignore_error=True, verbose=True):
 
     self.created_projects.append(project)
 
+    logger.info(f'Forked project nodes/{project.id}/')
     if verbose:
-        logger.debug('Forked project:')
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
@@ -229,7 +229,7 @@ def _create_project(self, node_object, ignore_error=True, verbose=True):
     if _data is None:
         return None, None
 
-    logger.info('POST Create new project')
+    logger.info('Create new project')
     _response, _error_message = self._request('POST', 'nodes/', params={}, data=_data, )
     if _error_message:
         logger.warning(_error_message)
@@ -248,8 +248,8 @@ def _create_project(self, node_object, ignore_error=True, verbose=True):
 
     self.created_projects.append(project)
 
+    logger.info(f'Created project \'{project.id}\'')
     if verbose:
-        logger.debug('Created project:')
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     return project, json.loads(_content)['data']
@@ -301,14 +301,14 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
     if not hasattr(target_node, 'errors'):
         project = project_link.embeds.target_node.data
 
-    if verbose:
-        if project:
-            logger.debug('Created Node Links:')
+    if project:
+        logger.info(f'Created Node Links \'{project_link.id}\'')
+        if verbose:
             logger.debug(f'\'{project_link.id}\' - [{project_link.type}]')
             logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
-        else:
-            errors = target_node.errors
-            logger.warning(f'When link to {pointer_id}: {errors[0].detail}')
+    else:
+        errors = target_node.errors
+        logger.warning(f'When link to {pointer_id}: {errors[0].detail}')
 
     return project, json.loads(_content)['data']
 
@@ -385,7 +385,7 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     if _data is None:
         return None, None
 
-    logger.info(f'POST Create new component to nodes/{parent_id}/')
+    logger.info(f'Create new component to nodes/{parent_id}/')
     _url = 'nodes/{node_id}/children/'.format(node_id=parent_id)
     _response, _error_message = self._request('POST', _url, params={}, data=_data, )
     if _error_message:
@@ -405,8 +405,8 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
 
     self.created_projects.append(project)
 
+    logger.info(f'Created component \'{project.id}\'')
     if verbose:
-        logger.debug('Create component:')
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
     # link a project to this node (parent_node_id = project.id)
@@ -502,15 +502,15 @@ def projects_create(self):
     if not os.path.exists(self.template):
         sys.exit('Missing the template file')
 
-    logger.info(f'USE the template of projects: {self.template}')
+    logger.info(f'Use the template of projects: {self.template}')
     _projects_dict = utils.read_json_file(self.template)
 
     try:
         # check json schema
-        logger.info(f'VALIDATE BY the template of projects: {self.template_schema_projects}')
+        logger.info(f'Validate by the template of projects: {self.template_schema_projects}')
         utils.check_json_schema(self.template_schema_projects, _projects_dict)
 
-        logger.info('LOOP Following the template of projects')
+        logger.info('Loop following the template of projects')
         _projects = _projects_dict.get('projects', [])
         for _project_idx, _project_dict in enumerate(_projects):
             _children = _project_dict.get('children', [])
@@ -545,7 +545,7 @@ def projects_create(self):
         _length = len(self.created_projects)
         if _length:
             # prepare output file
-            logger.info(f'USE the output result file: {self.output_result_file}')
+            logger.info(f'Use the output result file: {self.output_result_file}')
             self._prepare_output_file()
             # write output file
             utils.write_json_file(self.output_result_file, _projects_dict)

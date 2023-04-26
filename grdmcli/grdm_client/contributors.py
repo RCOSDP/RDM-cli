@@ -40,7 +40,7 @@ def _list_project_contributors(self, pk, ignore_error=True, verbose=True):
     if not self.user:
         sys.exit('Missing currently logged-in user')
 
-    logger.info('GET list of contributors')
+    logger.info('Get list of contributors')
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _url = 'nodes/{node_id}/contributors/'.format(node_id=pk)
     _response, _error_message = self._request('GET', _url, params=params, data={}, )
@@ -58,8 +58,8 @@ def _list_project_contributors(self, pk, ignore_error=True, verbose=True):
     contributors = response.data
     _contributors_numb = response.links.meta.total
 
+    logger.info(f'List of contributors in project. [{_contributors_numb}]')
     if verbose:
-        logger.debug(f'List of contributors in project. [{_contributors_numb}]')
         for contributor in contributors:
             attrs = contributor.attributes
             bibliographic_text = '[visible]' if attrs.bibliographic else ''
@@ -199,6 +199,7 @@ def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids
     _invalid_user_obj_number = 0
     for _user_idx, _user_dict in enumerate(contributors):
         _user_id = _user_dict['id']
+        logger.info(f'JSONPOINTER ./contributors/{_user_idx}/ user_id={_user_id}')
 
         if _user_id == self.user.id:
             logger.warning('This member is the currently logged-in user, so skip creating/updating')
@@ -222,7 +223,6 @@ def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids
             _invalid_user_obj_number += 1
             continue
 
-        logger.info(f'JSONPOINTER ./contributors/{_user_idx}/')
         # Call API Create a contributor
         _index = _user_idx - _invalid_user_obj_number
         contributor, _ = self._add_project_contributor(pk, _user_dict, _index, verbose=verbose)
@@ -306,22 +306,23 @@ def contributors_create(self):
     if not os.path.exists(self.template):
         sys.exit('Missing the template file')
 
-    logger.info(f'USE the template of contributors: {self.template}')
+    logger.info(f'Use the template of contributors: {self.template}')
     _projects_dict = utils.read_json_file(self.template)
 
     try:
         # check json schema
-        logger.info(f'VALIDATE BY the template of projects: {self.template_schema_contributors}')
+        logger.info(f'Validate by the template of projects: {self.template_schema_contributors}')
         utils.check_json_schema(self.template_schema_contributors, _projects_dict)
 
-        logger.info('LOOP Following the template of contributors')
+        logger.info('Loop following the template of contributors')
         _projects = _projects_dict.get('projects', [])
         for idx, _project_dict in enumerate(_projects):
             _id = _project_dict.get('id')
+            logger.info(f'JSONPOINTER /projects/{idx}/')
             _contributors = _project_dict.get('contributors', [])
 
             if not _id:
-                logger.info(f'JSONPOINTER /projects/{idx}/id == {_id}')
+                logger.warning(f'Missing project id')
 
                 # update output object and ignore it
                 _projects[idx] = None
@@ -330,8 +331,7 @@ def contributors_create(self):
             current_user_contributor = None
             current_project_contributor_user_ids = []
 
-            logger.info(f'JSONPOINTER /projects/{idx}/')
-            logger.info('REMOVE Current contributors')
+            logger.info('Remove current contributors')
             current_user_contributor = self._clear_project_current_contributors(_id, current_project_contributor_user_ids, current_user_contributor, verbose=verbose)
 
             if current_user_contributor is None:
@@ -341,7 +341,7 @@ def contributors_create(self):
                 _projects[idx] = None
                 continue
 
-            logger.info('OVERWRITE new contributors')
+            logger.info('Overwrite new contributors')
             self._overwrite_project_contributors(_contributors, _id, current_project_contributor_user_ids, current_user_contributor, verbose=verbose)
 
             # update all current contributors of this project
@@ -360,7 +360,7 @@ def contributors_create(self):
         _length = len(self.created_project_contributors)
         if _length:
             # prepare output file
-            logger.info(f'USE the output result file: {self.output_result_file}')
+            logger.info(f'Use the output result file: {self.output_result_file}')
             self._prepare_output_file()
             # write output file
             utils.write_json_file(self.output_result_file, _projects_dict)

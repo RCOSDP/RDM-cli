@@ -31,7 +31,7 @@ def _delete_project(self, pk, ignore_error=True, verbose=True):
     """For development"""
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    logger.info(f'DELETE Remove project \'{pk}\'')
+    logger.info(f'Remove project node/\'{pk}\'/')
     _response, _error_message = self._request('DELETE', 'nodes/{node_id}/'.format(node_id=pk), params={}, data={}, )
     if _error_message:
         logger.warning(f'{_error_message}')
@@ -40,7 +40,7 @@ def _delete_project(self, pk, ignore_error=True, verbose=True):
         return False
 
     if verbose:
-        logger.debug(f'Deleted project: \'{pk}\'')
+        logger.debug(f'Deleted project: node/\'{pk}\'/')
 
 
 def projects_list(self, ignore_error=True):
@@ -57,7 +57,7 @@ def projects_list(self, ignore_error=True):
         self._users_me_affiliated_users(ignore_error=True, verbose=verbose)
         self._licenses(ignore_error=True, verbose=verbose)
 
-    logger.info(f'[For development]GET List of projects')
+    logger.info(f'Get list of projects')
     params = {const.ORDERING_QUERY_PARAM: 'title'}
     _response, _error_message = self._request('GET', 'nodes/', params=params, data={}, )
     if _error_message:
@@ -75,10 +75,11 @@ def projects_list(self, ignore_error=True):
     _projects_numb = response.links.meta.total
     self._meta.update({'_projects': _projects_numb})
 
+    logger.info(f'List of projects are those which are public or which the user has access to view. [{_projects_numb}]')
     if verbose:
-        logger.debug(f'[For development]List of projects are those which are public or which the user has access to view. [{_projects_numb}]')
         for project in self.projects:
-            logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]{project.attributes.tags}')
+            tags_info = f'[{project.type}][{project.attributes.category}]{project.attributes.tags}'
+            logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' {tags_info}')
             if IS_CLEAR and project.id not in IGNORE_PROJECTS:
                 self._delete_project(project.id, ignore_error=True, verbose=verbose)
 
