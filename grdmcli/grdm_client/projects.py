@@ -83,16 +83,18 @@ def _prepare_project_data(self, node_object, verbose=True):
     _template_from = _project.get('template_from')
     if _template_from:
         _attributes['template_from'] = _template_from
+        logger.warning('By default, the project from template will be made private.')
+        _project.pop('public')
 
     # update description
     _description = _project.get('description', '')
     _attributes['description'] = _description
 
-    # update description
+    # update public
     _public = _project.get('public', False)
     _attributes['public'] = _public
 
-    # update description
+    # update tags
     _tags = _project.get('tags', [])
     _attributes['tags'] = _tags
 
