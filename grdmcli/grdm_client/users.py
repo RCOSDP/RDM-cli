@@ -25,7 +25,7 @@ def _users_me(self, ignore_error=True, verbose=True):
     """
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    logger.info('GET the currently logged-in user')
+    logger.info('Get the currently logged-in user')
     _response, _error_message = self._request('GET', 'users/me/', params={}, data={})
     if _error_message:
         logger.warning(_error_message)
@@ -41,5 +41,6 @@ def _users_me(self, ignore_error=True, verbose=True):
     self.is_authenticated = True
     self.user = response.data
 
+    logger.info(f'You are logged in as \'{self.user.id}\'')
     if verbose:
-        logger.debug(f'You are logged in as: \'{self.user.id}\' - \'{self.user.attributes.full_name}\'')
+        logger.debug(f'\'{self.user.id}\' - \'{self.user.attributes.full_name}\'')

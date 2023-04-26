@@ -29,7 +29,7 @@ def _licenses(self, ignore_error=True, verbose=True):
     if not self.user:
         sys.exit(MSG_E001)
 
-    logger.info('GET List of licenses')
+    logger.info('Get list of licenses')
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _response, _error_message = self._request('GET', 'licenses/', params=params, data={}, )
     if _error_message:
@@ -47,8 +47,8 @@ def _licenses(self, ignore_error=True, verbose=True):
     _licenses_numb = response.links.meta.total
     self._meta.update({'_licenses': _licenses_numb})
 
+    logger.info(f'List of licenses. [{_licenses_numb}]')
     if verbose:
-        logger.debug(f'List of licenses. [{_licenses_numb}]')
         for _license in self.licenses:
             logger.debug(f'\'{_license.id}\' - \'{_license.attributes.name}\' [{_license.type}]')
 
