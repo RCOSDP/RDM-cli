@@ -29,7 +29,7 @@ def _licenses(self, ignore_error=True, verbose=True):
     if not self.user:
         sys.exit(MSG_E001)
 
-    logger.debug('Get list of licenses')
+    logger.info('Get list of licenses')
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _response, _error_message = self._request('GET', 'licenses/', params=params, data={}, )
     if _error_message:
