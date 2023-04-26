@@ -84,7 +84,7 @@ def _prepare_project_data(self, node_object, verbose=True):
     if _template_from:
         _attributes['template_from'] = _template_from
         logger.warning('By default, the project from template will be made private.')
-        _project.pop('public')
+        _project['public'] = False
 
     # update description
     _description = _project.get('description', '')
