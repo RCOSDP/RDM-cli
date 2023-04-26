@@ -168,7 +168,7 @@ def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
 
     self.created_projects.append(project)
 
-    logger.debug(f'Loaded project nodes/{project.id}/')
+    logger.info(f'Loaded project nodes/{project.id}/')
     if verbose:
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 

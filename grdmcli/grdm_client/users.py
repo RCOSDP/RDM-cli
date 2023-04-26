@@ -27,7 +27,7 @@ def _users_me(self, ignore_error=True, verbose=True):
     """
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
 
-    logger.info('GET the currently logged-in user')
+    logger.info('Get the currently logged-in user')
     _response, _error_message = self._request('GET', 'users/me/', params={}, data={})
     if _error_message:
         logger.warning(_error_message)
@@ -43,8 +43,9 @@ def _users_me(self, ignore_error=True, verbose=True):
     self.is_authenticated = True
     self.user = response.data
 
+    logger.info(f'You are logged in as \'{self.user.id}\'')
     if verbose:
-        logger.debug(f'You are logged in as: \'{self.user.id}\' - \'{self.user.attributes.full_name}\'')
+        logger.debug(f'\'{self.user.id}\' - \'{self.user.attributes.full_name}\'')
 
 
 def _users_me_affiliated_institutions(self, ignore_error=True, verbose=True):
@@ -72,8 +73,8 @@ def _users_me_affiliated_institutions(self, ignore_error=True, verbose=True):
     _institutions_numb = response.links.meta.total
     self._meta.update({'_institutions': _institutions_numb})
 
+    logger.info(f'List of affiliated institutions. [{_institutions_numb}]')
     if verbose:
-        logger.debug(f'[For development]List of affiliated institutions. [{_institutions_numb}]')
         for inst in self.affiliated_institutions:
             logger.debug(f'\'{inst.id}\' - \'{inst.attributes.name}\' [{inst.type}][{inst.attributes.description[:10]}...]')
 
@@ -110,7 +111,7 @@ def _users_me_affiliated_users(self, ignore_error=True, verbose=True):
 
     self._meta.update({'_users': _users_numb})
 
+    logger.info(f'List of affiliated institutions\' users. [{_users_numb}]')
     if verbose:
-        logger.debug(f'[For development]List of affiliated institutions\' users. [{_users_numb}]')
         for user in self.affiliated_users:
             logger.debug(f'\'{user.id}\' - \'{user.attributes.full_name}\'')
