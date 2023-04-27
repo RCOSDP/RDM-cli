@@ -1,9 +1,11 @@
 from grdmcli.grdm_client import GRDMClient
+from unittest import mock
 
 
 def test_init__grdm_client():
     args = {'osf_token': 'osf-token', 'osf_api_url': 'http://localhost:8000/v2/', 'ssl_cert_verify': False}
-    grdm_client = GRDMClient(**args)
+    with mock.patch('grdmcli.grdm_client.common.os.path.exists', return_value=False):
+        grdm_client = GRDMClient(**args)
     assert grdm_client.user is None
     assert grdm_client._meta == {}
     assert grdm_client.config_default == {}

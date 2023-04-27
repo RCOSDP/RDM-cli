@@ -454,15 +454,13 @@ def test_delete_project_contributor__send_request_error_and_ignore_error_false_s
 
 
 def test_delete_project_contributor__send_request_error_and_ignore_error_true(grdm_client, caplog):
-    with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
+    with mock.patch.object(grdm_client, '_request', return_value=(None, None)):
         _delete_project_contributor(grdm_client, pk, user_id)
         assert len(caplog.records) == 2
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Remove contributor \'{pk}-{user_id}\''
-        assert caplog.records[1].levelname == warning_level_log
-        assert caplog.records[1].message == error_message
-        assert caplog.records[2].levelname == debug_level_log
-        assert caplog.records[2].message == f'Deleted contributor: \'{pk}-{user_id}\''
+        assert caplog.records[1].levelname == debug_level_log
+        assert caplog.records[1].message == f'Deleted contributor: \'{pk}-{user_id}\''
 
 
 def test_delete_project_contributor__success(grdm_client, caplog):

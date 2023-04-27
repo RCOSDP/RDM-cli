@@ -253,10 +253,12 @@ class TestCommonCLI:
     @mock.patch("os.path.exists", return_value=False)
     @mock.patch("pathlib.Path.mkdir")
     def test_prepare_output_file__is_not_directory(self, mocker, common_cli, caplog):
-        CommonCLI._prepare_output_file(common_cli)
-        assert caplog.records[0].levelname == 'INFO'
-        assert caplog.records[0].message.__contains__('The new directory')
-        assert len(caplog.records) == 1
+        with mock.patch('grdmcli.grdm_client.common.os.path.join', return_value=None):
+            with mock.patch('grdmcli.grdm_client.common.os.path.isdir', return_value=False):
+                CommonCLI._prepare_output_file(common_cli)
+                assert caplog.records[0].levelname == 'INFO'
+                assert caplog.records[0].message.__contains__('The new directory')
+                assert len(caplog.records) == 1
 
     @mock.patch("os.path.exists", return_value=True)
     def test_prepare_output_file__output_file_exist(self, mocker, common_cli, caplog):

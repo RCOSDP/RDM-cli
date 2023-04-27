@@ -85,8 +85,9 @@ def test_main__exit_code_missing_api_url(monkeypatch, caplog):
     monkeypatch.setattr(sys, 'argv', ['grdmcli', _create, 'create', '--template', 'template-test'])
     exit_code = 'Missing API URL'
     with pytest.raises(SystemExit) as ex_info:
-        with mock.patch.object(GRDMClient, f'{_create}_create', side_effect=SystemExit(exit_code)):
-            main()
+        with mock.patch('grdmcli.grdm_client.common.os.path.exists', return_value=False):
+            with mock.patch.object(GRDMClient, f'{_create}_create', side_effect=SystemExit(exit_code)):
+                main()
     assert ex_info.value.code == exit_code
     assert len(caplog.records) == 5
     assert 'Missing the config file' in caplog.records[0].message
@@ -101,8 +102,9 @@ def test_main__exit_code_keyboard_interrupt(monkeypatch, caplog):
     monkeypatch.setattr(sys, 'argv', ['grdmcli', _create, 'create', '--template', 'template-test'])
     exit_code = 'KeyboardInterrupt'
     with mock.patch.object(GRDMClient, f'{_create}_create', side_effect=KeyboardInterrupt):
-        with pytest.raises(SystemExit) as ex_info:
-            main()
+        with mock.patch('grdmcli.grdm_client.common.os.path.exists', return_value=False):
+            with pytest.raises(SystemExit) as ex_info:
+                main()
         assert ex_info.value.code == exit_code
         assert len(caplog.records) == 5
         assert caplog.records[0].levelname == warning_level_log
@@ -122,8 +124,9 @@ def test_main__exit_code_exception(monkeypatch, caplog):
     monkeypatch.setattr(sys, 'argv', ['grdmcli', _create, 'create', '--template', 'template-test'])
     exit_code = 'error'
     with mock.patch.object(GRDMClient, f'{_create}_create', side_effect=Exception(exit_code)):
-        with pytest.raises(SystemExit) as ex_info:
-            main()
+        with mock.patch('grdmcli.grdm_client.common.os.path.exists', return_value=False):
+            with pytest.raises(SystemExit) as ex_info:
+                main()
         assert str(ex_info.value.code) == exit_code
         assert len(caplog.records) == 5
         assert caplog.records[0].levelname == warning_level_log
@@ -142,7 +145,8 @@ def test_main__exit_code_exception(monkeypatch, caplog):
 def test_main__exit_code_false(monkeypatch, caplog):
     monkeypatch.setattr(sys, 'argv', ['grdmcli', _create, 'create', '--template', 'template-test'])
     with mock.patch.object(GRDMClient, f'{_create}_create', return_value=None):
-        main()
+        with mock.patch('grdmcli.grdm_client.common.os.path.exists', return_value=False):
+            main()
     assert len(caplog.records) == 3
     assert caplog.records[0].levelname == warning_level_log
     assert 'Missing the config file' in caplog.records[0].message

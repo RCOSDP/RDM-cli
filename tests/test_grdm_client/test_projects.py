@@ -371,13 +371,14 @@ def test_load_project__is_fake_false_verbose_false(caplog, grdm_client):
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
         actual1, actual2 = _load_project(grdm_client, pk='node01', is_fake=False, verbose=False)
     _faked_or_loaded = f'[loaded]'
+    project_id = json.loads(new_project_str)['data']['id']
     assert len(caplog.records) == 2
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Retrieve project nodes/node01/ {_faked_or_loaded}'
     assert actual1 == new_project_obj.data
     assert actual2 == json.loads(new_project_str)['data']
     assert caplog.records[1].levelname == info_level_log
-    assert caplog.records[1].message == f'Loaded project nodes/node01/'
+    assert caplog.records[1].message == f'Loaded project nodes/{project_id}/'
 
 
 def test_fork_project__request_error_and_ignore_error_false_sys_exit(grdm_client, caplog):
@@ -435,10 +436,25 @@ def test_fork_project__verbose_true(grdm_client, caplog):
 def test_create_project__request_error_and_ignore_error_false_sys_exit(grdm_client, caplog):
     _node_project = projects['projects'][0]
     error_message = 'error'
-    with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        with pytest.raises(SystemExit) as ex_info:
-            _create_project(grdm_client, _node_project, ignore_error=False, verbose=False)
-        assert ex_info.value.code == error_message
+    with mock.patch('tests.factories.GRDMClientFactory._prepare_project_data', return_value=True):
+        with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
+            with pytest.raises(SystemExit) as ex_info:
+                _create_project(grdm_client, _node_project, ignore_error=False, verbose=False)
+            assert ex_info.value.code == error_message
+            assert caplog.records[0].levelname == info_level_log
+            assert caplog.records[0].message == f'Create new project'
+            assert caplog.records[1].levelname == warning_Level_log
+            assert caplog.records[1].message == f'{error_message}'
+            assert len(caplog.records) == 2
+
+
+def test_create_project__request_error_and_ignore_error_true(grdm_client, caplog):
+    error_message = 'error'
+    _node_project = projects['projects'][0]
+    with mock.patch('tests.factories.GRDMClientFactory._prepare_project_data', return_value=True):
+        with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
+            actual1, actual2 = _create_project(grdm_client, _node_project, ignore_error=True, verbose=False)
+        assert actual1 == actual2 is None
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Create new project'
         assert caplog.records[1].levelname == warning_Level_log
@@ -446,46 +462,39 @@ def test_create_project__request_error_and_ignore_error_false_sys_exit(grdm_clie
         assert len(caplog.records) == 2
 
 
-def test_create_project__request_error_and_ignore_error_true(grdm_client, caplog):
-    error_message = 'error'
-    _node_project = projects['projects'][0]
-    with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        actual1, actual2 = _create_project(grdm_client, _node_project, ignore_error=True, verbose=False)
-    assert actual1 == actual2 is None
-    assert caplog.records[0].levelname == info_level_log
-    assert caplog.records[0].message == f'POST Create new project'
-    assert caplog.records[1].levelname == warning_Level_log
-    assert caplog.records[1].message == f'{error_message}'
-    assert len(caplog.records) == 2
-
-
 def test_create_project__verbose_true(grdm_client, caplog):
     resp = requests.Response()
     resp._content = new_project_str
     _node_project = projects['projects'][0]
-    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
-        actual1, actual2 = _create_project(grdm_client, _node_project, verbose=True)
-    assert actual1 == new_project_obj.data
-    assert actual2 == json.loads(new_project_str)['data']
-    assert caplog.records[0].levelname == info_level_log
-    assert caplog.records[0].message == f'Create new project'
-    assert caplog.records[1].levelname == debug_level_log
-    assert caplog.records[1].message == f'Created project:'
-    assert caplog.records[2].levelname == debug_level_log
-    assert len(caplog.records) == 3
+    project_id = json.loads(new_project_str)['data']['id']
+    with mock.patch('tests.factories.GRDMClientFactory._prepare_project_data', return_value=True):
+        with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+            actual1, actual2 = _create_project(grdm_client, _node_project, verbose=True)
+        assert actual1 == new_project_obj.data
+        assert actual2 == json.loads(new_project_str)['data']
+        assert caplog.records[0].levelname == info_level_log
+        assert caplog.records[0].message == f'Create new project'
+        assert caplog.records[1].levelname == info_level_log
+        assert caplog.records[1].message == f'Created project \'{project_id}\''
+        assert caplog.records[2].levelname == debug_level_log
+        assert len(caplog.records) == 3
 
 
 def test_create_project__verbose_false(grdm_client, caplog):
     resp = requests.Response()
     resp._content = new_project_str
     _node_project = projects['projects'][0]
-    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
-        actual1, actual2 = _create_project(grdm_client, _node_project, verbose=False)
-    assert actual1 == new_project_obj.data
-    assert actual2 == json.loads(new_project_str)['data']
-    assert caplog.records[0].levelname == info_level_log
-    assert caplog.records[0].message == f'Create new project'
-    assert len(caplog.records) == 1
+    project_id = json.loads(new_project_str)['data']['id']
+    with mock.patch('tests.factories.GRDMClientFactory._prepare_project_data', return_value=True):
+        with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+            actual1, actual2 = _create_project(grdm_client, _node_project, verbose=False)
+        assert actual1 == new_project_obj.data
+        assert actual2 == json.loads(new_project_str)['data']
+        assert caplog.records[0].levelname == info_level_log
+        assert caplog.records[0].message == f'Create new project'
+        assert caplog.records[1].levelname == info_level_log
+        assert caplog.records[1].message == f'Created project \'{project_id}\''
+        assert len(caplog.records) == 2
 
 
 def test_link_project_to_project__request_error_and_ignore_error_false_sys_exit(grdm_client, caplog):
@@ -519,6 +528,7 @@ def test_link_project_to_project__verbose_true(grdm_client, caplog):
     resp = requests.Response()
     resp._content = link_project_str
     _project_id = projects['projects'][2]['id']
+    project_id = json.loads(link_project_str)['data']['id']
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
         actual1, actual2 = _link_project_to_project(grdm_client, _project_id, '74pnd', verbose=True)
     project_link = link_project_obj.data.embeds.target_node.data
@@ -526,8 +536,8 @@ def test_link_project_to_project__verbose_true(grdm_client, caplog):
     assert actual2 == json.loads(link_project_str)['data']
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Create a link to nodes/{_project_id}/'
-    assert caplog.records[1].levelname == debug_level_log
-    assert caplog.records[1].message == f'Created Node Links:'
+    assert caplog.records[1].levelname == info_level_log
+    assert caplog.records[1].message == f'Created Node Links \'{project_id}\''
     assert caplog.records[2].levelname == debug_level_log
     assert caplog.records[2].message == f'\'{link_project_obj.data.id}\' - [{project_link.type}]'
     assert len(caplog.records) == 4
@@ -544,7 +554,7 @@ def test_link_project_to_project__verbose_false(grdm_client, caplog):
     assert actual2 == json.loads(link_project_str)['data']
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Create a link to nodes/{_project_id}/'
-    assert len(caplog.records) == 1
+    assert len(caplog.records) == 2
 
 
 def test_link_project_to_project__target_node_error_verbose_true(grdm_client, caplog):
@@ -687,29 +697,31 @@ def test_projects_add_component__request_error_and_ignore_error_false_sys_exit(g
     _project = projects['projects'][2]
     error_message = 'error'
     parent_id = 'nid11'
-    with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        with pytest.raises(SystemExit) as ex_info:
-            _projects_add_component(grdm_client, parent_id, _project, ignore_error=False)
-        assert ex_info.value.code == error_message
-        assert len(caplog.records) == 2
-        assert caplog.records[0].levelname == info_level_log
-        assert caplog.records[0].message == f'Create new component to nodes/{parent_id}/'
-        assert caplog.records[1].levelname == warning_Level_log
-        assert caplog.records[1].message == f'{error_message}'
+    with mock.patch('tests.factories.GRDMClientFactory._prepare_project_data', return_value=True):
+        with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
+            with pytest.raises(SystemExit) as ex_info:
+                _projects_add_component(grdm_client, parent_id, _project, ignore_error=False)
+            assert ex_info.value.code == error_message
+            assert len(caplog.records) == 2
+            assert caplog.records[0].levelname == info_level_log
+            assert caplog.records[0].message == f'Create new component to nodes/{parent_id}/'
+            assert caplog.records[1].levelname == warning_Level_log
+            assert caplog.records[1].message == f'{error_message}'
 
 
 def test_projects_add_component__request_error_and_ignore_error_true(grdm_client, caplog):
     error_message = 'error'
     _project = projects['projects'][2]
     parent_id = 'nid11'
-    with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        actual1, actual2 = _projects_add_component(grdm_client, parent_id, _project, ignore_error=True)
-    assert actual1 == actual2 is None
-    assert caplog.records[0].levelname == info_level_log
-    assert caplog.records[0].message == f'Create new component to nodes/{parent_id}/'
-    assert caplog.records[1].levelname == warning_Level_log
-    assert caplog.records[1].message == f'{error_message}'
-    assert len(caplog.records) == 2
+    with mock.patch('tests.factories.GRDMClientFactory._prepare_project_data', return_value=True):
+        with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
+            actual1, actual2 = _projects_add_component(grdm_client, parent_id, _project, ignore_error=True)
+        assert actual1 == actual2 is None
+        assert caplog.records[0].levelname == info_level_log
+        assert caplog.records[0].message == f'Create new component to nodes/{parent_id}/'
+        assert caplog.records[1].levelname == warning_Level_log
+        assert caplog.records[1].message == f'{error_message}'
+        assert len(caplog.records) == 2
 
 
 def test_projects_add_component__verbose_true(grdm_client, caplog):
@@ -719,16 +731,18 @@ def test_projects_add_component__verbose_true(grdm_client, caplog):
     parent_id = 'nid11'
     _project['project_links'] = ['nid92', None]
     _project['children'] = [_project['children'][0], None]
-    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
-        actual1, actual2 = _projects_add_component(grdm_client, parent_id, _project, verbose=True)
+    project_id = json.loads(new_project_str)['data']['id']
+    with mock.patch('tests.factories.GRDMClientFactory._prepare_project_data', return_value=True):
+        with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+            actual1, actual2 = _projects_add_component(grdm_client, parent_id, _project, verbose=True)
     assert _project['project_links'] == ['nid92']
     assert _project['children'] == [_project['children'][0]]
     assert actual1 == new_project_obj.data
     assert actual2 == json.loads(new_project_str)['data']
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Create new component to nodes/{parent_id}/'
-    assert caplog.records[1].levelname == debug_level_log
-    assert caplog.records[1].message == f'Create component:'
+    assert caplog.records[1].levelname == info_level_log
+    assert caplog.records[1].message == f'Created component \'{project_id}\''
     assert caplog.records[2].levelname == debug_level_log
     assert len(caplog.records) == 3
 
