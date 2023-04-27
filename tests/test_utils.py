@@ -1,12 +1,13 @@
 import inspect
 import json
+import logging
 from unittest import mock
 
-import jsonschema
 import pytest
 
 from grdmcli import utils
 from grdmcli.exceptions import GrdmCliException
+from tests.utils import *
 
 data = {
     "projects": [{
@@ -39,6 +40,11 @@ jsonschema_str = """{
 file_path = 'test_path.json'
 
 
+@pytest.fixture(autouse=True)
+def set_log_level(caplog):
+    caplog.set_level(logging.DEBUG)
+
+
 def test_inspect_info__normal():
     current_frame = inspect.currentframe()
     stack_info = inspect.stack()
@@ -56,30 +62,33 @@ def test_inspect_info__normal():
 def test_read_json_file__success():
     with mock.patch('builtins.open', mock.mock_open(read_data=json.dumps(data))) as mock_file:
         res = utils.read_json_file(file_path)
-        assert res == data
-        mock_file.assert_called_with(file_path, 'r', encoding='utf-8')
+    assert res == data
+    mock_file.assert_called_with(file_path, 'r', encoding='utf-8')
 
 
 def test_read_json_file__exception():
-    with mock.patch('builtins.open', mock.mock_open(read_data=data)):
+    with mock.patch('builtins.open', mock.mock_open(read_data='')):
         with pytest.raises(GrdmCliException) as ex_infor:
             utils.read_json_file(file_path)
         assert 'Cannot read json file' == ex_infor.value.args[0]
 
 
-def test_write_json_file__success(capfd):
+def test_write_json_file__success(caplog):
     with mock.patch('builtins.open', mock.mock_open()) as mock_file:
         utils.write_json_file(file_path, data)
-        assert capfd.readouterr().out == f"File was written successfully:  {file_path}\n"
-        mock_file.assert_called_with(file_path, 'w', encoding='utf-8')
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == info_level_log
+    assert caplog.records[0].message == f"File was written successfully: {file_path}"
+    mock_file.assert_called_with(file_path, 'w', encoding='utf-8')
 
 
-def test_write_json_file__exception():
-    with mock.patch('builtins.open', mock.mock_open(read_data=json.dumps(data))):
-        with mock.patch('json.dump', side_effect=Exception()):
-            with pytest.raises(GrdmCliException) as ex_info:
+def test_write_json_file__exception(caplog):
+    with pytest.raises(GrdmCliException) as ex_info:
+        with mock.patch('builtins.open', mock.mock_open(read_data=json.dumps(data))):
+            with mock.patch('json.dump', side_effect=Exception()):
                 utils.write_json_file(file_path, data)
-            assert 'Cannot write json file' == ex_info.value.args[0]
+    assert 'Cannot write json file' == ex_info.value.args[0]
+    assert len(caplog.records) == 0
 
 
 @mock.patch('grdmcli.utils.read_json_file', return_value=json.loads(jsonschema_str))
@@ -90,7 +99,6 @@ def test_check_json_schema__success(mocker):
 
 @mock.patch('grdmcli.utils.read_json_file', return_value=json.loads(jsonschema_str))
 def test_check_json_schema__error(mocker):
-    with mock.patch('jsonschema.validate', side_effect=jsonschema.exceptions.ValidationError('error')):
-        with pytest.raises(GrdmCliException) as ex_info:
-            utils.check_json_schema(file_path, data)
-        assert ex_info.value.args[0]['message'] == 'error'
+    with pytest.raises(GrdmCliException) as ex_info:
+        utils.check_json_schema(file_path, {})
+    assert 'ValidationError' in ex_info.value.args[0]
