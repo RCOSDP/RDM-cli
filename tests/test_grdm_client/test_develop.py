@@ -5,9 +5,12 @@ from unittest import mock
 import pytest
 import requests
 
-from grdmcli.grdm_client.develop import _delete_project, projects_list
+from grdmcli.grdm_client.develop import (
+    _delete_project,
+    projects_list
+)
 from tests.factories import GRDMClientFactory
-from utils import *
+from tests.utils import *
 
 
 @pytest.fixture(autouse=True)
@@ -54,9 +57,11 @@ def test_delete_project__send_request_success_and_verbose_false(caplog, grdm_cli
     resp.status_code = 204
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
         _delete_project(grdm_client, pk, verbose=False)
-    assert len(caplog.records) == 1
+    assert len(caplog.records) == 2
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Remove project node/\'{pk}\'/'
+    assert caplog.records[1].levelname == info_level_log
+    assert caplog.records[1].message == f'Deleted project: node/\'{pk}\'/'
 
 
 def test_delete_project__send_request_success_and_verbose_true(caplog, grdm_client):
@@ -68,7 +73,7 @@ def test_delete_project__send_request_success_and_verbose_true(caplog, grdm_clie
     assert len(caplog.records) == 2
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Remove project node/\'{pk}\'/'
-    assert caplog.records[1].levelname == debug_level_log
+    assert caplog.records[1].levelname == info_level_log
     assert caplog.records[1].message == f'Deleted project: node/\'{pk}\'/'
 
 
