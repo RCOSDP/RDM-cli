@@ -18,7 +18,7 @@ from grdmcli.grdm_client.contributors import (
     contributors_create
 )
 from tests.factories import GRDMClientFactory
-from utils import *
+from tests.utils import *
 
 get_str = """{
   "data": [
@@ -459,7 +459,7 @@ def test_delete_project_contributor__send_request_error_and_ignore_error_true(gr
         assert len(caplog.records) == 2
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Remove contributor \'{pk}-{user_id}\''
-        assert caplog.records[1].levelname == debug_level_log
+        assert caplog.records[1].levelname == info_level_log
         assert caplog.records[1].message == f'Deleted contributor: \'{pk}-{user_id}\''
 
 
@@ -469,7 +469,7 @@ def test_delete_project_contributor__success(grdm_client, caplog):
         assert len(caplog.records) == 2
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Remove contributor \'{pk}-{user_id}\''
-        assert caplog.records[1].levelname == debug_level_log
+        assert caplog.records[1].levelname == info_level_log
         assert caplog.records[1].message == f'Deleted contributor: \'{pk}-{user_id}\''
 
 
@@ -531,11 +531,12 @@ def test_add_project_contributor__success(caplog, grdm_client):
 
 def test_clear_project_current_contributors_success(grdm_client):
     data = get_obj.data
-    with mock.patch.object(grdm_client, '_list_project_contributors', return_value=(data, None)):
-        current_user_contributor = _clear_project_current_contributors(grdm_client, pk, [], None)
-        assert type(current_user_contributor) is SimpleNamespace
-        assert len(grdm_client.created_project_contributors) == 1
-        assert current_user_contributor == data[1]
+    with mock.patch.object(grdm_client, '_delete_project_contributor', return_value=(None, True)):
+        with mock.patch.object(grdm_client, '_list_project_contributors', return_value=(data, None)):
+            current_user_contributor = _clear_project_current_contributors(grdm_client, pk, [], None)
+            assert type(current_user_contributor) is SimpleNamespace
+            assert len(grdm_client.created_project_contributors) == 1
+            assert current_user_contributor == data[1]
 
 
 def test_overwrite_project_contributors__current_user_in_contributors(grdm_client, caplog):
@@ -631,33 +632,40 @@ def test_contributors_create__file_path_template_not_exist(grdm_client, caplog):
 def test_contributors_create__created_project_contributors_empty_verbose_false(mocker, grdm_client, caplog):
     _projects = project_dict["projects"][0]
     with pytest.raises(SystemExit) as ex_info:
-        with mock.patch('grdmcli.utils.read_json_file', return_value={"projects": [_projects]}):
-            contributors_create(grdm_client)
-    assert len(caplog.records) == 7
+        with mock.patch.object(grdm_client, '_delete_project_contributor', return_value=(None, True)):
+            with mock.patch.object(grdm_client, '_list_project_contributors', return_value=([], None)):
+                with mock.patch('grdmcli.utils.read_json_file', return_value={"projects": [_projects]}):
+                    contributors_create(grdm_client)
+    assert len(caplog.records) == 8
     assert caplog.records[4].levelname == info_level_log
     assert caplog.records[4].message == 'JSONPOINTER /projects/0/'
     assert caplog.records[5].levelname == info_level_log
     assert caplog.records[5].message == 'Remove current contributors'
     assert caplog.records[6].levelname == info_level_log
     assert caplog.records[6].message == 'Overwrite new contributors'
+    assert caplog.records[7].levelname == warning_level_log
+    assert caplog.records[7].message == 'The \'projects\' object is empty'
     assert ex_info.value.code == 0
 
 
 @mock.patch('os.path.exists', side_effect=[True, True])
 @mock.patch('grdmcli.utils.write_json_file')
 @mock.patch('grdmcli.utils.check_json_schema')
-def test_contributors_create__created_project_contributors_exists(mocker, grdm_client, caplog):
+def test_contributors_create__created_project_contributors_exists(mocker, mocker1, grdm_client, caplog):
     grdm_client.created_project_contributors = get_obj.data
     _projects = project_dict["projects"][1]
     with pytest.raises(SystemExit) as ex_info:
-        with mock.patch('grdmcli.utils.read_json_file', return_value={"projects": [_projects]}):
-            contributors_create(grdm_client)
+        with mock.patch.object(grdm_client, '_delete_project_contributor', return_value=(None, False)):
+            with mock.patch.object(grdm_client, '_list_project_contributors', return_value=(get_obj.data, None)):
+                with mock.patch('grdmcli.utils.read_json_file', return_value={"projects": [_projects]}):
+                    contributors_create(grdm_client)
     prj_created = len(grdm_client.created_project_contributors)
-    assert caplog.records[4] == 'JSONPOINTER /projects/0/'
-    assert caplog.records[5] == 'Remove current contributors'
-    assert caplog.records[6] == 'Overwrite new contributors'
-    assert caplog.records[7] == f'Created contributors for projects. [{prj_created}]'
-    assert caplog.records[8 + prj_created] == f'Use the output result file: {grdm_client.output_result_file}'
+    assert caplog.records[4].message == 'JSONPOINTER /projects/0/'
+    assert caplog.records[5].message == 'Remove current contributors'
+    assert caplog.records[6].message == 'Overwrite new contributors'
+    assert caplog.records[7].message == f'Use the output result file: {grdm_client.output_result_file}'
+    assert caplog.records[8].message == f'Created contributors for projects. [{prj_created}]'
+    assert caplog.records[8 + prj_created].levelname == debug_level_log
     assert ex_info.value.code == 0
 
 
