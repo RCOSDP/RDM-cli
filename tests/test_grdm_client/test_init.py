@@ -15,5 +15,5 @@ def test_init__grdm_client():
     assert not grdm_client.is_authenticated
     assert grdm_client.config_file
     assert grdm_client.has_required_attributes
-    # project create
+    # For projects functions
     assert grdm_client.created_projects == []

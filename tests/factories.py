@@ -188,9 +188,6 @@ class GRDMClientFactory(CommonCLIFactory):
 
     # For projects functions
 
-    def _delete_project(self, pk, ignore_error=True, verbose=True):
-        pass
-
     def _fake_project_content_data(self, pk, verbose=True):
         pass
 
