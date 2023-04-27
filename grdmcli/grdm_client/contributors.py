@@ -95,8 +95,8 @@ def _delete_project_contributor(self, pk, user_id, ignore_error=True, verbose=Tr
         if not ignore_error:
             sys.exit(_error_message)
 
-    if verbose and is_deleted:
-        logger.debug(f'Deleted contributor: \'{pk}-{user_id}\'')
+    if is_deleted:
+        logger.info(f'Deleted contributor: \'{pk}-{user_id}\'')
 
     return user_id, is_deleted
 
