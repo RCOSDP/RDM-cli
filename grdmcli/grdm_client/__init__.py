@@ -35,6 +35,7 @@ class GRDMClient(CommonCLI):
     from .develop import (
         _delete_project,
         projects_list,
+        projects_delete,
     )
     # For projects functions
     from .licenses import (

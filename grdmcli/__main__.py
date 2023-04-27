@@ -64,6 +64,12 @@ def main():
     # to add config args
     _have_config_parsers.append(projects_list_parser)
 
+    # [For development] block command=delete
+    projects_delete_parser = _add_subparser(projects_cmd_subparsers, 'delete', 'projects delete command')
+    projects_delete_parser.set_defaults(func='projects_delete')
+    # to add config args
+    _have_config_parsers.append(projects_delete_parser)
+
     # block command=create
     projects_create_parser = _add_subparser(projects_cmd_subparsers, 'create', 'projects create command')
     projects_create_parser.set_defaults(func='projects_create')

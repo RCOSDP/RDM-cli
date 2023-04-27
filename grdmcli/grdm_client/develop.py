@@ -11,6 +11,7 @@ from .. import constants as const, utils  # noqa
 __all__ = [
     '_delete_project',
     'projects_list',
+    'projects_delete',
 ]
 MSG_E001 = 'Missing currently logged-in user'
 
@@ -39,8 +40,7 @@ def _delete_project(self, pk, ignore_error=True, verbose=True):
             sys.exit(_error_message)
         return False
 
-    if verbose:
-        logger.debug(f'Deleted project: node/\'{pk}\'/')
+    logger.info(f'Deleted project: node/\'{pk}\'/')
 
 
 def projects_list(self, ignore_error=True):
@@ -84,3 +84,23 @@ def projects_list(self, ignore_error=True):
                 self._delete_project(project.id, ignore_error=True, verbose=verbose)
 
     sys.exit(0)
+
+
+def projects_delete(self, ignore_error=True):
+    """For development"""
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*utils.inspect_info(inspect.currentframe(), inspect.stack())))
+    verbose = self.verbose
+
+    logger.info('Check config and authenticate by token')
+    self._check_config()
+
+    try:
+        projects = [
+        ]
+        for project in projects:
+            self._delete_project(project, ignore_error=True, verbose=verbose)
+
+        sys.exit(0)
+    except Exception as err:
+        # logger.error(err)
+        sys.exit(err)
