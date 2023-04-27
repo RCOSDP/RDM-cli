@@ -244,3 +244,6 @@ class GRDMClientFactory(CommonCLIFactory):
 
     def _overwrite_project_contributors(self, contributors, pk, contributor_user_ids, current_user_contributor):
         pass
+
+    def _clear_project_current_contributors(self, pk, contributor_user_ids, current_user_contributor, verbose=True):
+        pass
