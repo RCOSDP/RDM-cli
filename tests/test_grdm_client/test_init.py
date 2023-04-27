@@ -1,5 +1,6 @@
-from grdmcli.grdm_client import GRDMClient
 from unittest import mock
+
+from grdmcli.grdm_client import GRDMClient
 
 
 def test_init__grdm_client():
@@ -14,10 +15,11 @@ def test_init__grdm_client():
     assert not grdm_client.is_authenticated
     assert grdm_client.config_file
     assert grdm_client.has_required_attributes
+    # For development functions
     assert grdm_client.affiliated_institutions == []
     assert grdm_client.affiliated_users == []
     assert grdm_client.projects == []
-    # project create
+    # For projects functions
     assert grdm_client.created_projects == []
-    # contributors create
+    # For contributors functions
     assert grdm_client.created_project_contributors == []

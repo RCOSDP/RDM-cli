@@ -7,6 +7,7 @@ import pytest
 
 from grdmcli import utils
 from grdmcli.exceptions import GrdmCliException
+from tests.utils import *
 
 data = {
     "projects": [{
@@ -76,7 +77,7 @@ def test_write_json_file__success(caplog):
     with mock.patch('builtins.open', mock.mock_open()) as mock_file:
         utils.write_json_file(file_path, data)
     assert len(caplog.records) == 1
-    assert caplog.records[0].levelname == 'INFO'
+    assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f"File was written successfully: {file_path}"
     mock_file.assert_called_with(file_path, 'w', encoding='utf-8')
 

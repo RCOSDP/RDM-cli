@@ -10,9 +10,10 @@ from grdmcli.grdm_client.users import (
     _users_me,
     _users_me_affiliated_institutions,
     _users_me_affiliated_users,
-    MSG_E001)
+    MSG_E001
+)
 from tests.factories import GRDMClientFactory, user_str
-from utils import *
+from tests.utils import *
 
 
 @pytest.fixture

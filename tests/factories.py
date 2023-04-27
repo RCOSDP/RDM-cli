@@ -190,6 +190,8 @@ class GRDMClientFactory(CommonCLIFactory):
         self.created_project_contributors = []
         self.template_schema_contributors = 'path-to-schema'
 
+    # For development functions
+
     def _users_me_affiliated_institutions(self, ignore_error=True, verbose=True):
         pass
 
@@ -237,7 +239,7 @@ class GRDMClientFactory(CommonCLIFactory):
     def _create_or_load_project(self, projects, project_idx):
         pass
 
-    # For `contributors create`
+    # For contributors functions
 
     def _prepare_project_contributor_data(self, _contributor_object, _index, verbose=True):
         pass

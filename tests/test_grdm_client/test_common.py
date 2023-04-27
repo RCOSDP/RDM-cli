@@ -9,6 +9,7 @@ import requests
 
 from grdmcli.grdm_client.common import CommonCLI
 from tests.factories import CommonCLIFactory
+from tests.utils import *
 
 
 @pytest.fixture
@@ -147,7 +148,7 @@ class TestCommonCLI:
     @mock.patch("os.path.exists", return_value=False)
     def test_load_option_from_config_file__return_false(self, common_cli, caplog):
         actual = CommonCLI._load_option_from_config_file(common_cli)
-        assert caplog.records[0].levelname == 'WARNING'
+        assert caplog.records[0].levelname == warning_level_log
         assert caplog.records[0].message == f'Missing the config file {common_cli.config_file}'
         assert len(caplog.records) == 1
         assert actual is False
@@ -179,7 +180,7 @@ class TestCommonCLI:
         assert common_cli.osf_api_url == 'http://localhost:8001/v2/'
         assert common_cli.osf_token == 'access-token-update'
         assert len(caplog.records) == 1
-        assert caplog.records[0].levelname == 'INFO'
+        assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Read config_file: {common_cli.config_file}'
 
     def test_load_required_attributes_from_config_file__not_update(self, common_cli, caplog):
@@ -192,7 +193,7 @@ class TestCommonCLI:
         assert common_cli.osf_api_url == 'http://localhost:8000/v2/'
         assert common_cli.osf_token == 'osf-token'
         assert len(caplog.records) == 1
-        assert caplog.records[0].levelname == 'INFO'
+        assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Read config_file: {common_cli.config_file}'
 
     def test_load_required_attributes_from_environment__update(self, common_cli):
@@ -218,7 +219,7 @@ class TestCommonCLI:
         CommonCLI._check_config(common_cli)
         assert common_cli.is_authenticated is False
 
-        assert caplog.records[0].levelname == 'INFO'
+        assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Check Personal Access Token'
         assert len(caplog.records) == 1
 
@@ -226,9 +227,9 @@ class TestCommonCLI:
         common_cli.osf_api_url = None
         with pytest.raises(SystemExit) as ex_info:
             CommonCLI._check_config(common_cli)
-        assert caplog.records[0].levelname == 'INFO'
+        assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Try get from config property'
-        assert caplog.records[1].levelname == 'INFO'
+        assert caplog.records[1].levelname == info_level_log
         assert caplog.records[1].message == f'Try get from environment variable'
         assert len(caplog.records) == 2
         assert ex_info.value.code == 'Missing API URL'
@@ -243,9 +244,9 @@ class TestCommonCLI:
         common_cli.osf_token = None
         with pytest.raises(SystemExit) as ex_info:
             CommonCLI._check_config(common_cli)
-        assert caplog.records[0].levelname == 'INFO'
+        assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Try get from config property'
-        assert caplog.records[1].levelname == 'INFO'
+        assert caplog.records[1].levelname == info_level_log
         assert caplog.records[1].message == f'Try get from environment variable'
         assert len(caplog.records) == 2
         assert ex_info.value.code == 'Missing Personal Access Token'
@@ -253,10 +254,10 @@ class TestCommonCLI:
     @mock.patch("os.path.exists", return_value=False)
     @mock.patch("pathlib.Path.mkdir")
     def test_prepare_output_file__is_not_directory(self, mocker, common_cli, caplog):
-        with mock.patch('grdmcli.grdm_client.common.os.path.join', return_value=None):
+        with mock.patch('grdmcli.grdm_client.common.os.path.join', return_value='/None'):
             with mock.patch('grdmcli.grdm_client.common.os.path.isdir', return_value=False):
                 CommonCLI._prepare_output_file(common_cli)
-                assert caplog.records[0].levelname == 'INFO'
+                assert caplog.records[0].levelname == info_level_log
                 assert caplog.records[0].message.__contains__('The new directory')
                 assert len(caplog.records) == 1
 

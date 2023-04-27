@@ -22,7 +22,7 @@ from grdmcli.grdm_client.projects import (
     projects_create,
 )
 from tests.factories import GRDMClientFactory
-from utils import *
+from tests.utils import *
 
 _content = json.dumps({
     'data': {
@@ -249,11 +249,6 @@ link_project_str = """{
     }
 }"""
 
-info_level_log = 'INFO'
-debug_level_log = debug_level_log
-warning_Level_log = 'WARNING'
-error_level_log = 'ERROR'
-
 content_obj = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 fork_project_obj = json.loads(fork_project_str, object_hook=lambda d: SimpleNamespace(**d))
 new_project_obj = json.loads(new_project_str, object_hook=lambda d: SimpleNamespace(**d))
@@ -348,7 +343,7 @@ def test_load_project__is_fake_false_and_request_error_and_ignore_error_false_sy
         assert len(caplog.records) == 2
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Retrieve project nodes/node01/ {_faked_or_loaded}'
-        assert caplog.records[1].levelname == warning_Level_log
+        assert caplog.records[1].levelname == warning_level_log
         assert caplog.records[1].message == f'{error_message}'
 
 
@@ -359,7 +354,7 @@ def test_load_project__is_fake_false_and_request_error_and_ignore_error_true(grd
     _faked_or_loaded = f'[loaded]'
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Retrieve project nodes/node01/ {_faked_or_loaded}'
-    assert caplog.records[1].levelname == warning_Level_log
+    assert caplog.records[1].levelname == warning_level_log
     assert caplog.records[1].message == f'{error_message}'
     assert len(caplog.records) == 2
     assert actual1 == actual2 is None
@@ -391,9 +386,9 @@ def test_fork_project__request_error_and_ignore_error_false_sys_exit(grdm_client
         pk = _node_project['fork_id']
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Fork a project from nodes/{pk}/'
-        assert caplog.records[1].levelname == warning_Level_log
+        assert caplog.records[1].levelname == warning_level_log
         assert 'Ignore the following attributes' in caplog.records[1].message
-        assert caplog.records[2].levelname == warning_Level_log
+        assert caplog.records[2].levelname == warning_level_log
         assert caplog.records[2].message == f'{error_message}'
         assert len(caplog.records) == 3
 
@@ -407,9 +402,9 @@ def test_fork_project__request_error_and_ignore_error_true(grdm_client, caplog):
     assert actual1 == actual2 is None
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Fork a project from nodes/{pk}/'
-    assert caplog.records[1].levelname == warning_Level_log
+    assert caplog.records[1].levelname == warning_level_log
     assert 'Ignore the following attributes' in caplog.records[1].message
-    assert caplog.records[2].levelname == warning_Level_log
+    assert caplog.records[2].levelname == warning_level_log
     assert caplog.records[2].message == f'{error_message}'
     assert len(caplog.records) == 3
 
@@ -425,7 +420,7 @@ def test_fork_project__verbose_true(grdm_client, caplog):
     assert actual2 == json.loads(fork_project_str)['data']
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Fork a project from nodes/{pk}/'
-    assert caplog.records[1].levelname == warning_Level_log
+    assert caplog.records[1].levelname == warning_level_log
     assert 'Ignore the following attributes' in caplog.records[1].message
     assert caplog.records[2].levelname == info_level_log
     assert caplog.records[2].message == f'Forked project nodes/{fork_project_obj.data.id}/'
@@ -443,7 +438,7 @@ def test_create_project__request_error_and_ignore_error_false_sys_exit(grdm_clie
             assert ex_info.value.code == error_message
             assert caplog.records[0].levelname == info_level_log
             assert caplog.records[0].message == f'Create new project'
-            assert caplog.records[1].levelname == warning_Level_log
+            assert caplog.records[1].levelname == warning_level_log
             assert caplog.records[1].message == f'{error_message}'
             assert len(caplog.records) == 2
 
@@ -457,7 +452,7 @@ def test_create_project__request_error_and_ignore_error_true(grdm_client, caplog
         assert actual1 == actual2 is None
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Create new project'
-        assert caplog.records[1].levelname == warning_Level_log
+        assert caplog.records[1].levelname == warning_level_log
         assert caplog.records[1].message == f'{error_message}'
         assert len(caplog.records) == 2
 
@@ -506,7 +501,7 @@ def test_link_project_to_project__request_error_and_ignore_error_false_sys_exit(
         assert ex_info.value.code == error_message
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Create a link to nodes/{_project_id}/'
-        assert caplog.records[1].levelname == warning_Level_log
+        assert caplog.records[1].levelname == warning_level_log
         assert caplog.records[1].message == f'{error_message}'
         assert len(caplog.records) == 2
 
@@ -519,7 +514,7 @@ def test_link_project_to_project__request_error_and_ignore_error_true(grdm_clien
     assert actual1 == actual2 is None
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Create a link to nodes/{_project_id}/'
-    assert caplog.records[1].levelname == warning_Level_log
+    assert caplog.records[1].levelname == warning_level_log
     assert caplog.records[1].message == f'{error_message}'
     assert len(caplog.records) == 2
 
@@ -569,7 +564,7 @@ def test_link_project_to_project__target_node_error_verbose_true(grdm_client, ca
     assert actual2 == _project_link_error['data']
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Create a link to nodes/{_project_id}/'
-    assert caplog.records[1].levelname == warning_Level_log
+    assert caplog.records[1].levelname == warning_level_log
     assert caplog.records[1].message == f'When link to 74pnd: error link'
     assert len(caplog.records) == 2
 
@@ -705,7 +700,7 @@ def test_projects_add_component__request_error_and_ignore_error_false_sys_exit(g
             assert len(caplog.records) == 2
             assert caplog.records[0].levelname == info_level_log
             assert caplog.records[0].message == f'Create new component to nodes/{parent_id}/'
-            assert caplog.records[1].levelname == warning_Level_log
+            assert caplog.records[1].levelname == warning_level_log
             assert caplog.records[1].message == f'{error_message}'
 
 
@@ -719,7 +714,7 @@ def test_projects_add_component__request_error_and_ignore_error_true(grdm_client
         assert actual1 == actual2 is None
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Create new component to nodes/{parent_id}/'
-        assert caplog.records[1].levelname == warning_Level_log
+        assert caplog.records[1].levelname == warning_level_log
         assert caplog.records[1].message == f'{error_message}'
         assert len(caplog.records) == 2
 
@@ -793,11 +788,9 @@ def test_projects_create__verbose_true(mocker, grdm_client, caplog):
     with mock.patch.object(grdm_client, '_create_or_load_project', return_value=fork_project_obj.data):
         with pytest.raises(SystemExit) as ex_info:
             projects_create(grdm_client)
-        size = len(grdm_client.created_projects)
         assert caplog.records[3].levelname == info_level_log
         assert caplog.records[3].message == 'Loop following the template of projects'
-        assert caplog.records[4].message == f'Created projects. [{size}]'
-        assert caplog.records[5 + size].message == f'Use the output result file: {grdm_client.output_result_file}'
+        assert caplog.records[4].message == 'The \'projects\' object is empty'
         assert _projects == _projects
         assert ex_info.value.args[0] == 0
 
@@ -812,4 +805,6 @@ def test_projects_create__case_create_or_load_project_none(mocker, grdm_client, 
         with mock.patch.object(grdm_client, '_create_or_load_project',
                                return_value=test_create_or_load_project__case_load_project_none(grdm_client, caplog)):
             projects_create(grdm_client)
-        assert caplog.records[4].message == f'Use the output result file: {grdm_client.output_result_file}'
+        assert caplog.records[4].message == 'Loop following the template of projects'
+        assert caplog.records[5].message == 'Project is not found'
+        assert caplog.records[6].message == 'The \'projects\' object is empty'

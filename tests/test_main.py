@@ -5,9 +5,13 @@ from unittest import mock
 
 import pytest
 
-from grdmcli.__main__ import (_add_subparser, _subparser_add_config_args, main)
+from grdmcli.__main__ import (
+    _add_subparser,
+    _subparser_add_config_args,
+    main
+)
 from grdmcli.grdm_client import GRDMClient
-from utils import *
+from tests.utils import *
 
 
 @pytest.fixture(autouse=True)
@@ -113,7 +117,7 @@ def test_main__exit_code_keyboard_interrupt(monkeypatch, caplog):
         assert caplog.records[1].message == f'Start process'
         assert caplog.records[2].levelname == info_level_log
         assert caplog.records[2].message == f'End process'
-        assert caplog.records[3].levelname == 'ERROR'
+        assert caplog.records[3].levelname == error_level_log
         assert caplog.records[3].message == f'{exit_code}'
         assert caplog.records[4].levelname == info_level_log
         assert caplog.records[4].message == f'For help: grdmcli {_create} create --help'
@@ -135,7 +139,7 @@ def test_main__exit_code_exception(monkeypatch, caplog):
         assert caplog.records[1].message == f'Start process'
         assert caplog.records[2].levelname == info_level_log
         assert caplog.records[2].message == f'End process'
-        assert caplog.records[3].levelname == 'ERROR'
+        assert caplog.records[3].levelname == error_level_log
         assert caplog.records[3].message == f'{exit_code}'
         assert caplog.records[4].levelname == info_level_log
         assert caplog.records[4].message == f'For help: grdmcli {_create} create --help'

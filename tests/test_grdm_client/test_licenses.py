@@ -9,9 +9,10 @@ import requests
 from grdmcli.grdm_client.licenses import (
     _licenses,
     _find_license_id_from_name,
-    MSG_E001)
+    MSG_E001
+)
 from tests.factories import GRDMClientFactory
-from utils import *
+from tests.utils import *
 
 licenses_dict = {
     "data": [

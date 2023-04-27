@@ -1,6 +1,5 @@
 import inspect  # noqa
 import logging
-from datetime import datetime  # noqa
 
 from .common import CommonCLI
 from .. import constants as utils  # noqa
@@ -31,7 +30,7 @@ class GRDMClient(CommonCLI):
         _users_me_affiliated_institutions,
         _users_me_affiliated_users,
     )
-    # For development
+    # For development functions
     from .develop import (
         _delete_project,
         projects_list,
