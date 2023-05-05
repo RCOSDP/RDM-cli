@@ -125,9 +125,9 @@ options:
   --verbose             Enable Verbose mode
 ```
 
-Refer to [doc/Template_file_design.xlsx](doc/Template_file_design.xlsx) for template file design.
+Refer to [docs/Template_file_design.xlsx](docs/Template_file_design.xlsx) for template file design.
 
-Refer to [doc/sample](doc/sample) for template sample.
+Refer to [docs/sample](docs/sample) for template sample.
 
 
 #### 参加メンバーの新規登録、上書き
@@ -178,9 +178,9 @@ options:
   --verbose             Enable Verbose mode
 ```
 
-Refer to [doc/Template_file_design.xlsx](doc/Template_file_design.xlsx) for template file design.
+Refer to [docs/Template_file_design.xlsx](docs/Template_file_design.xlsx) for template file design.
 
-Refer to [doc/sample](doc/sample) for template sample.
+Refer to [docs/sample](docs/sample) for template sample.
 
 ### How to run UT TCs
 - To run test code in the `test` module,  
