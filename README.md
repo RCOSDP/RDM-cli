@@ -125,6 +125,11 @@ options:
   --verbose             Enable Verbose mode
 ```
 
+Refer to [doc/Template_file_design.xlsx](doc/Template_file_design.xlsx) for template file design.
+
+Refer to [doc/sample](doc/sample) for template sample.
+
+
 #### 参加メンバーの新規登録、上書き
 The following functions are possible:
 - Overwrite the project's contributor list
@@ -132,6 +137,10 @@ The following functions are possible:
 **\* Notice** about the order of registration/overwrite contributors of a project/component:
 - Clear available contributors from the project. Except the current user. This member is project admin.
 - Add new contributors list. Except the current user
+
+**\* Notice** about creating a contoributor:  
+- When the command is executed, it first deletes all contributors and then inserts the user according to the template.
+- The "currently logged-in user" will keep its role as ProjectAdmin, and other attributes will not change.(No Delete/Create/Update)
 
 ##### Usages
 Get help and see available commands, get help on a specific command
@@ -168,6 +177,10 @@ options:
   --debug               Enable Debug mode
   --verbose             Enable Verbose mode
 ```
+
+Refer to [doc/Template_file_design.xlsx](doc/Template_file_design.xlsx) for template file design.
+
+Refer to [doc/sample](doc/sample) for template sample.
 
 ### How to run UT TCs
 - To run test code in the `test` module,  
