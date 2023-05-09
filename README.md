@@ -29,19 +29,12 @@ From all publicly documented scopes, please select:
 - `osf.full_write` : View and edit all information associated with this account, including for private projects.
 
 #### Optional configuration
-- `SSL certificate verify` is required in Production environment.  
-  It is set `True` as default in the `constants.py`  
-  ```
-  SSL_CERT_VERIFY = True
-  ```
+- If you are using a self-signed SSL certificate (e.g., Testing), please skip the verification of the SSL server certificate using the following configuration.
   In `.grdmcli.config`, you can overwrite it by:
   ```
   ssl_cert_verify = false
   ```
   Or disable by an **optional argument** `--disable_ssl_verify` in command line.  
-
-  - If `SSL cert verify` is `Enable`, you must define the ssl client cert file (`.pem`).  
-    It includes `SSL_CERT_FILE` and `SSL_KEY_FILE` which should be defined as the environment variables.
 
 - `debug` and `verbose` is set `False` in the `constants.py`  
   ```
