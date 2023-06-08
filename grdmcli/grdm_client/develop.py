@@ -80,8 +80,8 @@ def projects_list(self, ignore_error=True):
         for project in self.projects:
             tags_info = f'[{project.type}][{project.attributes.category}]{project.attributes.tags}'
             logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' {tags_info}')
-            if IS_CLEAR and project.id not in IGNORE_PROJECTS:
-                self._delete_project(project.id, ignore_error=True, verbose=verbose)
+    #        if IS_CLEAR and project.id not in IGNORE_PROJECTS:
+    #            self._delete_project(project.id, ignore_error=True, verbose=verbose)
 
     sys.exit(0)
 
