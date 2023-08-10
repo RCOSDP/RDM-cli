@@ -1,0 +1,100 @@
+{
+    "projects": [
+        {
+            "category": "project",
+            "title": "Project Example 001",
+            "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+            "public": false,
+            "tags": [
+                "replication",
+                "reproducibility",
+                "open science",
+                "reproduction",
+                "psychological science",
+                "psychology",
+                "metascience",
+                "crowdsource"
+            ],
+            "children": [
+                {
+                    "category": "analysis",
+                    "title": "Analysis Component Example 001",
+                    "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                    "public": false,
+                    "tags": [
+                        "analysis",
+                        "component"
+                    ]
+                },
+                {
+                    "category": "communication",
+                    "title": "Communication Component Example 001"
+                },
+                {
+                    "category": "data",
+                    "title": "Data Component Example 001"
+                },
+                {
+                    "category": "hypothesis",
+                    "title": "Hypothesis Component Example 001"
+                },
+                {
+                    "category": "instrumentation",
+                    "title": "Instrumentation Component Example 001"
+                },
+                {
+                    "category": "methods and measures",
+                    "title": "Methods and Measures Component Example 001"
+                },
+                {
+                    "category": "procedure",
+                    "title": "Procedure Component Example 001"
+                },
+                {
+                    "category": "software",
+                    "title": "Software Component Example 001"
+                },
+                {
+                    "category": "other",
+                    "title": "Other Component Example 001"
+                }
+            ]
+        },
+        {
+            "category": "analysis",
+            "title": "Analysis Example 001"
+        },
+        {
+            "category": "communication",
+            "title": "Communication Example 001"
+        },
+        {
+            "category": "data",
+            "title": "Data Example 001"
+        },
+        {
+            "category": "hypothesis",
+            "title": "Hypothesis Example 001"
+        },
+        {
+            "category": "instrumentation",
+            "title": "Instrumentation Example 001"
+        },
+        {
+            "category": "methods and measures",
+            "title": "Methods and Measures Example 001"
+        },
+        {
+            "category": "procedure",
+            "title": "Procedure Example 001"
+        },
+        {
+            "category": "software",
+            "title": "Software Example 001"
+        },
+        {
+            "category": "other",
+            "title": "Other Example 001"
+        }
+    ]
+}

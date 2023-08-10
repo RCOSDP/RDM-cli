@@ -1,0 +1,27 @@
+{
+    "projects": [
+        {
+            "id": "nid20",
+            "children": [
+                {
+                    "category": "project",
+                    "title": "Project Example 003",
+                    "children": [
+                        {
+                            "category": "project",
+                            "title": "Project Example 004"
+                        }
+                    ],
+                    "project_links": [
+                        "nid90",
+                        "nid91"
+                    ]
+                }
+            ],
+            "project_links": [
+                "nid90",
+                "nid91"
+            ]
+        }
+    ]
+}

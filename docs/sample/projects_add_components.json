@@ -1,0 +1,35 @@
+{
+    "projects": [
+        {
+            "id": "nid20",
+            "children": [
+                {
+                    "category": "instrumentation",
+                    "title": "Instrumentation Component Example 002",
+                    "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                    "public": false,
+                    "tags": [
+                        "analysis",
+                        "component"
+                    ]
+                },
+                {
+                    "category": "methods and measures",
+                    "title": "Methods and Measures Component Example 002"
+                },
+                {
+                    "category": "procedure",
+                    "title": "Procedure Component Example 002"
+                },
+                {
+                    "category": "software",
+                    "title": "Software Component Example 002"
+                },
+                {
+                    "category": "other",
+                    "title": "Other Component Example 002"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,29 @@
+{
+    "projects": [
+        {
+            "id": "nid01",
+            "contributors": [
+                {
+                    "id": "uid01",
+                    "bibliographic": true,
+                    "permission": "admin"
+                },
+                {
+                    "id": "uid02",
+                    "bibliographic": true,
+                    "permission": "admin"
+                },
+                {
+                    "id": "uid03",
+                    "bibliographic": true,
+                    "permission": "write"
+                },
+                {
+                    "id": "uid04",
+                    "bibliographic": false,
+                    "permission": "read"
+                }
+            ]
+        }
+    ]
+}

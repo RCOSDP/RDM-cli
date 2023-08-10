@@ -1,0 +1,39 @@
+{
+    "projects": [
+        {
+            "fork_id": "nid01",
+            "category": "project",
+            "title": "Project Example 002",
+            "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.",
+            "public": false,
+            "tags": [
+                "replication",
+                "fork"
+            ],
+            "children": [
+                {
+                    "category": "analysis",
+                    "title": "Analysis Component Example 002",
+                    "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                    "public": false,
+                    "tags": [
+                        "analysis",
+                        "component"
+                    ]
+                },
+                {
+                    "category": "communication",
+                    "title": "Communication Component Example 002"
+                },
+                {
+                    "category": "data",
+                    "title": "Data Component Example 002"
+                },
+                {
+                    "category": "hypothesis",
+                    "title": "Hypothesis Component Example 002"
+                }
+            ]
+        }
+    ]
+}

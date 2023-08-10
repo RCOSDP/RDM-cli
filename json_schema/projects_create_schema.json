@@ -1,0 +1,195 @@
+{
+    "title": "GRDM CLI - Projects/Components Template schema",
+    "description": "For projects/components definition JSON Schema",
+    "type": "object",
+    "properties": {
+        "projects": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/definitions/NodeIdOrNull",
+                        "default": null
+                    },
+                    "fork_id": {
+                        "$ref": "#/definitions/NodeIdOrNull",
+                        "default": null
+                    },
+                    "template_from": {
+                        "$ref": "#/definitions/NodeId"
+                    },
+                    "category": {
+                        "$ref": "#/definitions/NodeCategory"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "node_license": {
+                        "$ref": "#/definitions/NodeLicense"
+                    },
+                    "public": {
+                        "type": "boolean"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "children": {
+                        "$ref": "#/definitions/NodeChildren"
+                    },
+                    "project_links": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/NodeId"
+                        }
+                    }
+                },
+                "additionalProperties": false,
+                "anyOf": [
+                    {
+                        "properties": {
+                            "id": {
+                                "$ref": "#/definitions/NodeId"
+                            }
+                        },
+                        "required": [
+                            "id"
+                        ]
+                    },
+                    {
+                        "required": [
+                            "category",
+                            "title"
+                        ]
+                    }
+                ]
+            }
+        }
+    },
+    "required": [
+        "projects"
+    ],
+    "additionalProperties": false,
+    "definitions": {
+        "NodeId": {
+            "type": "string",
+            "pattern": "^[23456789abcdefghjkmnpqrstuvwxyz]{5}$"
+        },
+        "NodeIdOrNull": {
+            "anyOf": [
+                {
+                    "type": "null"
+                },
+                {
+                    "$ref": "#/definitions/NodeId"
+                }
+            ]
+        },
+        "NodeCategory": {
+            "enum": [
+                "analysis",
+                "communication",
+                "data",
+                "hypothesis",
+                "instrumentation",
+                "methods and measures",
+                "procedure",
+                "project",
+                "software",
+                "other"
+            ]
+        },
+        "NodeLicense": {
+            "type": "object",
+            "properties": {
+                "license_name": {
+                    "type": "string"
+                },
+                "copyright_holders": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "year": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "license_name",
+                "copyright_holders",
+                "year"
+            ],
+            "additionalProperties": false
+        },
+        "NodeChildren": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "$ref": "#/definitions/NodeIdOrNull"
+                    },
+                    "template_from": {
+                        "$ref": "#/definitions/NodeId"
+                    },
+                    "category": {
+                        "$ref": "#/definitions/NodeCategory"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "node_license": {
+                        "$ref": "#/definitions/NodeLicense"
+                    },
+                    "public": {
+                        "type": "boolean"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "children": {
+                        "$ref": "#/definitions/NodeChildren"
+                    },
+                    "project_links": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/NodeId"
+                        }
+                    }
+                },
+                "anyOf": [
+                    {
+                        "properties": {
+                            "id": {
+                                "$ref": "#/definitions/NodeId"
+                            }
+                        },
+                        "required": [
+                            "id"
+                        ]
+                    },
+                    {
+                        "required": [
+                            "category",
+                            "title"
+                        ]
+                    }
+                ],
+                "additionalProperties": false
+            }
+        }
+    }
+}

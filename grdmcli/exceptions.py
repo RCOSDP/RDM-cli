@@ -1,0 +1,2 @@
+class GrdmCliException(Exception):
+    pass
