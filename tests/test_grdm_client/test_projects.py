@@ -20,7 +20,9 @@ from grdmcli.grdm_client.projects import (
     _projects_add_component,
     _create_or_load_project,
     projects_create,
+    projects_get_list
 )
+from pathvalidate import ValidationError
 from tests.factories import GRDMClientFactory
 from tests.utils import *
 
@@ -248,6 +250,76 @@ link_project_str = """{
         }
     }
 }"""
+get_project_str = json.dumps({
+    'data': [
+        {
+            "id": "yanxg",
+            "type": "nodes",
+            "attributes": {
+                "title": "Test_01"
+            },
+            "links": {
+                "html": "http://localhost:5000/yanxg/",
+                "self": "http://localhost:8000/v2/nodes/yanxg/"
+            }
+        },
+        {
+            "id": "y5nqj",
+            "type": "nodes",
+            "attributes": {
+                "title": "Other Example 001"
+            },
+            "links": {
+                "html": "http://localhost:5000/y5nqj/",
+                "self": "http://localhost:8000/v2/nodes/y5nqj/"
+            }
+        },
+        {
+            "id": "am5b3",
+            "type": "nodes",
+            "attributes": {
+                "title": "Software Example 001"
+            },
+            "links": {
+                "html": "http://localhost:5000/am5b3/",
+                "self": "http://localhost:8000/v2/nodes/am5b3/"
+            }
+        },
+        {
+            "id": "m27kx",
+            "type": "nodes",
+            "attributes": {
+                "title": "Procedure Example 001"
+            },
+            "links": {
+                "html": "http://localhost:5000/m27kx/",
+                "self": "http://localhost:8000/v2/nodes/m27kx/"
+            }
+        },
+        {
+            "id": "dumb2",
+            "type": "nodes",
+            "attributes": {
+                "title": "Methods and Measures Example 001"
+            },
+            "links": {
+                "html": "http://localhost:5000/dumb2/",
+                "self": "http://localhost:8000/v2/nodes/dumb2/"
+            }
+        },
+        {
+            "id": "wguvp",
+            "type": "nodes",
+            "attributes": {
+                "title": "Instrumentation Example 001"
+            },
+            "links": {
+                "html": "http://localhost:5000/wguvp/",
+                "self": "http://localhost:8000/v2/nodes/wguvp/"
+            }
+        }
+    ]
+})
 
 content_obj = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 fork_project_obj = json.loads(fork_project_str, object_hook=lambda d: SimpleNamespace(**d))
@@ -808,3 +880,62 @@ def test_projects_create__case_create_or_load_project_none(mocker, grdm_client, 
         assert caplog.records[4].message == 'Loop following the template of projects'
         assert caplog.records[5].message == 'Project is not found'
         assert caplog.records[6].message == 'The \'projects\' object is empty'
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+def test_projects_get_list__only_case_output_result_file_successful(grdm_client, caplog):
+    resp = requests.Response()
+    resp._content = get_project_str.encode('utf-8')
+
+    with mock.patch.object(grdm_client, 'output_result_file', 'D:\\Test\\Test.json'):
+        with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+            projects_get_list(grdm_client)
+            assert caplog.records[4].message == 'Write file successfully.'
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+def test_projects_get_list__only_case_output_result_file_unexpected_file_extension(grdm_client):
+    resp = requests.Response()
+    resp._content = get_project_str.encode('utf-8')
+
+    with mock.patch.object(grdm_client, 'output_result_file', 'D:\\Test\\Test.exe'):
+        with pytest.raises(SystemExit) as ex_info:
+            projects_get_list(grdm_client)
+        assert ex_info.value.code == 'The output file type is not valid'
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+def test_projects_get_list__only_case_output_result_file_error_get_project_api(grdm_client):
+    error_message = 'error'
+    resp = requests.Response()
+    resp._content = get_project_str.encode('utf-8')
+
+    with mock.patch.object(grdm_client, 'output_result_file', 'D:\\Test\\Test.json'):
+        with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
+            with pytest.raises(SystemExit) as ex_info:
+                projects_get_list(grdm_client)
+            assert ex_info.value.code == error_message
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+def test_projects_get_list__only_case_display_console(grdm_client, caplog):
+    resp = requests.Response()
+    resp._content = get_project_str.encode('utf-8')
+
+    with mock.patch.object(grdm_client, 'output_result_file', None):
+        with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+            projects_get_list(grdm_client)
+            assert caplog.records[4].message == 'Display console successfully.'
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+def test_projects_get_list__case_output_result_file_and_display_console(grdm_client, caplog):
+    resp = requests.Response()
+    resp._content = get_project_str.encode('utf-8')
+
+    with mock.patch.object(grdm_client, 'output_result_file', 'D:\\Test\\Test.json'):
+        with mock.patch.object(grdm_client, 'display_console', True):
+            with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+                projects_get_list(grdm_client)
+                assert caplog.records[4].message == 'Write file successfully.'
+                assert caplog.records[5].message == 'Display console successfully.'

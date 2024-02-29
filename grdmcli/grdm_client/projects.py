@@ -21,6 +21,7 @@ __all__ = [
     '_projects_add_component',
     '_create_or_load_project',
     'projects_create',
+    'projects_get_list'
 ]
 here = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
@@ -563,3 +564,49 @@ def projects_create(self):
             for _project in self.created_projects:
                 logger.debug(
                     f'\'{_project.id}\' - \'{_project.attributes.title}\' [{_project.type}][{_project.attributes.category}]')
+
+
+def projects_get_list(self):
+    # validate file and folder
+    if self.output_result_file and self.output_result_file.endswith('.json') is False:
+        sys.exit('The output file type is not valid')
+
+    logger.info('Check validate done')
+
+    # load config
+    verbose = self.verbose
+    logger.info('Check config and authenticate by token')
+    self._check_config(verbose=verbose)
+
+    # Call api get project list
+    logger.info('Get project list...')
+    _response, _error_message = self._request('GET', f'users/{self.user.id}/nodes', params={}, data={}, )
+    if _error_message:
+        sys.exit(_error_message)
+    logger.info('Get project list successfully.')
+
+    response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
+
+    # Data aggregation
+    projects = []
+    projects_list = response.data
+
+    for prj in projects_list:
+        projects.append({
+            'id': prj.id,
+            'title': prj.attributes.title
+        })
+
+    # Return value
+    result = {'projects': projects}
+    if self.output_result_file:
+        self._prepare_output_file()
+        # write output JSON file
+        utils.write_json_file(self.output_result_file, result)
+        logger.info('Write file successfully.')
+
+    if self.display_console or not self.output_result_file:
+        # write the result in JSON format to standard output (stdout)
+        log_result = f'\n{json.dumps(result, indent=4)}'
+        print(log_result)
+        logger.info('Display console successfully.')

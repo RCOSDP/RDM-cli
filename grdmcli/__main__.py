@@ -6,6 +6,7 @@ import logging
 import sys
 
 import six
+from pathvalidate.argparse import validate_filepath_arg
 
 from . import __version__
 from . import constants as const  # noqa
@@ -70,6 +71,19 @@ def main():
                                         help='The output result file path')
     # to add config args
     _have_config_parsers.append(projects_create_parser)
+
+    # block command=list
+    projects_list_parser = _add_subparser(projects_cmd_subparsers, 'list', 'projects list command')
+    projects_list_parser.set_defaults(func='projects_get_list')
+    # to add template arg
+    projects_list_parser.add_argument('--output_result_file',
+                                      help='The output result file path',
+                                      type=validate_filepath_arg)
+    projects_list_parser.add_argument('--display_console',
+                                      action='store_true',
+                                      help='Output result to console screen')
+    # to add config args
+    _have_config_parsers.append(projects_list_parser)
 
     # [END] block entity=projects
 

@@ -41,6 +41,7 @@ class CommonCLI(Namespace):
         self.config_default = {}
         self.template = const.TEMPLATE_FILE_NAME_DEFAULT
         self.output_result_file = const.OUTPUT_RESULT_FILE_NAME_DEFAULT
+        self.display_console = False
 
         self.user = None
         self.is_authenticated = False

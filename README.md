@@ -175,6 +175,49 @@ Refer to [docs/Template_file_design.xlsx](docs/Template_file_design.xlsx) for te
 
 Refer to [docs/sample](docs/sample) for template sample.
 
+#### 既存プロジェクト情報の一覧リスト取得
+The following functions are possible:
+- Get the project list belonging to the currently logged-in user .
+
+**\* Notice** about getting the project list:  
+- Get all projects belonging to the user, output information includes: the project name and GUID, no component information.
+
+##### Usages
+Get help and see available commands, get help on a specific command
+```cmd
+grdmcli --help
+grdmcli projects --help
+grdmcli projects list --help
+```
+
+Example for getting user's project list function 
+```text
+$ grdmcli projects list --help
+usage: grdmcli projects list [-h]
+                             [--output_result_file OUTPUT_RESULT_FILE]
+                             [--display_console]
+                             [--osf_token OSF_TOKEN]
+                             [--osf_api_url OSF_API_URL]
+                             [--disable_ssl_verify]
+                             [--debug]
+                             [--verbose]
+
+projects list command
+
+options:
+  -h, --help            show this help message and exit
+  --output_result_file OUTPUT_RESULT_FILE
+                        The output result file path
+  --display_console     Output result to console screen
+  --osf_token OSF_TOKEN
+                        The Personal Access Token
+  --osf_api_url OSF_API_URL
+                        The API URL
+  --disable_ssl_verify  Disable SSL verification
+  --debug               Enable Debug mode
+  --verbose             Enable Verbose mode
+```
+
 ### How to run UT TCs
 - To run test code in the `test` module,  
 Ensure the following packages in `requirements.txt` are installed:
