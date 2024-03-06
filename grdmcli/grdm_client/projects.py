@@ -565,6 +565,28 @@ def projects_create(self):
                 logger.debug(
                     f'\'{_project.id}\' - \'{_project.attributes.title}\' [{_project.type}][{_project.attributes.category}]')
 
+def list_cli_response_handler(response):
+    response = json.loads(response.content, object_hook=lambda d: SimpleNamespace(**d))
+    projects = []
+    projects_list = response.data
+
+    # Data aggregation
+    for prj in projects_list:
+        projects.append({
+            'id': prj.id,
+            'title': prj.attributes.title
+        })
+
+    return projects
+
+def call_api_user_nodes(self, page = 1):
+    _response, _error_message = self._request('GET', f'users/{self.user.id}/nodes?page={page}', params={}, data={}, )
+
+    if _error_message:
+        sys.exit(_error_message)
+
+    return _response
+
 
 def projects_get_list(self):
     # validate file and folder
@@ -580,22 +602,24 @@ def projects_get_list(self):
 
     # Call api get project list
     logger.info('Get project list...')
-    _response, _error_message = self._request('GET', f'users/{self.user.id}/nodes', params={}, data={}, )
-    if _error_message:
-        sys.exit(_error_message)
-    logger.info('Get project list successfully.')
-
+    _response = call_api_user_nodes(self)
     response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
 
-    # Data aggregation
+    # Add first data to projects
     projects = []
-    projects_list = response.data
+    projects.extend(list_cli_response_handler(_response))
 
-    for prj in projects_list:
-        projects.append({
-            'id': prj.id,
-            'title': prj.attributes.title
-        })
+    # handle data if total data is more than first response
+    total_data = response.links.meta.total
+    data_per_page = response.links.meta.per_page
+    page_count = total_data / data_per_page
+    current_page = 1
+    while(current_page < page_count):
+        current_page += 1
+        project = list_cli_response_handler(call_api_user_nodes(self, current_page))
+        projects.extend(project)
+
+    logger.info('Get project list successfully.')
 
     # Return value
     result = {'projects': projects}

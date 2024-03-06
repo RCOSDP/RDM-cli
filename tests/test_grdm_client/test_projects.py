@@ -318,7 +318,18 @@ get_project_str = json.dumps({
                 "self": "http://localhost:8000/v2/nodes/wguvp/"
             }
         }
-    ]
+    ],
+    "links": {
+        "last": "http://localhost:8000/v2/users/jdm2p/nodes/?page=100&page%5Bsize%5D=10&sort=pk",
+        "next": "http://localhost:8000/v2/users/jdm2p/nodes/?page=2&page%5Bsize%5D=10&sort=pk",
+        "meta": {
+            "total": 6,
+            "per_page": 3
+        }
+    },
+    "meta": {
+        "version": "2.0"
+    }
 })
 
 content_obj = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
