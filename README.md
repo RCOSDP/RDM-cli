@@ -175,6 +175,59 @@ Refer to [docs/Template_file_design.xlsx](docs/Template_file_design.xlsx) for te
 
 Refer to [docs/sample](docs/sample) for template sample.
 
+
+#### コマンドラインツールによるプロジェクト情報の抽出
+The following functions are possible:
+- Get the all project/components and contributors information of user
+
+**\* Notice** About input information
+- If project_id is not specified, information of all projects/components and contributors of the user will be gotten
+- If project_id is specified, only project/component and contributor information of the specified project will be gotten
+
+**\* Notice** About output information
+- The output will be 2 Json files and can be input for "grdmcli projects create" and "grdmcli contributors create" commands.
+- Can output information of more than 1000 projects and 1000 contributors
+
+##### Usages
+Get help and see available commands, get help on a specific command
+```cmd
+grdmcli --help
+grdmcli projects --help
+grdmcli projects get --help
+```
+
+Example for projects get function 
+```text
+$ grdmcli projects get --help
+usage: grdmcli projects get [-h]
+                                   [--project_id PROJECT_ID [PROJECT_ID ...]]
+                                   [--output_projects_file OUTPUT_PROJECTS_FILE]
+                                   [--output_contributors_file OUTPUT_CONTRIBUTORS_FILE]
+                                   [--osf_token OSF_TOKEN]
+                                   [--osf_api_url OSF_API_URL]
+                                   [--disable_ssl_verify]
+                                   [--debug]
+                                   [--verbose]
+
+projects get command
+
+options:
+  -h, --help            show this help message and exit
+  --project_id PROJECT_ID [PROJECT_ID ...]
+                        List id of project that user want to get information
+  --output_projects_file OUTPUT_PROJECTS_FILE
+                        The output projects file path
+  --output_contributors_file OUTPUT_CONTRIBUTORS_FILE
+                        The output contributors file path
+  --osf_token OSF_TOKEN
+                        The Personal Access Token
+  --osf_api_url OSF_API_URL
+                        The API URL
+  --disable_ssl_verify  Disable SSL verification
+  --debug               Enable Debug mode
+  --verbose             Enable Verbose mode
+```
+
 ### How to run UT TCs
 - To run test code in the `test` module,  
 Ensure the following packages in `requirements.txt` are installed:
