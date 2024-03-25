@@ -173,6 +173,12 @@ class CommonCLIFactory(Namespace):
 
     def _prepare_output_file(self):
         pass
+    
+    def parse_api_response(self, method, url, params=None):
+        pass
+    
+    def get_all_data_from_api(self, url, params=None):
+        pass
 
 
 class GRDMClientFactory(CommonCLIFactory):

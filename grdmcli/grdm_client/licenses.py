@@ -5,6 +5,8 @@ import sys
 from datetime import datetime  # noqa
 from pprint import pprint  # noqa
 from types import SimpleNamespace
+import math
+from concurrent.futures import ThreadPoolExecutor
 
 from .. import constants as const, utils  # noqa
 
@@ -30,6 +32,10 @@ def _licenses(self, ignore_error=True, verbose=True):
         sys.exit(MSG_E001)
 
     logger.info('Get list of licenses')
+    _licenses = []
+    _licenses_numb = 0
+
+    # get first time to get page_count and total
     params = {const.ORDERING_QUERY_PARAM: 'name'}
     _response, _error_message = self._request('GET', 'licenses/', params=params, data={}, )
     if _error_message:
@@ -37,14 +43,25 @@ def _licenses(self, ignore_error=True, verbose=True):
         if not ignore_error:
             sys.exit(_error_message)
         return False
-    _content = _response.content
 
-    # pprint(_response.json())
-    # Parse JSON into an object with attributes corresponding to dict keys.
-    response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
+    response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
 
-    self.licenses = response.data
     _licenses_numb = response.links.meta.total
+    data_per_page = response.links.meta.per_page
+    page_count = math.ceil(_licenses_numb / data_per_page)
+    _licenses.extend(response.data)
+
+    # if first time get is not get all data, will use thread to call api get all
+    if (page_count > 1):
+        urls = [f'licenses/?page={current_page}' for current_page in range(2, page_count + 1)]
+
+        # initialize ThreadPoolExecutor and use it to call api multi time
+        with ThreadPoolExecutor(max_workers = const.MAX_THREADS_CALL_API) as executor:
+            responses = list(executor.map(lambda url: self.parse_api_response('GET', url), urls))
+            for res in responses:
+                _licenses.extend(res.data)
+
+    self.licenses = _licenses
     self._meta.update({'_licenses': _licenses_numb})
 
     logger.info(f'List of licenses. [{_licenses_numb}]')

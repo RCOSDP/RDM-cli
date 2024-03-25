@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from unittest import mock
+from types import SimpleNamespace
 
 import pytest
 import requests
@@ -279,3 +280,50 @@ class TestCommonCLI:
         common_cli.disable_ssl_verify = False
         CommonCLI.force_update_config(common_cli)
         assert common_cli.ssl_cert_verify
+
+    def test_get_all_data_from_api__page_count_more_than_one(self, common_cli):
+        res_dict = {
+            'data': [1],
+            'links': {
+                'meta': {
+                    "total": 2,
+                    "per_page": 1
+                }
+            }
+        }
+        resp = requests.Response()
+        resp._content = json.dumps(res_dict)
+        with mock.patch.object(common_cli, 'parse_api_response', return_value = json.loads(resp.content, object_hook=lambda d: SimpleNamespace(**d))):
+            CommonCLI.get_all_data_from_api(common_cli, 'user/123/nodes')
+    
+    def test_parse_api_response__successful(self, common_cli):
+        res_dict = {
+            'data': [1],
+            'links': {
+                'meta': {
+                    "total": 2,
+                    "per_page": 1
+                }
+            }
+        }
+        resp = requests.Response()
+        resp._content = json.dumps(res_dict)
+        with mock.patch.object(common_cli, '_request', return_value=(resp, None)):
+            CommonCLI.parse_api_response(common_cli, 'GET', 'user/123/nodes')
+    
+    def test_parse_api_response__error(self, common_cli):
+        res_dict = {
+            'data': [1],
+            'links': {
+                'meta': {
+                    "total": 2,
+                    "per_page": 1
+                }
+            }
+        }
+        resp = requests.Response()
+        resp._content = json.dumps(res_dict)
+        with mock.patch.object(common_cli, '_request', return_value=(None, 'error_message')):
+            with pytest.raises(SystemExit) as ex_info:
+                CommonCLI.parse_api_response(common_cli, 'GET', 'user/123/nodes')
+
