@@ -40,6 +40,7 @@ class GRDMClient(CommonCLI):
         _projects_add_component,
         _create_or_load_project,
         projects_create,
+        projects_get
     )
     template_schema_projects = property(_get_template_schema_projects)
     # For contributors functions
