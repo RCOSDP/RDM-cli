@@ -148,6 +148,7 @@ class CommonCLIFactory(Namespace):
         self.user = None
         self.template = 'path-to-template'
         self.output_result_file = 'path-to-write-file'
+        self.display_console = False
         self.affiliated_institutions = []
         self.affiliated_users = []
         self.projects = []

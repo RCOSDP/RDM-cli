@@ -21,6 +21,7 @@ __all__ = [
     '_projects_add_component',
     '_create_or_load_project',
     'projects_create',
+    'projects_get_list'
 ]
 here = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
@@ -563,3 +564,73 @@ def projects_create(self):
             for _project in self.created_projects:
                 logger.debug(
                     f'\'{_project.id}\' - \'{_project.attributes.title}\' [{_project.type}][{_project.attributes.category}]')
+
+def list_cli_response_handler(response):
+    response = json.loads(response.content, object_hook=lambda d: SimpleNamespace(**d))
+    projects = []
+    projects_list = response.data
+
+    # Data aggregation
+    for prj in projects_list:
+        projects.append({
+            'id': prj.id,
+            'title': prj.attributes.title
+        })
+
+    return projects
+
+def call_api_user_nodes(self, page = 1):
+    _response, _error_message = self._request('GET', f'users/{self.user.id}/nodes?page={page}', params={}, data={}, )
+
+    if _error_message:
+        sys.exit(_error_message)
+
+    return _response
+
+
+def projects_get_list(self):
+    # validate file and folder
+    if self.output_result_file and self.output_result_file.endswith('.json') is False:
+        sys.exit('The output file type is not valid')
+
+    logger.info('Check validate done')
+
+    # load config
+    verbose = self.verbose
+    logger.info('Check config and authenticate by token')
+    self._check_config(verbose=verbose)
+
+    # Call api get project list
+    logger.info('Get project list...')
+    _response = call_api_user_nodes(self)
+    response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
+
+    # Add first data to projects
+    projects = []
+    projects.extend(list_cli_response_handler(_response))
+
+    # handle data if total data is more than first response
+    total_data = response.links.meta.total
+    data_per_page = response.links.meta.per_page
+    page_count = total_data / data_per_page
+    current_page = 1
+    while(current_page < page_count):
+        current_page += 1
+        project = list_cli_response_handler(call_api_user_nodes(self, current_page))
+        projects.extend(project)
+
+    logger.info('Get project list successfully.')
+
+    # Return value
+    result = {'projects': projects}
+    if self.output_result_file:
+        self._prepare_output_file()
+        # write output JSON file
+        utils.write_json_file(self.output_result_file, result)
+        logger.info('Write file successfully.')
+
+    if self.display_console or not self.output_result_file:
+        # write the result in JSON format to standard output (stdout)
+        log_result = f'\n{json.dumps(result, indent=4)}'
+        print(log_result)
+        logger.info('Display console successfully.')
