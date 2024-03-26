@@ -1,0 +1,29 @@
+{
+  "projects": [
+    {
+      "id": "yanxg",
+      "template_from": "abcde",
+      "category": "project",
+      "title": "Project Example 001_new",
+      "description": "Lorem Ipsum 001_new",
+      "node_license": {
+        "license_name": "MIT License",
+        "copyright_holders": [
+          "holder1",
+          "holder2"
+        ],
+        "year": "2023"
+      },
+      "public": false,
+      "tags": [
+        "replication",
+        "reproducibility",
+        "open science"
+      ],
+      "project_links": [
+        "yan92",
+        "yan93"
+      ]
+    }
+  ]
+}

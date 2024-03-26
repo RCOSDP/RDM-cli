@@ -1,0 +1,17 @@
+{
+  "projects": [
+    {
+      "id": "yanxg",
+      "category": "project",
+      "title": "Project Example 001",
+      "node_license": {
+        "license_name": "MIT License 2",
+        "copyright_holders": [
+          "holder3",
+          "holder4"
+        ],
+        "year": "2023"
+      }
+    }
+  ]
+}

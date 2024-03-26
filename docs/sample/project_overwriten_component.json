@@ -1,0 +1,18 @@
+{
+  "projects": [
+    {
+      "id": "yanxg",
+      "template_from": "abcde",
+      "category": "project",
+      "title": "Project Example 001",
+      "children": [
+        {
+          "id": "yanxy",
+          "category": "analysis",
+          "title": "Analysis Component Example 011_new",
+          "description": "Lorem Ipsum 011_new."
+        }
+      ]
+    }
+  ]
+}
