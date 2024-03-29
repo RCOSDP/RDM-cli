@@ -16,7 +16,8 @@ OUTPUT_RESULT_FILE_NAME_DEFAULT = './output_result_file.json'
 OUTPUT_PROJECTS_FILE_NAME_DEFAULT = './output_projects_file.json'
 OUTPUT_CONTRIBUTORS_FILE_NAME_DEFAULT = './output_contributors_file.json'
 
-# Maximum data return from API (update it if the max range of return data per_page of server is change)
+# Maximum data return from API
+# (update it if the max range of return data per_page of server is change)
 PAGE_SIZE_SERVER = 100
 MAX_THREADS_CALL_API = 10
 

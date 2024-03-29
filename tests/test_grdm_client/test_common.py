@@ -293,9 +293,11 @@ class TestCommonCLI:
         }
         resp = requests.Response()
         resp._content = json.dumps(res_dict)
-        with mock.patch.object(common_cli, 'parse_api_response', return_value = json.loads(resp.content, object_hook=lambda d: SimpleNamespace(**d))):
+        with mock.patch.object(common_cli, 'parse_api_response',
+                               return_value=json.loads(resp.content,
+                                                       object_hook=lambda d: SimpleNamespace(**d))):
             CommonCLI.get_all_data_from_api(common_cli, 'user/123/nodes')
-    
+
     def test_parse_api_response__successful(self, common_cli):
         res_dict = {
             'data': [1],
@@ -310,8 +312,8 @@ class TestCommonCLI:
         resp._content = json.dumps(res_dict)
         with mock.patch.object(common_cli, '_request', return_value=(resp, None)):
             CommonCLI.parse_api_response(common_cli, 'GET', 'user/123/nodes')
-    
-    def test_parse_api_response__error(self, common_cli):
+
+    def test_parse_api_response__error(self, common_cli, caplog):
         res_dict = {
             'data': [1],
             'links': {
@@ -326,4 +328,24 @@ class TestCommonCLI:
         with mock.patch.object(common_cli, '_request', return_value=(None, 'error_message')):
             with pytest.raises(SystemExit) as ex_info:
                 CommonCLI.parse_api_response(common_cli, 'GET', 'user/123/nodes')
+            assert ex_info.value.code == 'error_message'
 
+    def test_parse_api_response__ignore_error(self, common_cli, caplog):
+        res_dict = {
+            'data': [1],
+            'links': {
+                'meta': {
+                    "total": 2,
+                    "per_page": 1
+                }
+            }
+        }
+        resp = requests.Response()
+        resp._content = json.dumps(res_dict)
+        with mock.patch.object(common_cli, '_request',
+                               return_value=(resp, 'error_message')):
+            # with pytest.raises(SystemExit):
+            CommonCLI.parse_api_response(common_cli,
+                                         'GET', 'user/123/nodes', {}, True),
+        assert caplog.records[0].levelname == 'WARNING'
+        assert caplog.records[0].message == 'error_message'

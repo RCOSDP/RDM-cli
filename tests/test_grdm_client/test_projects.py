@@ -255,19 +255,14 @@ link_project_str = """{
 }"""
 get_cli_project = [
     {
-        "id": "333",
+        "id": "b3",
         "type": "nodes",
         "attributes": {
             "fork": False,
-            "title": "Project Example 0018",
-            "description": "Lorem Ipsum has been",
+            "title": "Project Example b3",
+            "description": "Lorem b3",
             "category": "project",
-            "tags": [
-                "0018",
-                "cli",
-                "development",
-                "required properties"
-            ],
+            "tags": [],
             "node_license": {
                 "copyright_holders": [
                     "Copyright (c) 2024"
@@ -286,156 +281,7 @@ get_cli_project = [
             "children": {
                 "links": {
                     "related": {
-                        "href": "http://localhost:8000/v2/nodes/jbkzh/children/",
-                        "meta": { }
-                    }
-                }
-            }
-        }
-    },
-    {
-        "id": "1234",
-        "type": "nodes",
-        "attributes": {
-            "fork": False,
-            "title": "Project Example 0018",
-            "description": "Lorem Ipsum has been",
-            "category": "project",
-            "tags": [
-                "0018",
-                "cli",
-                "development",
-                "required properties"
-            ],
-            "node_license": {
-                "copyright_holders": [
-                    "Copyright (c) 2024"
-                ],
-                "year": "2024"
-            },
-            "public": True
-        },
-        "relationships": {
-            "license": {
-                "data": {
-                    "id": "1",
-                    "type": "licenses"
-                }
-            },
-            "children": {
-                "links": {
-                    "related": {
-                        "href": "http://localhost:8000/v2/nodes/jbkzh/children/",
-                        "meta": { }
-                    }
-                }
-            },
-            "parent": {
-                "links": {
-                    "related": {
-                        "href": "http://localhost:8000/v2/nodes/jbkzh/",
-                        "meta": {}
-                    }
-                },
-                "data": {
-                    "id": "333",
-                    "type": "nodes"
-                }
-            }
-        }
-    },
-    {
-        "id": "6qrsy",
-        "type": "nodes",
-        "attributes": {
-            "fork": False,
-            "title": "Project Example 0018",
-            "description": "Lorem Ipsum has been",
-            "category": "project",
-            "tags": [
-                "0018",
-                "cli",
-                "development",
-                "required properties"
-            ],
-            "node_license": {
-                "copyright_holders": [
-                    "Copyright (c) 2024"
-                ],
-                "year": "2024"
-            },
-            "public": True
-        },
-        "relationships": {
-            "license": {
-                "data": {
-                    "id": "1",
-                    "type": "licenses"
-                }
-            },
-            "children": {
-                "links": {
-                    "related": {
-                        "href": "http://localhost:8000/v2/nodes/jbkzh/children/",
-                        "meta": { }
-                    }
-                }
-            },
-            "parent": {
-                "links": {
-                    "related": {
-                        "href": "http://localhost:8000/v2/nodes/jbkzh/",
-                        "meta": {}
-                    }
-                },
-                "data": {
-                    "id": "jbkzh",
-                    "type": "nodes"
-                }
-            }
-        }
-    },
-    {
-        "id": "wh9my",
-        "type": "nodes",
-        "attributes": {
-            "fork": False,
-            "title": "Project Example 0018",
-            "description": "L ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-            "category": "project",
-            "tags": [
-                "0018",
-                "cli",
-                "development",
-                "required properties"
-            ],
-            "node_license": {
-                "copyright_holders": [
-                    "Copyright (c) 2024"
-                ],
-                "year": "2024"
-            },
-            "public": True
-        },
-        "relationships": {
-            "license": {
-                "data": {
-                    "id": "1",
-                    "type": "licenses"
-                }
-            },
-            "children": {
-                "links": {
-                    "related": {
-                        "href": "http://localhost:8000/v2/nodes/wh9my/children/",
-                        "meta": {}
-                    }
-                }
-            },
-            "contributors": {
-                "links": {
-                    "related": {
-                        "href": "http://localhost:8000/v2/nodes/wh9my/contributors/",
+                        "href": "http://localhost:8000/v2/nodes/b3/children/",
                         "meta": {}
                     }
                 }
@@ -443,70 +289,26 @@ get_cli_project = [
             "parent": {
                 "links": {
                     "related": {
-                        "href": "http://localhost:8000/v2/nodes/jbkzh/",
+                        "href": "http://localhost:8000/v2/nodes/a1/",
                         "meta": {}
                     }
                 },
                 "data": {
-                    "id": "6qrsy",
+                    "id": "a1",
                     "type": "nodes"
                 }
             }
         }
     },
     {
-        "id": "jbkzh",
-        "type": "nodes",
-        "attributes": {
-            "fork": False,
-            "title": "Project Example 0018",
-            "description": "Lorem Ipsum has been",
-            "category": "project",
-            "tags": [
-                "0018",
-                "cli",
-                "development",
-                "required properties"
-            ],
-            "node_license": {
-                "copyright_holders": [
-                    "Copyright (c) 2024"
-                ],
-                "year": "2024"
-            },
-            "public": True
-        },
-        "relationships": {
-            "license": {
-                "data": {
-                    "id": "1",
-                    "type": "licenses"
-                }
-            },
-            "children": {
-                "links": {
-                    "related": {
-                        "href": "http://localhost:8000/v2/nodes/jbkzh/children/",
-                        "meta": { }
-                    }
-                }
-            },
-        }
-    },
-    {
-        "id": "uhnj5",
+        "id": "a1",
         "type": "nodes",
         "attributes": {
             "fork": True,
-            "title": "Project Example 0018",
-            "description": "Lorem Ipsum has been",
+            "title": "Project Example a1",
+            "description": "Lorem a1",
             "category": "project",
-            "tags": [
-                "0018",
-                "cli",
-                "development",
-                "required properties"
-            ],
+            "tags": [],
             "node_license": {
                 "copyright_holders": [
                     "Copyright (c) 2024"
@@ -516,18 +318,57 @@ get_cli_project = [
             "public": True
         },
         "relationships": {
+            "template_node": {
+                "data": {
+                    "id": "aasd"
+                }
+            },
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
             "forked_from": {
                 "links": {
                     "related": {
-                        "href": "http://localhost:8000/v2/nodes/qhbgu/",
+                        "href": "http://localhost:8000/v2/nodes/6hd3k/",
                         "meta": {}
                     }
                 },
                 "data": {
-                    "id": "qhbgu",
+                    "id": "6hd3k",
                     "type": "nodes"
                 }
             },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/a1/children/",
+                        "meta": {}
+                    }
+                }
+            }
+        }
+    },
+    {
+        "id": "b1",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example b1",
+            "description": "Lorem b1",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
             "license": {
                 "data": {
                     "id": "1",
@@ -537,20 +378,468 @@ get_cli_project = [
             "children": {
                 "links": {
                     "related": {
-                        "href": "http://localhost:8000/v2/nodes/jbkzh/children/",
-                        "meta": { }
+                        "href": "http://localhost:8000/v2/nodes/b1/children/",
+                        "meta": {}
                     }
                 }
             },
             "parent": {
                 "links": {
                     "related": {
-                        "href": "http://localhost:8000/v2/nodes/jbkzh/",
+                        "href": "http://localhost:8000/v2/nodes/a1/",
                         "meta": {}
                     }
                 },
                 "data": {
-                    "id": "wh9my",
+                    "id": "a1",
+                    "type": "nodes"
+                }
+            }
+        }
+    },
+    {
+        "id": "d1",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example d1",
+            "description": "Lorem d1",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/d1/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/c1/",
+                        "meta": {}
+                    }
+                },
+                "data": {
+                    "id": "c1",
+                    "type": "nodes"
+                }
+            }
+        }
+    },
+    {
+        "id": "c1",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example c1",
+            "description": "Lorem c1",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/c1/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/b2/",
+                        "meta": {}
+                    }
+                },
+                "data": {
+                    "id": "b2",
+                    "type": "nodes"
+                }
+            }
+        }
+    },
+    {
+        "id": "b2",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example b2",
+            "description": "Lorem b2",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/b2/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/a1/",
+                        "meta": {}
+                    }
+                },
+                "data": {
+                    "id": "a1",
+                    "type": "nodes"
+                }
+            }
+        }
+    },
+    {
+        "id": "c2",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example c2",
+            "description": "Lorem c2",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/c2/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/b2/",
+                        "meta": {}
+                    }
+                },
+                "data": {
+                    "id": "b2",
+                    "type": "nodes"
+                }
+            }
+        }
+    },
+    {
+        "id": "c3",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example c3",
+            "description": "Lorem c3",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/c3/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/b1/",
+                        "meta": {}
+                    }
+                },
+                "data": {
+                    "id": "b1",
+                    "type": "nodes"
+                }
+            }
+        }
+    },
+    {
+        "id": "c4",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example c4",
+            "description": "Lorem c4",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/c4/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/b5/",
+                        "meta": {}
+                    }
+                },
+                "data": {
+                    "id": "b5",
+                    "type": "nodes"
+                }
+            }
+        }
+    },
+    {
+        "id": "b5",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example b5",
+            "description": "Lorem b5",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/b5/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/a2/",
+                        "meta": {}
+                    }
+                },
+                "data": {
+                    "id": "a2",
+                    "type": "nodes"
+                }
+            }
+        }
+    },
+    {
+        "id": "b4",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example b4",
+            "description": "Lorem b4",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/b4/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/a2/",
+                        "meta": {}
+                    }
+                },
+                "data": {
+                    "id": "a2",
+                    "type": "nodes"
+                }
+            }
+        }
+    },
+    {
+        "id": "a2",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example a2",
+            "description": "Lorem a2",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/a2/children/",
+                        "meta": {}
+                    }
+                }
+            }
+        }
+    },
+    {
+        "id": "d2",
+        "type": "nodes",
+        "attributes": {
+            "fork": False,
+            "title": "Project Example d2",
+            "description": "Lorem d2",
+            "category": "project",
+            "tags": [],
+            "node_license": {
+                "copyright_holders": [
+                    "Copyright (c) 2024"
+                ],
+                "year": "2024"
+            },
+            "public": True
+        },
+        "relationships": {
+            "license": {
+                "data": {
+                    "id": "1",
+                    "type": "licenses"
+                }
+            },
+            "children": {
+                "links": {
+                    "related": {
+                        "href": "http://localhost:8000/v2/nodes/d2/children/",
+                        "meta": {}
+                    }
+                }
+            },
+            "parent": {
+                "links": {
+                "related": {
+                    "href": "http://localhost:8000/v2/nodes/c4/",
+                    "meta": {}
+                }
+                },
+                "data": {
+                    "id": "c4",
                     "type": "nodes"
                 }
             }
@@ -598,10 +887,10 @@ get_cli_licenses_dict = {
     }
 }
 get_cli_linked_nodes = {
-    "jbkzh": ['1', '2', '3'],
-    "wh9my": ['1', '2', '3'],
-    "uhnj5": ['1', '2', '3'],
-    "6qrsy": ['1', '2', '3'],
+    "a1": ['1', '2', '3'],
+    "c3": ['1', '2', '3'],
+    "b2": ['1', '2', '3'],
+    "d1": ['1', '2', '3'],
 }
 
 content_obj = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
@@ -1172,13 +1461,12 @@ def mock_get_cli__request(url, params = {}):
     pattern_user_node = r'^users\/[^\/]+\/nodes(?:/.+)?$'
     pattern_linked_node = r'^nodes\/[^\/]+\/linked_nodes(?:/.+)?$'
     pattern_contributors = r'^nodes\/[^\/]+\/contributors(?:/.+)?$'
-    logging.info(url)
     if re.match(pattern_licenses, url):
         return get_cli_licenses_dict
     elif re.match(pattern_user_node, url):
         return get_cli_project_obj
     elif re.match(pattern_linked_node, url):
-        return {
+        linked_nodes = {
             'data': [
                 {
                     "id": "456"
@@ -1194,52 +1482,284 @@ def mock_get_cli__request(url, params = {}):
                 }
             }
         }
+        data = requests.Response()
+        data._content = json.dumps(linked_nodes)
+        return json.loads(data.content, object_hook=lambda d: SimpleNamespace(**d)).data
     elif re.match(pattern_contributors, url):
-        return {
-                "data": [
-                    {
-                        "id": "g3uzd-jdm2p",
-                        "attributes": {
-                            "index": 0,
-                            "bibliographic": True,
-                            "permission": "admin",
-                            "unregistered_contributor": None
+        contributors = {
+            "data": [
+                {
+                    "id": "g3uzd-jdm2p",
+                    "attributes": {
+                        "index": 0,
+                        "bibliographic": True,
+                        "permission": "admin",
+                        "unregistered_contributor": None
+                    },
+                    "relationships": {
+                        "users": {
+                            "links": {
+                                "related": {
+                                    "href": "http://localhost:8000/v2/users/jdm2p/",
+                                    "meta": {}
+                                }
+                            },
+                            "data": {
+                                "id": "jdm2p",
+                                "type": "users"
+                            }
+                        },
+                        "node": {
+                            "links": {
+                                "related": {
+                                    "href": "http://localhost:8000/v2/nodes/g3uzd/",
+                                    "meta": {}
+                                }
+                            },
+                            "data": {
+                                "id": "g3uzd",
+                                "type": "nodes"
+                            }
                         }
                     },
-                    {
-                        "id": "g3uzd-1234",
-                        "attributes": {
-                            "index": 0,
-                            "bibliographic": True,
-                            "permission": "admin",
-                            "unregistered_contributor": None
+                },
+                {
+                    "id": "g3uzd-1234",
+                    "attributes": {
+                        "index": 0,
+                        "bibliographic": True,
+                        "permission": "admin",
+                        "unregistered_contributor": None
+                    },
+                    "relationships": {
+                        "users": {
+                            "links": {
+                                "related": {
+                                    "href": "http://localhost:8000/v2/users/1234/",
+                                    "meta": {}
+                                }
+                            },
+                            "data": {
+                                "id": "1234",
+                                "type": "users"
+                            }
+                        },
+                        "node": {
+                            "links": {
+                                "related": {
+                                    "href": "http://localhost:8000/v2/nodes/g3uzd/",
+                                    "meta": {}
+                                }
+                            },
+                            "data": {
+                                "id": "g3uzd",
+                                "type": "nodes"
+                            }
                         }
                     },
-                ]
+                },
+            ]
+        }
+        data = requests.Response()
+        data._content = json.dumps(contributors)
+        return json.loads(data.content, object_hook=lambda d: SimpleNamespace(**d)).data
+
+
+# Get cli parse_api_response
+def mock_parse_api_response(method, url):
+    pattern_children_a1 = r'^(.*?)nodes\/a1\/children'
+    data_children_a1 = {
+        "data": [
+            {
+                "id": "b3",
+                "type": "nodes",
+                "attributes": {
+                    "fork": False,
+                    "title": "Project Example b3",
+                    "description": "Lorem b3",
+                    "category": "project",
+                    "tags": [],
+                    "node_license": {
+                        "copyright_holders": [
+                            "Copyright (c) 2024"
+                        ],
+                        "year": "2024"
+                    },
+                    "public": True
+                },
+                "relationships": {
+                    "license": {
+                        "data": {
+                            "id": "1",
+                            "type": "licenses"
+                        }
+                    },
+                    "children": {
+                        "links": {
+                            "related": {
+                                "href": "http://localhost:8000/v2/nodes/b3/children/",
+                                "meta": {}
+                            }
+                        }
+                    },
+                    "parent": {
+                        "links": {
+                            "related": {
+                                "href": "http://localhost:8000/v2/nodes/a1/",
+                                "meta": {}
+                            }
+                        },
+                        "data": {
+                            "id": "a1",
+                            "type": "nodes"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "b1",
+                "type": "nodes",
+                "attributes": {
+                    "fork": False,
+                    "title": "Project Example b1",
+                    "description": "Lorem b1",
+                    "category": "project",
+                    "tags": [],
+                    "node_license": {
+                        "copyright_holders": [
+                            "Copyright (c) 2024"
+                        ],
+                        "year": "2024"
+                    },
+                    "public": True
+                },
+                "relationships": {
+                    "license": {
+                        "data": {
+                            "id": "1",
+                            "type": "licenses"
+                        }
+                    },
+                    "children": {
+                        "links": {
+                            "related": {
+                                "href": "http://localhost:8000/v2/nodes/b1/children/",
+                                "meta": {}
+                            }
+                        }
+                    },
+                    "parent": {
+                        "links": {
+                            "related": {
+                                "href": "http://localhost:8000/v2/nodes/a1/",
+                                "meta": {}
+                            }
+                        },
+                        "data": {
+                            "id": "a1",
+                            "type": "nodes"
+                        }
+                    }
+                }
+            },
+            {
+                "id": "b2",
+                "type": "nodes",
+                "attributes": {
+                    "fork": False,
+                    "title": "Project Example b2",
+                    "description": "Lorem b2",
+                    "category": "project",
+                    "tags": [],
+                    "node_license": {
+                        "copyright_holders": [
+                            "Copyright (c) 2024"
+                        ],
+                        "year": "2024"
+                    },
+                    "public": True
+                },
+                "relationships": {
+                    "license": {
+                        "data": {
+                            "id": "1",
+                            "type": "licenses"
+                        }
+                    },
+                    "children": {
+                        "links": {
+                            "related": {
+                                "href": "http://localhost:8000/v2/nodes/b2/children/",
+                                "meta": {}
+                            }
+                        }
+                    },
+                    "parent": {
+                        "links": {
+                            "related": {
+                                "href": "http://localhost:8000/v2/nodes/a1/",
+                                "meta": {}
+                            }
+                        },
+                        "data": {
+                            "id": "a1",
+                            "type": "nodes"
+                        }
+                    }
+                }
             }
+        ]
+    }
+    data_children_a1_resp = requests.Response()
+    data_children_a1_resp._content = json.dumps(data_children_a1)
+
+    empty_children_resp = requests.Response()
+    empty_children_resp._content = json.dumps({"data": []})
+
+    if re.match(pattern_children_a1, url):
+        return json.loads(data_children_a1_resp.content, object_hook=lambda d: SimpleNamespace(**d))
+
+    return json.loads(empty_children_resp.content, object_hook=lambda d: SimpleNamespace(**d))
+
+
+# Mocking get node by filter id
+def get_node_from_all_node(input_project_ids):
+    clone_all_node_resp_dict = get_cli_user_node
+    clone_all_node_resp_dict['data'] = [node for node in get_cli_project if node['id'] in input_project_ids]
+
+    resp = requests.Response()
+    resp._content = json.dumps(clone_all_node_resp_dict)
+    return resp
 
 
 @mock.patch('grdmcli.utils.write_json_file')
 @mock.patch('grdmcli.grdm_client.licenses._licenses')
-def test_projects_get__case_input_project_id_less_than_spec_without_output_location(mocker, grdm_client):
-    user_node_resp = requests.Response()
-    user_node_resp._content = json.dumps(get_cli_user_node)
-    with mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes', side_effect=(user_node_resp, None)), \
-        mock.patch.object(grdm_client, 'project_id', 'jbkzh'), \
-        mock.patch.object(grdm_client, 'licenses', return_value=(get_cli_licenses_object.data)):
-            projects_get(grdm_client)
+def test_projects_get__project_id_has_id_invalid(mocker, grdm_client, caplog):
+    input_prj_ids = ['invalid_id', 'a1', ',']
+    with mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes',
+                    side_effect=(get_node_from_all_node(input_prj_ids),
+                                 None)), \
+        mock.patch.object(grdm_client, 'project_id', input_prj_ids), \
+        mock.patch.object(grdm_client, 'licenses',
+                          get_cli_licenses_object.data):
+        projects_get(grdm_client)
+    assert caplog.records[1].message == 'Project not found'
+    assert caplog.records[2].message == 'Get the project and contributor information completed.'
 
 
 @mock.patch('grdmcli.utils.write_json_file')
 @mock.patch('grdmcli.grdm_client.licenses._licenses')
-def test_projects_get__case_input_project_id_less_than_100_wrong_file_type(mocker, grdm_client):
+def test_projects_get__case_wrong_file_type(mocker, grdm_client):
     resp = requests.Response()
     resp._content = get_cli_project
 
     user_node_resp = requests.Response()
     user_node_resp._content = json.dumps(get_cli_user_node)
-    with mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes', side_effect=(user_node_resp, None)):
-        with mock.patch.object(grdm_client, 'output_projects_file', './abc/test.txt'):
+    with mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes',
+                    side_effect=(user_node_resp, None)):
+        with mock.patch.object(grdm_client,
+                               'output_projects_file',
+                               './test/prj.txt'):
             with pytest.raises(SystemExit) as ex_info:
                 projects_get(grdm_client)
             assert str(ex_info.value) == "The output file type is not valid"
@@ -1247,40 +1767,137 @@ def test_projects_get__case_input_project_id_less_than_100_wrong_file_type(mocke
 
 @mock.patch('grdmcli.utils.write_json_file')
 @mock.patch('grdmcli.grdm_client.licenses._licenses')
-def test_projects_get__case_input_project_id_more_than_spec_without_output_location(mocker, grdm_client):
-    resp = requests.Response()
-    resp._content = get_cli_project
+def test_projects_get__case_has_location_path(mocker, grdm_client, caplog):
+    input_prj_ids = ['b2', 'a1']
+    with mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes',
+                    side_effect=(get_node_from_all_node(input_prj_ids), None)), \
+        mock.patch.object(grdm_client, 'project_id', input_prj_ids), \
+        mock.patch.object(grdm_client, 'output_projects_file',
+                          './test/prj.json'), \
+        mock.patch.object(grdm_client, 'output_contributors_file',
+                          './test/ctr.json'), \
+        mock.patch.object(grdm_client, 'parse_api_response',
+                          side_effect=mock_parse_api_response), \
+        mock.patch.object(grdm_client, 'licenses',
+                          get_cli_licenses_object.data):
+        projects_get(grdm_client)
+    assert caplog.records[1].message == 'Get the project and contributor information completed.'
 
+
+@mock.patch('grdmcli.utils.write_json_file')
+@mock.patch('grdmcli.grdm_client.licenses._licenses')
+def test_projects_get__case_project_id_less_than_spec_success(mocker,
+                                                              grdm_client,
+                                                              caplog):
+    input_prj_ids = ['a1']
+    with mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes',
+                    side_effect=(get_node_from_all_node(input_prj_ids), None)), \
+        mock.patch.object(grdm_client, 'project_id', input_prj_ids), \
+        mock.patch.object(grdm_client, 'licenses',
+                          get_cli_licenses_object.data):
+        projects_get(grdm_client)
+    assert caplog.records[1].message == 'Get the project and contributor information completed.'
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+@mock.patch('grdmcli.grdm_client.licenses._licenses')
+def test_projects_get__case_project_id_more_than_spec_success(mocker,
+                                                              grdm_client,
+                                                              caplog):
     user_node_resp = requests.Response()
     user_node_resp._content = json.dumps(get_cli_user_node)
-    with mock.patch('grdmcli.constants.PAGE_SIZE_SERVER', new=1), \
-        mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes', side_effect=(user_node_resp, None)), \
-        mock.patch('grdmcli.grdm_client.projects.get_all_linked_node', return_value=get_cli_linked_nodes), \
-        mock.patch('grdmcli.grdm_client.projects.get_all_contributor'), \
-        mock.patch.object(grdm_client, 'get_all_data_from_api', side_effect = mock_get_cli__request), \
-        mock.patch.object(grdm_client, 'project_id', 'jbkzh wh9my 1234'), \
-        mock.patch.object(grdm_client, 'licenses', get_cli_licenses_object.data):
-            projects_get(grdm_client)
+    with mock.patch('grdmcli.constants.PAGE_SIZE_SERVER', new=3), \
+        mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes',
+                   side_effect=(user_node_resp, None)), \
+        mock.patch.object(grdm_client, 'get_all_data_from_api',
+                          side_effect=mock_get_cli__request), \
+        mock.patch.object(grdm_client,
+                          'project_id', ['a1', 'c1', 'b3', 'b2', 'd1']), \
+        mock.patch.object(grdm_client,
+                          'licenses',
+                          get_cli_licenses_object.data):
+        projects_get(grdm_client)
+    assert caplog.records[1].message == 'Get the project and contributor information completed.'
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+@mock.patch('grdmcli.grdm_client.licenses._licenses')
+def test_projects_get__case_project_id_more_than_spec_lv4(mocker, grdm_client, caplog):
+    input_prj_ids = ['c4', 'a2', 'd2']
+    with mock.patch('grdmcli.constants.PAGE_SIZE_SERVER', new=2), \
+        mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes',
+                   side_effect=(get_node_from_all_node(input_prj_ids), None)), \
+        mock.patch.object(grdm_client, 'get_all_data_from_api',
+                          side_effect=mock_get_cli__request), \
+        mock.patch.object(grdm_client, 'project_id', input_prj_ids), \
+        mock.patch.object(grdm_client, 'licenses',
+                          get_cli_licenses_object.data):
+        projects_get(grdm_client)
+    assert caplog.records[1].message == 'Get the project and contributor information completed.'
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+@mock.patch('grdmcli.grdm_client.licenses._licenses')
+def test_projects_get__case_project_id_children_get_before(mocker, grdm_client, caplog):
+    input_prj_ids = ['b3', 'a1']
+    with mock.patch('grdmcli.constants.PAGE_SIZE_SERVER', new=2), \
+        mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes',
+                   side_effect=(get_node_from_all_node(input_prj_ids), None)), \
+        mock.patch.object(grdm_client, 'get_all_data_from_api',
+                          side_effect=mock_get_cli__request), \
+        mock.patch.object(grdm_client, 'parse_api_response',
+                          side_effect=mock_parse_api_response), \
+        mock.patch.object(grdm_client, 'project_id', input_prj_ids), \
+        mock.patch.object(grdm_client, 'licenses',
+                          get_cli_licenses_object.data):
+        projects_get(grdm_client)
+    assert caplog.records[1].message == 'Get the project and contributor information completed.'
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+@mock.patch('grdmcli.grdm_client.licenses._licenses')
+def test_projects_get__case_project_id_more_than_spec_and_all_invalid_id(mocker, grdm_client, caplog):
+    user_node_resp = requests.Response()
+    user_node_resp._content = json.dumps(get_cli_user_node)
+    with mock.patch('grdmcli.constants.PAGE_SIZE_SERVER', new=3), \
+        mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes',
+                   side_effect=(user_node_resp, None)), \
+        mock.patch.object(grdm_client, 'get_all_data_from_api',
+                          side_effect=mock_get_cli__request), \
+        mock.patch.object(grdm_client, 'project_id', 'abc cd ew fq ef aaq'), \
+        mock.patch.object(grdm_client, 'licenses',
+                          get_cli_licenses_object.data):
+        projects_get(grdm_client)
+    assert caplog.records[1].message == 'Project not found'
+    assert caplog.records[2].message == 'Get the project and contributor information completed.'
+
+
+@mock.patch('grdmcli.utils.write_json_file')
+@mock.patch('grdmcli.grdm_client.licenses._licenses')
+def test_projects_get__case_get_all(mocker, grdm_client, caplog):
+    user_node_resp = requests.Response()
+    user_node_resp._content = json.dumps(get_cli_user_node)
+    with mock.patch('grdmcli.constants.PAGE_SIZE_SERVER', new=3), \
+        mock.patch('grdmcli.grdm_client.projects.call_api_user_nodes',
+                   side_effect=(user_node_resp, None)), \
+        mock.patch.object(grdm_client, 'get_all_data_from_api',
+                          side_effect=mock_get_cli__request), \
+        mock.patch.object(grdm_client, 'project_id', None), \
+        mock.patch.object(grdm_client, 'licenses',
+                          get_cli_licenses_object.data):
+        projects_get(grdm_client)
+    assert caplog.records[1].message == 'Get the project and contributor information completed.'
 
 
 def test_get_all_linked_node(grdm_client):
-    with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value = []):
+    with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[]):
         get_all_linked_node(grdm_client, 'user/id/nodes')
-
-
-def test_convert_contributor_with_template_get_cli(grdm_client):
-    data = {
-        'id': 123,
-        'attributes': {
-            'bibliographic': 'somedata',
-        }
-    }
-    convert_contributor_with_template_get_cli(json.loads(json.dumps(data), object_hook=lambda d: SimpleNamespace(**d)))
 
 
 def test_call_api_user_nodes_error(grdm_client):
     error_message = 'error_message'
-    with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
+    with mock.patch.object(grdm_client, '_request',
+                           return_value=(None, error_message)):
         with pytest.raises(SystemExit) as ex_info:
             call_api_user_nodes(grdm_client, 'GET', 'url')
         assert ex_info.value.code == error_message

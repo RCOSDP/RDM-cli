@@ -240,8 +240,9 @@ class CommonCLI(Namespace):
         if self.disable_ssl_verify:
             self.ssl_cert_verify = False
 
-    # Receive url api to get and check if has existed more than 1 page data will get all the remaining parts
-    def get_all_data_from_api(self, url, params = {}):
+    # Receive url api to get and check
+    # if has existed more than 1 page data will get all the remaining parts
+    def get_all_data_from_api(self, url, params={}):
         data = []
         # first call api to get total data of api at page 1
         response = self.parse_api_response('GET', url, params)
@@ -254,22 +255,26 @@ class CommonCLI(Namespace):
 
         if (page_count > 1):
             # list all api need to call start from 2 to page_count
-            urls = [f'{url}?page={current_page}' for current_page in range(2, page_count + 1)]
+            urls = [f'{url}?page={curr_page}' for curr_page in range(2, page_count + 1)]
 
             # initialize ThreadPoolExecutor and use it to call api multi api in one time
-            with ThreadPoolExecutor(max_workers = const.MAX_THREADS_CALL_API) as executor:
-                responses = list(executor.map(lambda url: self.parse_api_response('GET', url), urls))
+            with ThreadPoolExecutor(max_workers=const.MAX_THREADS_CALL_API) as executor:
+                responses = list(
+                    executor.map(lambda url: self.parse_api_response('GET', url),
+                                 urls))
                 for res in responses:
                     data.extend(res.data)
 
         return data
 
     # Return only response of api request
-    def parse_api_response(self, method, url, params = {}):
+    def parse_api_response(self, method, url, params={}, ignore_error=False):
         _response, _error_message = self._request(method, url, params=params, data={}, )
-        
         if _error_message:
-            sys.exit(_error_message)
+            if ignore_error:
+                logger.warning(_error_message)
+            else:
+                sys.exit(_error_message)
 
         response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
 

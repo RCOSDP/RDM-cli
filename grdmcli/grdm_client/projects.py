@@ -6,6 +6,7 @@ import sys
 from pprint import pprint  # noqa
 from types import SimpleNamespace
 from concurrent.futures import ThreadPoolExecutor
+import re
 
 from .. import constants as const, utils
 
@@ -568,7 +569,7 @@ def projects_create(self):
 
 
 # Get project of user
-def call_api_user_nodes(self, page = 1, params = {}):
+def call_api_user_nodes(self, page=1, params={}):
     _response, _error_message = self._request('GET', f'users/{self.user.id}/nodes?page={page}',
                                               params=params, data={}, )
 
@@ -582,7 +583,6 @@ def projects_get(self):
     """PROJECT GET CLI: get project and details base on input id of user
     (or get all project if not input provided)
     """
-
     # load config
     verbose = self.verbose
     logger.info('Check config and authenticate by token')
@@ -596,47 +596,68 @@ def projects_get(self):
     list_node_ids = []
 
     # validate argument
-    if (self.output_projects_file and self.output_projects_file.endswith('.json') is False or
-        self.output_contributors_file and self.output_contributors_file.endswith('.json') is False):
+    if (self.output_projects_file and
+            self.output_projects_file.endswith('.json') is False or
+            self.output_contributors_file and
+            self.output_contributors_file.endswith('.json') is False):
         sys.exit('The output file type is not valid')
     if (self.project_id):
-        list_node_ids = self.project_id
+        # input may be has unexpected comma or space,
+        # below code will flatten them and return final id
+        flatten_ids = []
+        # Check if exist any comma in id input will be skip to ''
+        for input_id in self.project_id:
+            if ',' not in input_id:
+                flatten_ids.append(input_id)
+            else:
+                flatten_ids.append('')
+        # use set to remove duplicate id
+        list_node_ids = list(set(flatten_ids))
 
     # Get all licenses
-    self._licenses()
+    self._licenses(False)
 
     len_list_node_ids = len(list_node_ids)
+
     # user use --project_ids and --project_ids <= PAGE_SIZE_SERVER
     if len_list_node_ids > 0 and len_list_node_ids <= const.PAGE_SIZE_SERVER:
+        # input user maybe has comma so need to split to get correct length
+        id_str = ','.join(list_node_ids)
+
         # Gotten node ids
         self.gotten_node_ids = []
-        id_str = ','.join(list_node_ids)
         params = {
             'page[size]': const.PAGE_SIZE_SERVER,
             'filter[id]': id_str
         }
         _res = call_api_user_nodes(self, 1, params)
-        response = json.loads(_res.content, object_hook=lambda d: SimpleNamespace(**d))
+        response = json.loads(_res.content,
+                              object_hook=lambda d: SimpleNamespace(**d))
 
         nodes_list = response.data
-        # In DD if 'any' node_id is not valid will show only 1 message "Project not found"
+        # In DD if 'any' node_id is not valid
+        # will show only 1 message "Project not found"
         if len(nodes_list) < len_list_node_ids:
             logger.error("Project not found")
-        
+
         # Loop get details of node
         for node in nodes_list:
             converted_node = get_complete_node_details_recursive(self, node)
             if converted_node is not None:
                 self.nodes_tree[converted_node.id] = converted_node
-    # user do not use --project_ids or --project_ids is larger than PAGE_SIZE_SERVER
+
+    # user do not use --project_ids or
+    # --project_ids is larger than PAGE_SIZE_SERVER
     else:
         # Variable used to store the IDs of nodes
-        # that either themselves or their children are included in --project_ids
-        relevant_node_ids = []
+        # that either themselves or
+        # their children are included in --project_ids
+        relevant_nodes = []
 
         # Get all user nodes
-        list_nodes = self.get_all_data_from_api(f'users/{self.user.id}/nodes', {'page[size]': 100})
-        self.nodes_tree = {node.id:node for node in list_nodes}
+        list_nodes = self.get_all_data_from_api(f'users/{self.user.id}/nodes',
+                                                {'page[size]': 100})
+        self.nodes_tree = {node.id: node for node in list_nodes}
 
         # Get all urls of linked nodes and contributors of each node
         contributors_api_urls = []
@@ -647,30 +668,42 @@ def projects_get(self):
 
         linked_nodes = []
         # create parallel call api get all of all nodes
-        with ThreadPoolExecutor(max_workers = const.MAX_THREADS_CALL_API) as executor:
-            linked_nodes.extend(list(executor.map(lambda url: get_all_linked_node(self, url),
-                                                  linked_node_api_urls)))
+        with ThreadPoolExecutor(
+             max_workers=const.MAX_THREADS_CALL_API
+             ) as executor:
+            linked_nodes.extend(
+                list(executor.map(lambda url: get_all_linked_node(self, url),
+                     linked_node_api_urls)))
         for n_ln in linked_nodes:
             for key, value in n_ln.items():
                 self.linked_nodes_tree[key] = value
 
         node_contributors = []
         # create parallel call api get all of all nodes
-        with ThreadPoolExecutor(max_workers = const.MAX_THREADS_CALL_API) as executor:
-            node_contributors.extend(list(executor.map(lambda url: get_all_contributor(self, url),
-                                                  contributors_api_urls)))
+        with ThreadPoolExecutor(
+             max_workers=const.MAX_THREADS_CALL_API) as executor:
+            node_contributors.extend(
+                list(executor.map(lambda url: get_all_contributor(self, url),
+                     contributors_api_urls)))
         self.contributors_list = node_contributors
 
-        """Retrieve project details, convert them to a template-based data format,
-            and establish parent-child relationships between projects."""
+        """Retrieve project details,
+        convert them to a template-based data format,
+        and establish parent-child relationships between projects."""
         tree_node_ids = self.nodes_tree.keys()
         for node_id in tree_node_ids:
             # get details of node
             current_node = self.nodes_tree[node_id]
-            # current_node include attribute 'attributes' => it has not converted yet => need to convert
+            # current_node include attribute 'attributes'
+            # => it has not converted yet => need to convert
             if hasattr(current_node, 'attributes'):
-                current_node = get_details_node_with_template_get_cli(self, current_node, True)
+                current_node = get_details_node_with_template_get_cli(
+                               self, current_node, True)
             self.nodes_tree[node_id] = current_node
+
+            # check if current node is satisfy the input node id of user
+            if node_id in list_node_ids:
+                relevant_nodes.append(current_node)
 
             # Handle when node has parent_id
             if hasattr(current_node, 'parent_id'):
@@ -678,64 +711,81 @@ def projects_get(self):
                 parent_id = current_node.parent_id
                 parent_content = self.nodes_tree[parent_id]
 
-                # If the content of parent type 'list' => The parent has been moved to its parent yet
+                # If the content of parent type 'list'
+                # => The parent has been moved to its parent yet
                 if isinstance(parent_content, list):
-                    # Store the IDs of ancestors from the highest-level parent to the current project node
-                    ancestor_ids = []
-                    # we use list content to access to the parent
-                    # (the list is the order of ids from the root node of the parent of the current node)
-                    count = 0
-                    while count < len(parent_content):
-                        # all parent of current node's parent
-                        _id_parent_of_parent = parent_content[count]
-                        ancestor_ids.append(_id_parent_of_parent)
-                        count += 1
+                    # Store the IDs of ancestors from the highest-level parent
+                    # to the current project node
+                    # pass current highest parent
+                    ancestor_ids = [id for id in parent_content]
+
+                    # loop until the end of the highest tree parent found,
+                    # cause the upper parent can be move to higher parent
+                    while isinstance(self.nodes_tree[ancestor_ids[0]], list):
+                        high_parent = self.nodes_tree[ancestor_ids[0]]
+                        ancestor_ids = high_parent + ancestor_ids
                     ancestor_ids.append(parent_id)
 
                     # Variable represent the current_node's parent children
                     represent_relative_children = self.nodes_tree[ancestor_ids[0]].children
-                    # use count = 1 because represent_relative_children is currently access to children of ancestor_ids[0] above
+                    # children is currently
+                    # access to children of ancestor_ids[0] above
+                    # so use count = 1
                     count = 1
                     while count < len(ancestor_ids):
-                        # Get list id base on order of children in represent_relative_children
-                        # to get info details of ancestor_ids[count] in represent_relative_children
-                        ids = [child.id for child in represent_relative_children]
-                        represent_relative_children = represent_relative_children[ids.index(ancestor_ids[count])].children
+                        # Get list id base on order of children
+                        # to get info details of ancestor_ids[count]
+                        ids = [child.id for child in
+                               represent_relative_children]
+                        lower_parent = represent_relative_children[
+                                         ids.index(ancestor_ids[count])]
+                        represent_relative_children = lower_parent.children
                         count += 1
                     # remove parent_id flag before push to parent
-                    delattr(current_node,'parent_id')
-                    # after loop to access to the nearly parent, add current node to that
-                    # cause represent_relative_children is represent of access children step by step from root node
+                    delattr(current_node, 'parent_id')
+                    # loop to access to nearly parent and add current node
+                    # represent_relative_children is represent of
+                    #   access children step by step from root node
                     # so the root node will update correctly
                     represent_relative_children.append(current_node)
                     self.nodes_tree[current_node.id] = ancestor_ids
-
-                    # if item of ancestor_ids is in list_node_ids => user want to get that node details
-                    # => save id to relevant_node_ids for filter
-                    if bool(set(ancestor_ids) & set(list_node_ids)) or node_id in list_node_ids:
-                        relevant_node_ids.append(ancestor_ids[0])
                 else:
-                    # if node include attribute 'attributes' => it has not converted yet => need to convert
+                    # if node include attribute 'attributes'
+                    # => it has not converted yet => need to convert
                     if hasattr(self.nodes_tree[parent_id], 'attributes'):
                         self.nodes_tree[parent_id] = get_details_node_with_template_get_cli(
                             self, self.nodes_tree[parent_id], True)
                     # remove parent_id flag before push to parent
-                    delattr(current_node,'parent_id')
+                    delattr(current_node, 'parent_id')
                     self.nodes_tree[parent_id].children.append(current_node)
                     self.nodes_tree[node_id] = [parent_id]
-                    if node_id in list_node_ids:
-                        relevant_node_ids.append(parent_id)
             else:
                 # update node with node details
                 self.nodes_tree[node_id] = current_node
-                if node_id in list_node_ids:
-                    relevant_node_ids.append(node_id)
-        
-        # refilter if user input -project_id more than 100 (id is saved in relevant_node_ids)
+
+        if len(relevant_nodes) < len_list_node_ids:
+            logger.error("Project not found")
+
+        # refilter if user input id more than 100 (id saved in relevant_node)
         if len_list_node_ids > const.PAGE_SIZE_SERVER:
+            # use _clone_relevant_nodes cause below logic will multate data in relevant_nodes
+            _clone_relevant_nodes = [node for node in relevant_nodes]
+            for node in _clone_relevant_nodes:
+                node_content = self.nodes_tree[node.id]
+                # check above level parent is has any node in list project id of user input
+                # if true => remove current node
+                while isinstance(node_content, list) and len(node_content) > 0:
+                    if bool(set(node_content) & set(list_node_ids)):
+                        relevant_nodes.pop(relevant_nodes.index(node))
+                        node_content = None
+                    else:
+                        # continue go to above parent
+                        highest_parent_content = self.nodes_tree[node_content[0]]
+                        node_content = highest_parent_content
             result_nodes = {}
-            for id in relevant_node_ids:
-                result_nodes[id] = self.nodes_tree[id]
+            # re-update nodes_tree to template output
+            for node in relevant_nodes:
+                result_nodes[node.id] = node
             self.nodes_tree = result_nodes
 
     # write project
@@ -747,50 +797,51 @@ def projects_get(self):
         nodes = [convert_namespace_to_dict(obj)
                  for obj in list(self.nodes_tree.values())
                  if not isinstance(obj, list)]
-        rs = {'project': nodes}
+        rs = {'projects': nodes}
         utils.write_json_file(self.output_projects_file, rs)
     # # write contributor
     if self.output_contributors_file:
         self._prepare_output_file(self.output_contributors_file)
-        # node_contributors = [{'id': key, 'contributors': convert_namespace_to_dict(value)}
-        #                 for key, value in self.contributors_list.items()]
-        rs = {'project': self.contributors_list}
+        rs = {'projects': self.contributors_list}
         utils.write_json_file(self.output_contributors_file, rs)
 
     logger.info("Get the project and contributor information completed.")
 
 
-def get_details_node_with_template_get_cli(self, node, keep_parent = False):
+def get_details_node_with_template_get_cli(self, node, keep_parent=False):
     """Add linked node, project_links (if existed) and license to received node
-
     :param node: original node get from api
     :param keep_parent: the flag to check parent of current node,
-        if exit parent in relationships will add new attribute "parent_id" to return value
+        if exit parent in relationships will add new attr "parent_id"
     :return: Node details
     """
     attributes = node.attributes
+    result = {
+        'id': node.id,
+        'category': attributes.category,
+        'title': attributes.title,
+        'description': attributes.description,
+        'public':  attributes.public,
+        'tags':  attributes.tags,
+        'children': [],
+        'project_links': self.linked_nodes_tree.get(node.id, [])
+    }
     license = attributes.node_license
     relationships = node.relationships
+    if hasattr(relationships, 'forked_from') and relationships.forked_from.data.id is not None:
+        result['fork_id'] = relationships.forked_from.data.id
     # map license to node
     if license and hasattr(relationships, 'license'):
         license_id = relationships.license.data.id
         for lc in self.licenses:
             if lc.id == license_id:
                 license.license_name = lc.attributes.name
-
-    result = {
-        "id": node.id,
-        "template_from": attributes.template_from if hasattr(attributes, 'template_from') else "",
-        "category": attributes.category,
-        "fork": relationships.forked_from.data.id if attributes.fork else None,
-        "title": attributes.title,
-        "description": attributes.description,
-        "node_license": convert_namespace_to_dict(license),
-        "public":  attributes.public,
-        "tags":  attributes.tags,
-        "children": [],
-        "project_links": self.linked_nodes_tree.get(node.id, [])
-    }
+        if hasattr(license, 'license_name'):
+            result['node_license'] = convert_namespace_to_dict(license)
+    # mapping template_from
+    template_from = ''
+    if hasattr(relationships, 'template_node'):
+        result['template_from'] = relationships.template_node.data.id
 
     if keep_parent and hasattr(relationships, 'parent'):
         result['parent_id'] = relationships.parent.data.id
@@ -800,36 +851,40 @@ def get_details_node_with_template_get_cli(self, node, keep_parent = False):
 
 def get_all_linked_node(self, url):
     """Get all linked_node with url
-
     :param url: url to get linked_node (format: 'nodes/{node_id}/linked_nodes')
     :return: dict with key is the node_id, value is list of linked_node id
     """
     node_id = url.split("/")[1]
-    return {node_id: [linked_node.id for linked_node in self.get_all_data_from_api(url)]}
+    linked_nodes = [linked_node.id for linked_node in self.get_all_data_from_api(url)]
+    return {node_id: linked_nodes}
 
 
 def get_all_contributor(self, url):
     """Get all contributors with url
-
     :param url: url to get contributors (format: 'nodes/{node_id}/contributors')
     :return: dict with key is the node_id, value is list of contributors
     """
     node_id = url.split("/")[1]
     api_contributors = self.get_all_data_from_api(url)
-    # convert_namespace_to_dict to convert the contributor to dict (using for JSON write)
-    # convert_contributor_with_template_get_cli to convert contributor to template of PROJECT GET
+    # convert_namespace_to_dict to convert the contributor to dict
+    # convert_contributor_with_template_get_cli
+    #   to convert contributor to template of PROJECT GET
     contributors = []
     for contributor in api_contributors:
-        contributors.append(convert_namespace_to_dict(convert_contributor_with_template_get_cli(contributor)))
+        contributors.append(convert_namespace_to_dict(
+                            convert_contributor_with_template_get_cli(
+                                contributor
+                            )))
     return {'id': node_id, 'contributors': contributors}
 
 
-def get_complete_node_details_recursive(self, node, traverse_parent = False):
-    """Retrieves node details and retrieve details of its children recursively, until there are no more children.
+def get_complete_node_details_recursive(self, node, traverse_parent=False):
+    """Retrieves node details and retrieve details of its children recursively,
+    until there are no more children.
     Use only for case user input project_id less than PAGE_SIZE_SERVER
-
     :param node: node need to get additional attribute
-    :param traverse_parent: flag to keep parent id of node when convert node (use for mapping parent and children)
+    :param traverse_parent: flag to keep parent id of node when convert node
+        (use for mapping parent and children)
     :return: new Node
     """
 
@@ -838,7 +893,7 @@ def get_complete_node_details_recursive(self, node, traverse_parent = False):
         return None
     # convert_response_node_get_cli
     _return_node = get_details_node_with_template_get_cli(self, node, traverse_parent)
-    
+
     # get link
     url_node_link = f'nodes/{node.id}/linked_nodes'
     node_links = self.get_all_data_from_api(url_node_link)
@@ -850,8 +905,6 @@ def get_complete_node_details_recursive(self, node, traverse_parent = False):
     dict_contributors = get_all_contributor(self, url_node_contributor)
 
     # Init key value of node.id in tree if it has not already existed
-    # if self.contributors_list.get(node.id) is None:
-    #     self.contributors_list[node.id] = []
     self.contributors_list.append(dict_contributors)
 
     if not traverse_parent:
@@ -868,9 +921,7 @@ def get_complete_node_details_recursive(self, node, traverse_parent = False):
                 # move gotten node from self.nodes_tree to child of current node
                 list_converted_children.append(self.nodes_tree[child.id])
                 self.nodes_tree.pop(child.id)
-                
         _return_node.children = list_converted_children
-
     self.gotten_node_ids.append(node.id)
 
     return _return_node
@@ -878,17 +929,16 @@ def get_complete_node_details_recursive(self, node, traverse_parent = False):
 
 def convert_contributor_with_template_get_cli(original):
     """Convert contributor with template of PROJECT GET
-
     :param original: original contributor
     :return: new converted contributor base on template
     """
-
     attributes = original.attributes
+    permission = attributes.permission if hasattr(attributes, 'permission') else ''
 
     result = {
-        "id": original.id,
+        "id": original.relationships.users.data.id,
         "bibliographic": attributes.bibliographic,
-        "permission": attributes.admin if hasattr(attributes, 'admin') else "admin"
+        "permission": permission
     }
 
     return SimpleNamespace(**result)
@@ -896,13 +946,13 @@ def convert_contributor_with_template_get_cli(original):
 
 def convert_namespace_to_dict(namespace):
     """Convert namespace and namespace inside to dict
-
     :param namespace: namespace want to convert
     :return: dict converted from namespace
     """
-
     if isinstance(namespace, SimpleNamespace):
-        return {key: convert_namespace_to_dict(value) for key, value in namespace.__dict__.items()}
+        return {
+                key: convert_namespace_to_dict(value) for key,
+                value in namespace.__dict__.items()}
     elif isinstance(namespace, list):
         return [convert_namespace_to_dict(item) for item in namespace]
     else:
