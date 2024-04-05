@@ -68,6 +68,8 @@ The following functions are possible
 - Create new components from an available template (don't support on the website UI)
 - Creates a fork of an available project
 - Link an available other projects to each specific project
+- Override the project information
+- Override the component information
 
 The impossible ones:
 - Update attributes for available projects
@@ -81,6 +83,13 @@ The impossible ones:
 **\* Notice** about forking from a project/component:  
 When forking, the following information will be changed: `title`.  
 The other properties will be ignored: `category`, `description`, `public`, `tags`, `node_license`.
+
+**\* Notice** about override project/component:  
+If `id` is entered in input project information, the other properties: `id`, `fork_id`, `template_from` will be overwritten. 
+If `id` and `fork_id` is entered in the input project information, the error message: "Project could not created" is shown.
+If `id` of the project does not exist or does not belong to the currently logged in user entered in the input project information, the error message: "Project could not created" is shown.
+If `id` of the component is entered in the input project information, the component information will be overwritten and the project's existing components will not be deleted.
+The output information only contains information for newly created or overwritten projects or components.
 
 ##### Usages
 Get help and see available commands, get help on a specific command

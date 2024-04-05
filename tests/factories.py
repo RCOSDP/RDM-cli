@@ -174,6 +174,12 @@ class CommonCLIFactory(Namespace):
     def _prepare_output_file(self):
         pass
 
+    def parse_api_response(self, method, url, params=None):
+        pass
+
+    def get_all_data_from_api(self, url, params={}):
+        pass
+
 
 class GRDMClientFactory(CommonCLIFactory):
 
@@ -185,10 +191,13 @@ class GRDMClientFactory(CommonCLIFactory):
         # For projects functions
         self.created_projects = []
         self.template_schema_projects = 'path-to-schema'
+        self.final_output = {}
+        self.licenses = []
 
         # For contributors functions
         self.created_project_contributors = []
         self.template_schema_contributors = 'path-to-schema'
+
 
     # For projects functions
 
@@ -225,7 +234,25 @@ class GRDMClientFactory(CommonCLIFactory):
     def _add_project_components(self, children, project, verbose=True):
         pass
 
-    def _create_or_load_project(self, projects, project_idx):
+    def _create_or_update_project(self, projects, project_idx):
+        pass
+
+    def _update_project(self, node_object, ignore_error=True, verbose=True):
+        pass
+
+    def _overwrite_node_link(self, project, project_dict, verbose=True):
+        pass
+
+    def _update_project_component(self, project_dict, verbose=True):
+        pass
+
+    def _overwrite_node_link_update_component(self, _ip_projects_dict, verbose=True):
+        pass
+
+    def _remapping_node(self, tree_root):
+        pass
+
+    def _convert_node_to_create_schema(self, node):
         pass
 
     # For contributors functions

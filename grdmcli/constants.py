@@ -14,6 +14,10 @@ VERBOSE_VAR_NAME = 'VERBOSE'
 TEMPLATE_FILE_NAME_DEFAULT = './template_file.json'
 OUTPUT_RESULT_FILE_NAME_DEFAULT = './output_result_file.json'
 
+# Maximum data return from API
+# (update it if the max range of return data per_page of server is change)
+MAX_THREADS_CALL_API = 10
+
 MAX_PAGE_SIZE = 1000
 PAGE_SIZE_QUERY_PARAM = 'page[size]'
 ORDERING_QUERY_PARAM = 'sort'

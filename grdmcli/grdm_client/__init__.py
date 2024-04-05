@@ -38,8 +38,14 @@ class GRDMClient(CommonCLI):
         _add_project_pointers,
         _add_project_components,
         _projects_add_component,
-        _create_or_load_project,
-        projects_create,
+        _create_or_update_project,
+        _update_project,
+        _overwrite_node_link,
+        _update_project_component,
+        _overwrite_node_link_update_component,
+        _remapping_node,
+        _convert_node_to_create_schema,
+        projects_create
     )
     template_schema_projects = property(_get_template_schema_projects)
     # For contributors functions
