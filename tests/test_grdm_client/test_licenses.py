@@ -30,16 +30,89 @@ licenses_dict = {
             },
             "type": "licenses",
             "id": "563c1cf88c5e4a3877f9e968"
+        },
+        {
+            "links": {
+                "self": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e968/"
+            },
+            "attributes": {
+                "text": "Copyright (c) {{year}}, {{copyrightHolders}}All rights reserved.The full descriptive text of the License.",
+                "required_fields": [
+                    "year",
+                    "copyrightHolders"
+                ],
+                "name": "BSD 3-Clause \"Simplified\" License"
+            },
+            "type": "licenses",
+            "id": "123"
         }
     ],
     "links": {
         "first": "",
-        "last": "https://api.osf.io/v2/licenses/?page=2",
+        "last": "null",
         "prev": "",
-        "next": "https://api.osf.io/v2/licenses/?page=2",
+        "next": "null",
         "meta": {
-            "total": 16,
-            "per_page": 10
+            "total": 2,
+            "per_page": 1
+        }
+    }
+}
+licenses_dict_page_1 = {
+    "data": [
+        {
+            "links": {
+                "self": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e968/"
+            },
+            "attributes": {
+                "text": "Copyright (c) {{year}}, {{copyrightHolders}}All rights reserved.The full descriptive text of the License.",
+                "required_fields": [
+                    "year",
+                    "copyrightHolders"
+                ],
+                "name": "BSD 2-Clause \"Simplified\" License"
+            },
+            "type": "licenses",
+            "id": "563c1cf88c5e4a3877f9e968"
+        }
+    ],
+    "links": {
+        "first": "",
+        "last": "null",
+        "prev": "",
+        "next": "null",
+        "meta": {
+            "total": 2,
+            "per_page": 1
+        }
+    }
+}
+licenses_dict_page_2 = {
+    "data": [
+        {
+            "links": {
+                "self": "https://api.osf.io/v2/licenses/563c1cf88c5e4a3877f9e968/"
+            },
+            "attributes": {
+                "text": "Copyright (c) {{year}}, {{copyrightHolders}}All rights reserved.The full descriptive text of the License.",
+                "required_fields": [
+                    "year",
+                    "copyrightHolders"
+                ],
+                "name": "BSD 3-Clause \"Simplified\" License"
+            },
+            "type": "licenses",
+            "id": "123"
+        }
+    ],
+    "links": {
+        "first": "",
+        "last": "null",
+        "prev": "",
+        "next": "null",
+        "meta": {
+            "total": 2,
+            "per_page": 1
         }
     }
 }
@@ -90,13 +163,21 @@ def test_licenses__send_request_error_and_ignore_error_true_return_false(caplog,
 
 
 def test_licenses__send_request_success_verbose_false(caplog, grdm_client):
-    resp = requests.Response()
-    resp._content = json.dumps(licenses_dict)
-    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
-        _licenses(grdm_client, verbose=False)
-    expect_response = json.loads(resp.content, object_hook=lambda d: SimpleNamespace(**d))
+    resp1 = requests.Response()
+    resp1._content = json.dumps(licenses_dict_page_1)
+
+    resp2 = requests.Response()
+    resp2._content = json.dumps(licenses_dict_page_2)
+    converted_res_2 = json.loads(resp2.content, object_hook=lambda d: SimpleNamespace(**d))
+
+    with mock.patch.object(grdm_client, '_request', return_value=(resp1, None)):
+        with mock.patch.object(grdm_client, 'parse_api_response', return_value=(converted_res_2)):
+            _licenses(grdm_client, verbose=False)
+    expect_response = json.loads(json.dumps(licenses_dict), object_hook=lambda d: SimpleNamespace(**d))
     assert grdm_client.licenses == expect_response.data
     assert grdm_client._meta['_licenses'] == expect_response.links.meta.total
+
+
     assert len(caplog.records) == 2
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Get list of licenses'
@@ -105,13 +186,19 @@ def test_licenses__send_request_success_verbose_false(caplog, grdm_client):
 
 
 def test_licenses__send_request_success_verbose_true(caplog, grdm_client):
-    resp = requests.Response()
-    resp._content = json.dumps(licenses_dict)
-    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
-        _licenses(grdm_client, verbose=True)
+    resp1 = requests.Response()
+    resp1._content = json.dumps(licenses_dict_page_1)
+
+    resp2 = requests.Response()
+    resp2._content = json.dumps(licenses_dict_page_2)
+    converted_res_2 = json.loads(resp2.content, object_hook=lambda d: SimpleNamespace(**d))
+
+    with mock.patch.object(grdm_client, '_request', return_value=(resp1, None)):
+        with mock.patch.object(grdm_client, 'parse_api_response', return_value=(converted_res_2)):
+            _licenses(grdm_client, verbose=True)
     assert grdm_client.licenses == licenses_object.data
     assert grdm_client._meta['_licenses'] == licenses_object.links.meta.total
-    assert len(caplog.records) == 3
+    assert len(caplog.records) == 4
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'Get list of licenses'
     assert caplog.records[1].levelname == info_level_log
