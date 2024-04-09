@@ -90,7 +90,7 @@ def _prepare_project_data(self, node_object, verbose=True):
     # get node id
     _id = _project.get('id', None)
 
-    # Node update will not update template_from
+    # template_from is only use for create new
     if _id is None:
         # update template_from
         _template_from = _project.get('template_from')
@@ -218,13 +218,12 @@ def _fork_project(self, node_object, ignore_error=True, verbose=True):
         logger.warning(_error_message)
         if not ignore_error:
             # new feature of CREATE, UPDATE, FORK
-            # will continue next project if current project has error
+            # will continue next node if current node has error
             # so will log error without exit
             logger.error(_error_message)
         return None, None
     _content = _response.content
 
-    # pprint(_response.json())
     # Parse JSON into an object with attributes corresponding to dict keys.
     response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 
@@ -303,7 +302,6 @@ def _update_project(self, node_object, ignore_error=True, verbose=True):
         return None, None
     _content = _response.content
 
-    # pprint(_response.json())
     # Parse JSON into an object with attributes corresponding to dict keys.
     response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 
@@ -363,11 +361,11 @@ def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbo
         project = project_link.embeds.target_node.data
 
     if project:
-        # node_id has already been added to final_output so only need add project_links
-        if not check_dict_key(self.final_output[node_id], 'project_links'):
-            self.final_output[node_id]['project_links'] = []
-        if project.id not in self.final_output[node_id]['project_links']:
-            self.final_output[node_id]['project_links'].append(project.id)
+        # node_id has already been added to projects_creation_output so only need add project_links
+        if not check_dict_key(self.projects_creation_output[node_id], 'project_links'):
+            self.projects_creation_output[node_id]['project_links'] = []
+        if project.id not in self.projects_creation_output[node_id]['project_links']:
+            self.projects_creation_output[node_id]['project_links'].append(project.id)
 
         logger.info(f'Created Node Links \'{project_link.id}\'')
         if verbose:
@@ -409,19 +407,23 @@ def _add_project_components(self, children, project, verbose=True):
     :param project: object of project
     :return: None
     """
+    # get id of all children of current node, use for checking of step update children if exist
     children_of_project = self.get_all_data_from_api(f'nodes/{project.id}/children')
     list_children_of_project_ids = [node.id for node in children_of_project]
 
     for _component_idx, _component_dict in enumerate(children):
         _component_id = _component_dict.get('id')
 
+        # Update children if ID EXIST in input
         if _component_id:
+            # The input children_id is invalid if id has not exited in current_node's children
             if _component_id not in list_children_of_project_ids:
                 logger.error("Project could not created")
                 continue
             # update child node
             component = self._update_project_component(_component_dict, verbose)
             self._overwrite_node_link(component, _component_dict, verbose)
+        # create new children if ID NOT EXIST in input
         else:
             logger.info(f'JSONPOINTER ./children/{_component_idx}/')
 
@@ -437,7 +439,7 @@ def _add_project_components(self, children, project, verbose=True):
             children[_component_idx]['id'] = component.id
             children[_component_idx]['type'] = component.type
 
-        # handle create children of current child
+        # handle create/update children of current child
         self._overwrite_node_link_update_component(_component_dict, verbose)
 
 
@@ -482,7 +484,8 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     self.created_projects.append(project)
 
     project.parent_id = parent_id
-    self.final_output[project.id] = convert_namespace_to_dict(project)
+    # add to output for creating output file
+    self.projects_creation_output[project.id] = convert_namespace_to_dict(project)
 
     logger.info(f'Created component \'{project.id}\'')
     if verbose:
@@ -536,7 +539,7 @@ def _create_or_update_project(self, projects, project_idx, verbose=True):
         _project_dict['type'] = project.type
 
         # overwrite project
-        self.final_output[project.id] = convert_namespace_to_dict(project)
+        self.projects_creation_output[project.id] = convert_namespace_to_dict(project)
     elif _id:
         logger.info(f'JSONPOINTER /projects/{project_idx}/id == {_id}')
         project, _ = self._load_project(_id, is_fake=const.IS_FAKE_LOAD_PROJECT, ignore_error=True, verbose=verbose)
@@ -556,7 +559,7 @@ def _create_or_update_project(self, projects, project_idx, verbose=True):
         project, _  = self._update_project(_project_dict, ignore_error=True, verbose=verbose)
 
         # add to output
-        self.final_output[project.id] = convert_namespace_to_dict(project)
+        self.projects_creation_output[project.id] = convert_namespace_to_dict(project)
     else:
         logger.info(f'JSONPOINTER /projects/{project_idx}/')
         project, _ = self._create_project(_project_dict, ignore_error=True, verbose=verbose)
@@ -572,7 +575,7 @@ def _create_or_update_project(self, projects, project_idx, verbose=True):
         _project_dict['type'] = project.type
 
         # add to output
-        self.final_output[project.id] = convert_namespace_to_dict(project)
+        self.projects_creation_output[project.id] = convert_namespace_to_dict(project)
     return project
 
 
@@ -598,55 +601,55 @@ def projects_create(self):
     if not os.path.exists(self.template):
         sys.exit('Missing the template file')
 
-    self.final_output = {}
+    self.projects_creation_output = {}
 
     logger.info(f'Use the template of projects: {self.template}')
-    _ip_projects_dict = utils.read_json_file(self.template)
+    _input_prj_dicts = utils.read_json_file(self.template)
 
     try:
         # check json schema
         logger.info(f'Validate by the template of projects: {self.template_schema_projects}')
-        utils.check_json_schema(self.template_schema_projects, _ip_projects_dict)
+        utils.check_json_schema(self.template_schema_projects, _input_prj_dicts)
 
         logger.info('Loop following the template of projects')
-        _ip_projects = _ip_projects_dict.get('projects', [])
-        for _project_idx, _ip_project_dict in enumerate(_ip_projects):
-            _ip_children = _ip_project_dict.get('children', [])
+        _input_projects = _input_prj_dicts.get('projects', [])
+        for _project_idx, _input_prj_dict in enumerate(_input_projects):
+            _input_children = _input_prj_dict.get('children', [])
             # project_link in input file
-            _ip_project_links_id = _ip_project_dict.get('project_links', None)
+            _input_prj_link_ids = _input_prj_dict.get('project_links', None)
 
             # create new or fork project or update project
-            project = self._create_or_update_project(_ip_projects, _project_idx, verbose)
+            project = self._create_or_update_project(_input_projects, _project_idx, verbose)
             if project is None:
                 # update output object and ignore it
-                _ip_projects[_project_idx] = None
+                _input_projects[_project_idx] = None
                 continue
 
             # link a project to this node (parent_node_id = project.id)
-            parent_node_id = _ip_project_dict.get('id', None)
-            if _ip_project_links_id is not None:
+            parent_node_id = _input_prj_dict.get('id', None)
+            if _input_prj_link_ids is not None:
                 # Add node link to project if current node is first create
                 if parent_node_id is None:
                     # None => create new project base on _project_links
-                    self._add_project_pointers(_ip_project_links_id, project, verbose)
+                    self._add_project_pointers(_input_prj_link_ids, project, verbose)
 
                     # Delete None from project_links
-                    _ip_project_dict['project_links'] = [_pointer for _pointer in _ip_project_links_id
+                    _input_prj_dict['project_links'] = [_pointer for _pointer in _input_prj_link_ids
                                                         if _pointer is not None]
                 # overwrite node link of current project base on template input
                 else:
-                    self._overwrite_node_link(project, _ip_project_dict, verbose)
+                    self._overwrite_node_link(project, _input_prj_dict, verbose)
 
             # handle children of this node
-            if len(_ip_children):
-                _ip_project_dict['children'] = [_child for _child in _ip_children if _child is not None]
-                _filtered_ip_children = _ip_project_dict['children']
+            if len(_input_children):
+                _input_prj_dict['children'] = [_child for _child in _input_children if _child is not None]
+                _filtered_input_children = _input_prj_dict['children']
 
                 # Create Components and lower level component
-                self._add_project_components(_filtered_ip_children, project, verbose)
+                self._add_project_components(_filtered_input_children, project, verbose)
 
         # Delete None from projects
-        _ip_projects_dict['projects'] = [_prj for _prj in _ip_projects if _prj is not None]
+        _input_prj_dicts['projects'] = [_prj for _prj in _input_projects if _prj is not None]
 
         _length = len(self.created_projects)
         if _length:
@@ -654,8 +657,8 @@ def projects_create(self):
             logger.info(f'Use the output result file: {self.output_result_file}')
             self._prepare_output_file()
             # write output file
-            # utils.write_json_file(self.output_result_file, _ip_projects_dict)
-            utils.write_json_file(self.output_result_file, {'projects': self._remapping_node(self.final_output)})
+            output_result = {'projects': self._remapping_node(self.projects_creation_output)}
+            utils.write_json_file(self.output_result_file, output_result)
         else:
             logger.warning('The \'projects\' object is empty')
 
@@ -673,39 +676,48 @@ def projects_create(self):
                 
 
 def _overwrite_node_link(self, project, project_dict, verbose=True):
-    # OverrideNodeLink
+    """Override the node_link of input project if it has already existed.
+
+    :param project: Object project want to update
+    :param project_dict: Dict type project want to update, \n
+        in this project_dict need to has project_links (from input)\n
+        to checking and update
+    :param verbose: Boolean
+    :return"""
+
     parent_node_id = project_dict.get('id', None)
     # project_link in input file
-    _input_project_links_id = project_dict.get('project_links', None)
-    if _input_project_links_id is None:
+    _input_prj_links_id = project_dict.get('project_links', None)
+    if _input_prj_links_id is None:
         return
     _project_links = self.get_all_data_from_api(f'nodes/{parent_node_id}/node_links/')
 
     # list node id of linked
-    _node_project_links_ids = []
+    _node_link_ids = []
     # list linked id
-    _list_linked_id = []
+    _linked_ids = []
     for node in _project_links:
-        _list_linked_id.append(node.id)
-        _node_project_links_ids.append(node.relationships.target_node.data.id)
+        _linked_ids.append(node.id)
+        _node_link_ids.append(node.relationships.target_node.data.id)
 
     # list node_id will add new
-    add_node_link_id_list = [node_id for node_id in _input_project_links_id
-                        if node_id not in _node_project_links_ids]
+    add_node_link_id_list = [node_id for node_id in _input_prj_links_id
+                        if node_id not in _node_link_ids]
     # list node_id will remove from linked relationship
-    remove_node_link_id_list = [node_id for node_id in _node_project_links_ids
-                            if node_id not in _input_project_links_id]
+    remove_node_link_id_list = [node_id for node_id in _node_link_ids
+                            if node_id not in _input_prj_links_id]
 
-    # list id of linked relationship
+    # list id of linked relationship of removed node_id
     remove_linked_ids = []
     # find the linked_id need to delete
     # base on filtered node_id need to delete link_node above
     for node_id in remove_node_link_id_list:
-        if node_id in _node_project_links_ids:
-            remove_linked_ids.append(_list_linked_id[
-                _node_project_links_ids.index(node_id)])
+        if node_id in _node_link_ids:
+            remove_linked_ids.append(_linked_ids[
+                _node_link_ids.index(node_id)])
 
     # remove node_link
+    # use remove_linked_ids to process delete
     for linked_ids in remove_linked_ids:
         _, _error_message = self._request('DELETE', f'nodes/{parent_node_id}/node_links/{linked_ids}/')
         if _error_message:
@@ -725,18 +737,29 @@ def _overwrite_node_link(self, project, project_dict, verbose=True):
     self._add_project_pointers(_need_create_node_link_ids, project, verbose=verbose)
 
 
-def _update_project_component(self, project_dict, verbose=True):
-    child_id = project_dict.get('id', None)
+def _update_project_component(self, child_project_dict, verbose=True):
+    """Update component (project children)
 
+    :param child_project_dict: children dictionary
+    :param verbose: Boolean
+    :return"""
+
+    child_id = child_project_dict.get('id', None)
+
+    # call api get to check existence of child_project
     _, _error_message = self._request('GET', f'nodes/{child_id}/')
 
+    # if any error (include not children has not existed)
+    # will log error and do not handle update
     if _error_message:
         logger.error('Project could not be created')
     else:
-        _data = self._prepare_project_data(project_dict, verbose=verbose)
+        # prepare data to update node
+        _data = self._prepare_project_data(child_project_dict, verbose=verbose)
         _response_child, _error_message_child = self._request('PUT', f'nodes/{child_id}/',
                                                     params={}, data=_data, )
         if _error_message_child:
+            # handle message of each message code
             if str(HTTP_403_FORBIDDEN) in _error_message_child:
                 logger.error(_error_message_child)
             else:
@@ -753,58 +776,64 @@ def _update_project_component(self, project_dict, verbose=True):
         relationships = _node.relationships
         if hasattr(relationships, 'parent'):
             output_node.parent_id = relationships.parent.data.id
-        if check_dict_key(project_dict, 'project_links'):
-            output_node.project_links = project_dict['project_links']
-        self.final_output[_node.id] = convert_namespace_to_dict(output_node)
+        if check_dict_key(child_project_dict, 'project_links'):
+            output_node.project_links = child_project_dict['project_links']
+        self.projects_creation_output[_node.id] = convert_namespace_to_dict(output_node)
 
         # OverrideNodeLink
-        _child_node_link = project_dict.get('project_links', None)
+        _child_node_link = child_project_dict.get('project_links', None)
         if _child_node_link:
-            self._overwrite_node_link(_node, project_dict, verbose=verbose)
+            self._overwrite_node_link(_node, child_project_dict, verbose=verbose)
 
         # Handle children of current node
-        _ip_children = project_dict.get('children', [])
+        _ip_children = child_project_dict.get('children', [])
         if len(_ip_children):
-            project_dict['children'] = [_child for _child in _ip_children if _child is not None]
-            _filtered_ip_children = project_dict['children']
+            child_project_dict['children'] = [_child for _child in _ip_children if _child is not None]
+            _filtered_ip_children = child_project_dict['children']
             self._add_project_components(_filtered_ip_children, _node, verbose)
         return _node
 
 
-def _overwrite_node_link_update_component(self, _ip_projects_dict, verbose=True):
+def _overwrite_node_link_update_component(self, _input_prj_dicts, verbose=True):
+    """Update component node link and update current component with the update of _input_prj_dicts
+
+    :param _input_prj_dicts: list children want to update
+    :param verbose: Boolean
+    :return"""
+
     logger.info('Loop following the template of child projects')
-    _ip_projects = _ip_projects_dict.get('projects', [])
-    for _project_idx, _ip_project_dict in enumerate(_ip_projects):
-        _ip_children = _ip_project_dict.get('children', [])
+    _input_projects = _input_prj_dicts.get('projects', [])
+    for _project_idx, _input_prj_dict in enumerate(_input_projects):
+        _input_children = _input_prj_dict.get('children', [])
         # project_link in input file
-        _ip_project_links_id = _ip_project_dict.get('project_links', None)
+        _input_prj_links_id = _input_prj_dict.get('project_links', None)
 
         # create new or fork project or update project
-        project = self._create_or_update_project(_ip_projects, _project_idx, verbose)
+        project = self._create_or_update_project(_input_projects, _project_idx, verbose)
         if project is None:
             # update output object and ignore it
-            _ip_projects[_project_idx] = None
+            _input_projects[_project_idx] = None
             continue
 
         # link a project to this node (parent_node_id = project.id)
-        parent_node_id = _ip_project_dict.get('id', None)
-        if _ip_project_links_id is not None:
+        parent_node_id = _input_prj_dict.get('id', None)
+        if _input_prj_links_id is not None:
             # Add node link to project if current node is first create
             if parent_node_id is None:
                 # None => create new project base on _project_links
-                self._add_project_pointers(_ip_project_links_id, project, verbose)
+                self._add_project_pointers(_input_prj_links_id, project, verbose)
 
                 # Delete None from project_links
-                _ip_project_dict['project_links'] = [_pointer for _pointer in _ip_project_links_id
+                _input_prj_dict['project_links'] = [_pointer for _pointer in _input_prj_links_id
                                                     if _pointer is not None]
             # overwrite node link of current project base on template input
             else:
-                self._overwrite_node_link(project, _ip_project_dict, verbose)
+                self._overwrite_node_link(project, _input_prj_dict, verbose)
 
         # Delete None from children
-        if len(_ip_children):
-            _ip_project_dict['children'] = [_child for _child in _ip_children if _child is not None]
-            _filtered_ip_children = _ip_project_dict['children']
+        if len(_input_children):
+            _input_prj_dict['children'] = [_child for _child in _input_children if _child is not None]
+            _filtered_ip_children = _input_prj_dict['children']
 
             # Create Components and lower level component
             self._add_project_components(_filtered_ip_children, project, verbose)
@@ -826,26 +855,60 @@ def convert_namespace_to_dict(namespace):
 
 
 def _remapping_node(self, tree_root):
+    """Receive a root dictionary and\n
+        use the value properties to remapping with parent relationships
+    
+    :param tree_root: node dictionary with key is the id of node, value is node
+    :return: list dictionary of mapped node (parent and children)
+    """
+
+    # get list node ids in tree_root
     list_ids = tree_root.keys()
     for id in list_ids:
         current_node = tree_root[id]
+        # mapping to the parent if current node has parent_id
         if check_dict_key(current_node, 'parent_id'):
             parent_id = current_node['parent_id']
             parent_node = tree_root[parent_id]
 
+            # when add child to it's parent,
+            # that child will be change value to list
+            # (ex: ['id_parent1', 'id_parent2',...]) => 'The order access id'
+            # that value use to add lower children to correct parent tree 
+            # A > B > C > D
+            # D find parent C (assume C value is ['id_a', 'id_b'])
+            # D will access to A first, then B, then C and add to C's children
+
+            # parent value is list => current parent had been added to higher parent
             if type(parent_node) is list:
+                # store 'The order access id' of parent
                 last_parent_location = [id for id in parent_node]
+
+                # add id_parent to create fully 'The order access id' of current node
                 last_parent_location.append(parent_id)
+
+                # check if the highest parent is also list,
+                # we will loop and get the order access id
+                # until the highest parent is object (current final parent root)
                 while type(tree_root[last_parent_location[0]]) is list:
+                    # get 'The order access id' of the highest parent
                     highest_parent = tree_root[last_parent_location[0]]
+                    # update child 'The order access id'
                     last_parent_location = highest_parent + last_parent_location
 
+                # get highest parent from 'The order access id'
                 highest_parent = tree_root[last_parent_location[0]]
+                # check if the parent has children property or not
                 if not check_dict_key(highest_parent, 'children'):
+                    # init if not exit property children
                     tree_root[last_parent_location[0]]['children'] = []
+                # the final property children that current child can be appended to
                 final_location_children = highest_parent['children']
+                # start count from 1 cause
+                # highest_parent has already start with index 0
                 count = 1
                 while count < len(last_parent_location):
+                    # loop and store the children property of each parent until the last parent
                     list_ids_parent = [node['id'] for node in final_location_children]
                     index_parent = list_ids_parent.index(last_parent_location[count])
                     if not check_dict_key(final_location_children[index_parent], 'children'):
@@ -853,19 +916,32 @@ def _remapping_node(self, tree_root):
                     final_location_children = final_location_children[index_parent]['children']
                     count += 1
 
+                # append current child to the final location
                 final_location_children.append(self._convert_node_to_create_schema(current_node))
+                # re-update value of child in the tree with list ids of parent
                 tree_root[id] = last_parent_location
             else:
+                # if the parent is object => add current child to parent's children
                 if not check_dict_key(tree_root[parent_id], 'children'):
                     tree_root[parent_id]['children'] = []
+                # convert child with template output before add to parent
                 tree_root[parent_id]['children'].append(self._convert_node_to_create_schema(current_node))
+                # update children with list parent ids
                 tree_root[id] = [parent_id]
         else:
+            # if has no property parent_id => current node is root
             tree_root[id] = self._convert_node_to_create_schema(current_node)
+    # return list dictionary node
     return [node for node in tree_root.values() if type(node) is not list]
 
 
 def _convert_node_to_create_schema(self, node):
+    """Receive a node and convert it to the dictionary value base on output schema
+    
+    :param node: node need to convert
+    :return: list dictionary of mapped node (parent and children)
+    """
+
     attributes = node['attributes']
     relationships = node['relationships']
     license = attributes['node_license']
@@ -881,6 +957,7 @@ def _convert_node_to_create_schema(self, node):
 
     if check_dict_key(attributes, 'children'):
         result['children'] = attributes['children']
+    # get all node_link_id to update to project_links
     if check_dict_key(node, 'project_links'):
         _project_links = self.get_all_data_from_api(f'nodes/{node["id"]}/node_links/')
         result['project_links'] = []
@@ -891,6 +968,7 @@ def _convert_node_to_create_schema(self, node):
                 project = project_link.embeds.target_node.data
                 result['project_links'].append(project.id)
 
+    # get license and add license_name to the output
     if license and check_dict_key(relationships, 'license'):
         license_id = relationships['license']['data']['id']
         if not (hasattr(self, 'licenses') and self.licenses):
@@ -901,6 +979,7 @@ def _convert_node_to_create_schema(self, node):
         if check_dict_key(license, 'license_name'):
             result['node_license'] = convert_namespace_to_dict(license)
 
+    # get fork_id if the node has forked from anther node
     if (check_dict_key(relationships, 'forked_from') and
         relationships['forked_from']['data']['id'] is not None):
         result['fork_id'] = relationships['forked_from']['data']['id']
@@ -913,4 +992,11 @@ def _convert_node_to_create_schema(self, node):
 
 
 def check_dict_key(dict, key):
+    """Check the key is in dictionary
+    
+    :param dict: node want to check
+    :param key: key need to check
+    :return: Boolean
+    """
+
     return hasattr(SimpleNamespace(**dict), key)
