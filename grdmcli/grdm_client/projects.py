@@ -5,6 +5,7 @@ import os
 import sys
 from pprint import pprint  # noqa
 from types import SimpleNamespace
+from concurrent.futures import ThreadPoolExecutor
 
 from .. import constants as const, utils
 
@@ -100,16 +101,25 @@ def _prepare_project_data(self, node_object, verbose=True):
             _project['public'] = False
 
     # update description
-    _description = _project.get('description', '')
-    _attributes['description'] = _description
+    _description = _project.get('description', None)
+    if _description is None and  _id is None:
+        _attributes['description'] = ''
+    if _description:
+        _attributes['description'] = _description
 
     # update public
-    _public = _project.get('public', False)
-    _attributes['public'] = _public
+    _public = _project.get('public', None)
+    if _public is None and  _id is None:
+        _attributes['public'] = False
+    if _public is not None:
+        _attributes['public'] = _public
 
     # update tags
-    _tags = _project.get('tags', [])
-    _attributes['tags'] = _tags
+    _tags = _project.get('tags', None)
+    if _tags is None and  _id is None:
+        _attributes['tags'] = []
+    if _tags is not None:
+        _attributes['tags'] = _tags
 
     # update node_license
     _license = _project.get('node_license')
@@ -690,6 +700,25 @@ def _overwrite_node_link(self, project, project_dict, verbose=True):
     _input_prj_links_id = project_dict.get('project_links', None)
     if _input_prj_links_id is None:
         return
+
+    # check existence of input project_links
+    url_details = 'nodes/{node_id}/'
+    urls = [url_details.format(node_id = id) for id in _input_prj_links_id]
+    # reset _input_prj_links_id to get validated id project link
+    _input_prj_links_id = []
+    is_get_target_node = True
+    with ThreadPoolExecutor(max_workers=const.MAX_THREADS_CALL_API) as executor:
+                responses = list(
+                    executor.map(lambda url: self.parse_api_response('GET', url, {}, False, is_get_target_node),
+                                 urls))
+                for res in responses:
+                    if res :
+                        _input_prj_links_id.append(res.data.id)
+
+    # all project_link id is invalid
+    if len(_input_prj_links_id) == 0:
+        return
+
     _project_links = self.get_all_data_from_api(f'nodes/{parent_node_id}/node_links/')
 
     # list node id of linked
@@ -729,7 +758,7 @@ def _overwrite_node_link(self, project, project_dict, verbose=True):
         _, _error_message = self._request('GET', f'nodes/{node_link_id}')
         if _error_message:
             if str(HTTP_404_NOT_FOUND) in _error_message:
-                logger.warn(f'"Target Node {node_link_id} not found"')
+                logger.warn(f'Target Node {node_link_id} not found')
             continue
         _need_create_node_link_ids.append(node_link_id)
 
@@ -845,9 +874,8 @@ def convert_namespace_to_dict(namespace):
     :return: dict converted from namespace
     """
     if isinstance(namespace, SimpleNamespace):
-        return {
-                key: convert_namespace_to_dict(value) for key,
-                value in namespace.__dict__.items()}
+        return {key: convert_namespace_to_dict(value)
+                for key, value in namespace.__dict__.items()}
     elif isinstance(namespace, list):
         return [convert_namespace_to_dict(item) for item in namespace]
     else:
@@ -946,6 +974,7 @@ def _convert_node_to_create_schema(self, node):
     relationships = node['relationships']
     license = attributes['node_license']
 
+    # common attribute
     result = {}
     result['id'] = node['id']
     result['type'] = node['type']
@@ -955,18 +984,18 @@ def _convert_node_to_create_schema(self, node):
     result['public'] = attributes['public']
     result['tags'] = attributes['tags']
 
+    # get children
     if check_dict_key(attributes, 'children'):
         result['children'] = attributes['children']
+
     # get all node_link_id to update to project_links
-    if check_dict_key(node, 'project_links'):
-        _project_links = self.get_all_data_from_api(f'nodes/{node["id"]}/node_links/')
-        result['project_links'] = []
-        for project_link in _project_links:
-            project = None
-            target_node = project_link.embeds.target_node
-            if not hasattr(target_node, 'errors'):
-                project = project_link.embeds.target_node.data
-                result['project_links'].append(project.id)
+    _project_links = self.get_all_data_from_api(f'nodes/{node["id"]}/node_links/')
+    result['project_links'] = []
+    for project_link in _project_links:
+        target_node = project_link.embeds.target_node
+        if not hasattr(target_node, 'errors'):
+            project = project_link.embeds.target_node.data
+            result['project_links'].append(project.id)
 
     # get license and add license_name to the output
     if license and check_dict_key(relationships, 'license'):
@@ -977,7 +1006,7 @@ def _convert_node_to_create_schema(self, node):
             if lc.id == license_id:
                 license['license_name'] = lc.attributes.name
         if check_dict_key(license, 'license_name'):
-            result['node_license'] = convert_namespace_to_dict(license)
+            result['node_license'] = license
 
     # get fork_id if the node has forked from anther node
     if (check_dict_key(relationships, 'forked_from') and

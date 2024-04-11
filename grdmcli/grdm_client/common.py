@@ -240,10 +240,10 @@ class CommonCLI(Namespace):
 
     # Receive url api to get and check
     # if has existed more than 1 page data will get all the remaining parts
-    def get_all_data_from_api(self, url, params={}):
+    def get_all_data_from_api(self, url, params={}, ignore_error=False):
         data = []
         # first call api to get total data of api at page 1
-        response = self.parse_api_response('GET', url, params)
+        response = self.parse_api_response('GET', url, params, ignore_error)
 
         # get page_count to check number api need to call
         total_data = response.links.meta.total
@@ -258,7 +258,7 @@ class CommonCLI(Namespace):
             # initialize ThreadPoolExecutor and use it to call api multi api in one time
             with ThreadPoolExecutor(max_workers=const.MAX_THREADS_CALL_API) as executor:
                 responses = list(
-                    executor.map(lambda url: self.parse_api_response('GET', url),
+                    executor.map(lambda url: self.parse_api_response('GET', url, params, ignore_error),
                                  urls))
                 for res in responses:
                     data.extend(res.data)
@@ -266,11 +266,15 @@ class CommonCLI(Namespace):
         return data
 
     # Return only response of api request
-    def parse_api_response(self, method, url, params={}, ignore_error=False):
+    def parse_api_response(self, method, url, params={}, ignore_error=False, is_target_node=False):
         _response, _error_message = self._request(method, url, params=params, data={}, )
         if _error_message:
-            if ignore_error:
+            if is_target_node:
+                logger.warn(f'Target Node {url.split("/")[1]} not found')
+                return None
+            if ignore_error and is_target_node:
                 logger.warning(_error_message)
+                return None
             else:
                 sys.exit(_error_message)
 
