@@ -174,7 +174,7 @@ class CommonCLIFactory(Namespace):
     def _prepare_output_file(self):
         pass
 
-    def parse_api_response(self, method, url, params=None):
+    def parse_api_response(self, method, url, params=None, ignore_error=False, is_target_node=False):
         pass
 
     def get_all_data_from_api(self, url, params={}):
@@ -191,7 +191,7 @@ class GRDMClientFactory(CommonCLIFactory):
         # For projects functions
         self.created_projects = []
         self.template_schema_projects = 'path-to-schema'
-        self.final_output = {}
+        self.projects_creation_output = {}
         self.licenses = []
 
         # For contributors functions

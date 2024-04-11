@@ -5,6 +5,7 @@ from unittest import mock
 
 import pytest
 import requests
+import copy
 
 from grdmcli.exceptions import GrdmCliException
 from grdmcli.grdm_client.projects import (
@@ -297,6 +298,15 @@ link_project_str = """{
         }
     }
 }"""
+project_link_str = {
+    "embeds":{
+        "target_node":{
+            "data":{
+                "id": "74pnd"
+            }
+        }
+    }
+}
 
 list_project_links_str = """
     {
@@ -320,6 +330,129 @@ project_dict = {
     'project_links': [
         'abcd5',
         'abcd7'
+    ]
+}
+
+node_dict_has_license = {
+    "id": "4u38t",
+    "type": "nodes",
+    "attributes": {
+        "title": "Project 002",
+        "description": "Project 002_change error license.",
+        "category": "project",
+        "fork": True,
+        "public": True,
+        "tags": [],
+        "node_license": {
+            "copyright_holders": [
+                "holder3",
+                "holder4"
+            ],
+            "year": "2024",
+            "license_name": "license_name"
+        },
+        "current_user_permissions": [
+            "admin",
+            "write",
+            "read"
+        ],
+        "quota_rate": 0.09756263613,
+        "quota_threshold": 0.9,
+        "subjects": [],
+        "children": [
+            {
+                "id": "34dwda",
+                "type": "nodes",
+            }
+        ]
+    },
+    "relationships": {
+        "license": {
+            "links": {
+                "related": {
+                    "href": "http://localhost:8000/v2/licenses/64ddee0f7cffdd0001f55429/",
+                    "meta": {}
+                }
+            },
+            "data": {
+                "id": "64ddee0f7cffdd0001f55429",
+                "type": "licenses"
+            }
+        },
+        "template_node": {
+            "data": {
+                "id": "dqw312"
+            }
+        },
+        "forked_from": {
+            "data": {
+                "id": "qw123"
+            }
+        }
+    },
+    "project_links": [
+        "nid92",
+        "nid93"
+    ]
+}
+
+prj_has_children_prj_link = {
+    "id": "fqw32",
+    "projects": [
+        {
+            "category": "project",
+            "title": "Project Example 001",
+            "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+            "public": False,
+            "tags": [
+                "replication",
+                "reproducibility",
+                "open science",
+                "reproduction",
+                "psychological science",
+                "psychology",
+                "metascience",
+                "crowdsource"
+            ],
+            "template_from": "abc36",
+            "children": [
+                {
+                    "category": "analysis",
+                    "title": "Analysis Component Example 001",
+                    "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                    "public": False,
+                    "tags": [
+                        "analysis",
+                        "component"
+                    ]
+                },
+                {
+                    "id": "abcd4",
+                    "category": "communication",
+                    "title": "Communication Component Example 001"
+                }
+            ],
+            "project_links": [
+                "abcd4"
+            ]
+        },
+        {
+            "id": "abcd5",
+            "category": "project",
+            "title": "Project Example License 001",
+            "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+            "tags": [
+                "license"
+            ],
+            "node_license": {
+                "license_name": "MIT License",
+                "copyright_holders": [
+                    "holder1",
+                    "holder2"
+                ],
+                "year": "2023"
+            }
+        },
     ]
 }
 
@@ -378,7 +511,7 @@ def test_prepare_project_data__new_has_license_verbose_true(grdm_client, caplog)
         actual = _prepare_project_data(grdm_client, _project, verbose=True)
     assert actual['data']['type'] == 'nodes'
     assert actual['data']['attributes']['tags'] == _project['tags']
-    assert actual['data']['attributes']['public'] is False
+    assert actual['data']['attributes'].get('public', None) == None
     _license = _project.get('node_license', {})
     del _license['license_name']
     assert actual['data']['attributes']['node_license'] == _license
@@ -403,6 +536,34 @@ def test_prepare_project_data__fork_project(grdm_client, caplog):
     assert actual['data']['attributes']['tags'] == _project['tags']
     assert actual['data']['attributes']['public'] == _project['public']
     assert actual['data']['relationships'] == {}
+
+
+def test_prepare_project_data__none_of_description_tags_id(grdm_client, caplog):
+    prepare_data = {
+        'category': 'data',
+        'public': 'false'
+    }
+    actual = _prepare_project_data(grdm_client, prepare_data, verbose=True)
+    assert actual['data']['type'] == 'nodes'
+    assert actual['data']['attributes']['tags'] == []
+    assert actual['data']['attributes']['public'] == 'false'
+
+
+def test_prepare_project_data__license_none_has_id(grdm_client, caplog):
+    prepare_data = {
+        'id': '123',
+        'category': 'data',
+        'public': 'false',
+        'node_license': {
+            'license_name': 'license_name'
+        }
+    }
+    with mock.patch.object(grdm_client, '_find_license_id_from_name', return_value=None):
+        actual = _prepare_project_data(grdm_client, prepare_data, verbose=True)
+        assert actual['data']['type'] == 'nodes'
+        assert actual['data']['id'] == '123'
+        assert actual['data']['attributes']['public'] == 'false'
+        assert 'node_license' not in actual['data']
 
 
 def test_load_project__is_fake_and_verbose_true(caplog, grdm_client):
@@ -603,13 +764,13 @@ def test_link_project_to_project__request_error_and_ignore_error_true(grdm_clien
 def test_link_project_to_project__verbose_true(grdm_client, caplog):
     resp = requests.Response()
     resp._content = link_project_str
-    final_output = {}
-    final_output[link_project_obj.data.id] = link_project_obj.data
+    projects_creation_output = {}
+    projects_creation_output[link_project_obj.data.id] = link_project_obj.data
 
     _project_id = projects['projects'][2]['id']
     project_id = json.loads(link_project_str)['data']['id']
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)),\
-        mock.patch.object(grdm_client, 'final_output', return_value=final_output):
+        mock.patch.object(grdm_client, 'projects_creation_output', return_value=projects_creation_output):
         actual1, actual2 = _link_project_to_project(grdm_client, _project_id, '74pnd', verbose=True)
     project_link = link_project_obj.data.embeds.target_node.data
     assert actual1 == project_link
@@ -626,12 +787,12 @@ def test_link_project_to_project__verbose_true(grdm_client, caplog):
 def test_link_project_to_project__verbose_false(grdm_client, caplog):
     resp = requests.Response()
     resp._content = link_project_str
-    final_output = {}
-    final_output[link_project_obj.data.id] = link_project_obj.data
+    projects_creation_output = {}
+    projects_creation_output[link_project_obj.data.id] = link_project_obj.data
 
     _project_id = projects['projects'][2]['id']
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)),\
-        mock.patch.object(grdm_client, 'final_output', return_value=final_output):
+        mock.patch.object(grdm_client, 'projects_creation_output', return_value=projects_creation_output):
         actual1, actual2 = _link_project_to_project(grdm_client, _project_id, '74pnd', verbose=False)
     project_link = link_project_obj.data.embeds.target_node.data
     assert actual1 == project_link
@@ -648,11 +809,11 @@ def test_link_project_to_project__target_node_error_verbose_true(grdm_client, ca
     resp._content = json.dumps(_project_link_error)
     _project_id = projects['projects'][2]['id']
 
-    final_output = {}
-    final_output[link_project_obj.data.id] = link_project_obj.data
+    projects_creation_output = {}
+    projects_creation_output[link_project_obj.data.id] = link_project_obj.data
 
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)),\
-        mock.patch.object(grdm_client, 'final_output', return_value=final_output):
+        mock.patch.object(grdm_client, 'projects_creation_output', return_value=projects_creation_output):
         actual1, actual2 = _link_project_to_project(grdm_client, _project_id, '74pnd', verbose=True)
     assert actual1 is None
     assert actual2 == _project_link_error['data']
@@ -1059,28 +1220,41 @@ def test_overwrite_node_link__successful(grdm_client):
         _overwrite_node_link(grdm_client, SimpleNamespace(), project_dict)
 
 
-def test_overwrite_node_link__delete_error_add_error_404(grdm_client):
+def test_overwrite_node_link__delete_error_add_error_404(grdm_client, caplog):
     with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=list_project_links.data),\
         mock.patch.object(grdm_client, '_request', side_effect=[(None, 'Error'), (True, 'Error 404'), (True, None), (True, None)]),\
+        mock.patch.object(grdm_client, 'parse_api_response', side_effect=[SimpleNamespace(data=SimpleNamespace(id='abcd5')),
+                                                                          SimpleNamespace(data=SimpleNamespace(id='abcd7'))]),\
         mock.patch.object(grdm_client, '_add_project_pointers'):
         _overwrite_node_link(grdm_client, SimpleNamespace(), project_dict)
 
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == 'Error'
+    assert caplog.records[1].levelname == warning_level_log
+    assert caplog.records[1].message == f'Target Node {project_dict["project_links"][0]} not found'
 
-def test_update_project_component__get_error(grdm_client):
+
+def test_update_project_component__get_error(grdm_client, caplog):
     with mock.patch.object(grdm_client, '_request', side_effect=[(None, 'Error')]):
         _update_project_component(grdm_client, project_dict)
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == 'Project could not be created'
 
 
-def test_update_project_component__put_403_error(grdm_client):
+def test_update_project_component__put_403_error(grdm_client, caplog):
     with mock.patch.object(grdm_client, '_request', side_effect=[(True, None), (None, 'Error 403')]),\
         mock.patch.object(grdm_client, '_prepare_project_data'):
         _update_project_component(grdm_client, project_dict)
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == 'Error 403'
 
 
-def test_update_project_component__put_normal_error(grdm_client):
+def test_update_project_component__put_normal_error(grdm_client, caplog):
     with mock.patch.object(grdm_client, '_request', side_effect=[(True, None), (None, 'Error normal')]),\
         mock.patch.object(grdm_client, '_prepare_project_data'):
         _update_project_component(grdm_client, project_dict)
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == 'Project could not be created'
 
 
 def test_update_project_component__success(grdm_client):
@@ -1122,307 +1296,77 @@ def test_update_project_component__success(grdm_client):
         _update_project_component(grdm_client, has_child_link_project)
 
 
-def test_overwrite_node_link_update_component__successful(grdm_client):
-    test_prjs = {
-        "id": "fqw32",
-        "projects": [
-            {
-                "id": "123d",
-                "category": "project",
-                "title": "Project Example 001",
-                "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                "public": False,
-                "tags": [
-                    "replication",
-                    "reproducibility",
-                    "open science",
-                    "reproduction",
-                    "psychological science",
-                    "psychology",
-                    "metascience",
-                    "crowdsource"
-                ],
-                "template_from": "abc36",
-                "children": [
-                    {
-                        "id": "abcd3",
-                        "category": "analysis",
-                        "title": "Analysis Component Example 001",
-                        "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-                        "public": False,
-                        "tags": [
-                            "analysis",
-                            "component"
-                        ]
-                    },
-                    {
-                        "id": "abcd4",
-                        "category": "communication",
-                        "title": "Communication Component Example 001"
-                    }
-                ]
-            },
-            {
-                "id": "abcd5",
-                "category": "project",
-                "title": "Project Example License 001",
-                "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                "tags": [
-                    "license"
-                ],
-                "node_license": {
-                    "license_name": "MIT License",
-                    "copyright_holders": [
-                        "holder1",
-                        "holder2"
-                    ],
-                    "year": "2023"
-                }
-            },
-        ]
-    }
-    
+def test_overwrite_node_link_update_component__successful(grdm_client, caplog):
+    override_prjs = copy.deepcopy(prj_has_children_prj_link)
+    override_prjs['projects'][0]['id'] = '123d'
+    override_prjs['projects'][0]['children'][0]['id'] = 'abcd3'
+    override_prjs.pop('project_links', None)
+
     with mock.patch.object(grdm_client, '_create_or_update_project' ),\
         mock.patch.object(grdm_client, '_overwrite_node_link'),\
         mock.patch.object(grdm_client, '_add_project_pointers'):
-        _overwrite_node_link_update_component(grdm_client, test_prjs, True)
+        _overwrite_node_link_update_component(grdm_client, override_prjs, True)
+    assert caplog.records[0].levelname == info_level_log
+    assert caplog.records[0].message == 'Loop following the template of child projects'
 
 
 def test_overwrite_node_link_update_component__project_none(grdm_client):
-    test_prjs = {
-        "id": "fqw32",
-        "projects": [
-            {
-                "id": "123d",
-                "category": "project",
-                "title": "Project Example 001",
-                "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                "public": False,
-                "tags": [
-                    "replication",
-                    "reproducibility",
-                    "open science",
-                    "reproduction",
-                    "psychological science",
-                    "psychology",
-                    "metascience",
-                    "crowdsource"
-                ],
-                "template_from": "abc36",
-                "children": [
-                    {
-                        "category": "analysis",
-                        "title": "Analysis Component Example 001",
-                        "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-                        "public": False,
-                        "tags": [
-                            "analysis",
-                            "component"
-                        ]
-                    },
-                    {
-                        "id": "abcd4",
-                        "category": "communication",
-                        "title": "Communication Component Example 001"
-                    }
-                ],
-                "project_links": [
-                    "abcd4"
-                ]
-            },
-            {
-                "id": "abcd5",
-                "category": "project",
-                "title": "Project Example License 001",
-                "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                "tags": [
-                    "license"
-                ],
-                "node_license": {
-                    "license_name": "MIT License",
-                    "copyright_holders": [
-                        "holder1",
-                        "holder2"
-                    ],
-                    "year": "2023"
-                }
-            },
-        ]
-    }
-    
+    override_prjs = copy.deepcopy(prj_has_children_prj_link)
+    override_prjs['projects'][0]['id'] = '123d'
     with mock.patch.object(grdm_client, '_create_or_update_project', return_value=None),\
         mock.patch.object(grdm_client, '_overwrite_node_link'),\
         mock.patch.object(grdm_client, '_add_project_pointers'):
-        _overwrite_node_link_update_component(grdm_client, test_prjs, True)
+        _overwrite_node_link_update_component(grdm_client, override_prjs, True)
 
 
 def test_overwrite_node_link_update_component__project_not_none_id_empty(grdm_client):
-    test_prjs = {
-        "id": "fqw32",
-        "projects": [
-            {
-                "category": "project",
-                "title": "Project Example 001",
-                "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                "public": False,
-                "tags": [
-                    "replication",
-                    "reproducibility",
-                    "open science",
-                    "reproduction",
-                    "psychological science",
-                    "psychology",
-                    "metascience",
-                    "crowdsource"
-                ],
-                "template_from": "abc36",
-                "children": [
-                    {
-                        "category": "analysis",
-                        "title": "Analysis Component Example 001",
-                        "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-                        "public": False,
-                        "tags": [
-                            "analysis",
-                            "component"
-                        ]
-                    },
-                    {
-                        "id": "abcd4",
-                        "category": "communication",
-                        "title": "Communication Component Example 001"
-                    }
-                ],
-                "project_links": [
-                    "abcd4"
-                ]
-            },
-            {
-                "id": "abcd5",
-                "category": "project",
-                "title": "Project Example License 001",
-                "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                "tags": [
-                    "license"
-                ],
-                "node_license": {
-                    "license_name": "MIT License",
-                    "copyright_holders": [
-                        "holder1",
-                        "holder2"
-                    ],
-                    "year": "2023"
-                }
-            },
-        ]
-    }
-    
     with mock.patch.object(grdm_client, '_create_or_update_project', return_value=SimpleNamespace()),\
         mock.patch.object(grdm_client, '_overwrite_node_link'),\
         mock.patch.object(grdm_client, '_add_project_pointers'):
-        _overwrite_node_link_update_component(grdm_client, test_prjs, True)
+        _overwrite_node_link_update_component(grdm_client, prj_has_children_prj_link, True)
 
 
 def test_overwrite_node_link_update_component__project_not_none_has_id(grdm_client):
-    test_prjs = {
-        "id": "fqw32",
-        "projects": [
-            {
-                "id": "4422",
-                "category": "project",
-                "title": "Project Example 001",
-                "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                "public": False,
-                "tags": [
-                    "replication",
-                    "reproducibility",
-                    "open science",
-                    "reproduction",
-                    "psychological science",
-                    "psychology",
-                    "metascience",
-                    "crowdsource"
-                ],
-                "template_from": "abc36",
-                "children": [
-                    {
-                        "category": "analysis",
-                        "title": "Analysis Component Example 001",
-                        "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
-                        "public": False,
-                        "tags": [
-                            "analysis",
-                            "component"
-                        ]
-                    },
-                    {
-                        "id": "abcd4",
-                        "category": "communication",
-                        "title": "Communication Component Example 001"
-                    }
-                ],
-                "project_links": [
-                    "abcd4"
-                ]
-            },
-            {
-                "id": "abcd5",
-                "category": "project",
-                "title": "Project Example License 001",
-                "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
-                "tags": [
-                    "license"
-                ],
-                "node_license": {
-                    "license_name": "MIT License",
-                    "copyright_holders": [
-                        "holder1",
-                        "holder2"
-                    ],
-                    "year": "2023"
-                }
-            },
-        ]
-    }
-    
+    override_prjs = copy.deepcopy(prj_has_children_prj_link)
+    override_prjs['projects'][0]['id'] = '4422'
     with mock.patch.object(grdm_client, '_create_or_update_project', return_value=SimpleNamespace()),\
         mock.patch.object(grdm_client, '_overwrite_node_link'),\
         mock.patch.object(grdm_client, '_add_project_pointers'):
-        _overwrite_node_link_update_component(grdm_client, test_prjs, True)
+        _overwrite_node_link_update_component(grdm_client, override_prjs, True)
 
 
 def test_remapping_node(grdm_client):
     pr1 = {
-            "id": "id1",
-            "parent_id": "id4",
-            "children": [
-                {
-                    "id": "id2"
-                }
-            ]
-        }
+        "id": "id1",
+        "parent_id": "id4",
+        "children": [
+            {
+                "id": "id2"
+            }
+        ]
+    }
     pr2 = {
-            "id": "id2",
-            "parent_id": "id1"
-        }
+        "id": "id2",
+        "parent_id": "id1"
+    }
     pr3 = {
-            "id": "id3",
-            "parent_id": "id2"
-        }
+        "id": "id3",
+        "parent_id": "id2"
+    }
     pr4 = {
-            "id": "id4",
-            "children": [
-                {
-                    "id": "id1",
-                    "parent_id": "id4",
-                    "children": [
-                        {
-                            "id": "id2"
-                        }
-                    ]
-                }
-            ]
-        }
+        "id": "id4",
+        "children": [
+            {
+                "id": "id1",
+                "parent_id": "id4",
+                "children": [
+                    {
+                        "id": "id2"
+                    }
+                ]
+            }
+        ]
+    }
 
     tree = {
         "id2": {
@@ -1447,150 +1391,15 @@ def test_remapping_node(grdm_client):
 
 
 def test_convert_node_to_create_schema(grdm_client):
-    node_dict = {
-        "id": "4u38t",
-        "type": "nodes",
-        "attributes": {
-            "title": "Project 002",
-            "description": "Project 002_change error license.",
-            "category": "project",
-            "fork": True,
-            "public": True,
-            "tags": [],
-            "node_license": {
-                "copyright_holders": [
-                    "holder3",
-                    "holder4"
-                ],
-                "year": "2024"
-            },
-            "current_user_permissions": [
-                "admin",
-                "write",
-                "read"
-            ],
-            "quota_rate": 0.09756263613,
-            "quota_threshold": 0.9,
-            "subjects": [],
-            "children": [
-                {
-                    "id": "34dwda",
-                    "type": "nodes",
-                }
-            ]
-        },
-        "relationships": {
-            "license": {
-                "links": {
-                    "related": {
-                        "href": "http://localhost:8000/v2/licenses/64ddee0f7cffdd0001f55429/",
-                        "meta": {}
-                    }
-                },
-                "data": {
-                    "id": "64ddee0f7cffdd0001f55429",
-                    "type": "licenses"
-                }
-            },
-        },
-        "project_links": [
-            "nid92",
-            "nid93"
-        ]
-    }
-    project_link_str = {
-        "embeds":{
-            "target_node":{
-                "data":{
-                    "id": "74pnd"
-                }
-            }
-        }
-    }
     _projects_obj = json.loads(json.dumps(project_link_str), object_hook=lambda d: SimpleNamespace(**d))
-    logging.info(type(_projects_obj))
-    logging.info(_projects_obj)
     with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[_projects_obj]),\
         mock.patch.object(grdm_client, 'licenses', return_value=[{"id": "64ddee0f7cffdd0001f55429", "license_name": "123"}]):
-        _convert_node_to_create_schema(grdm_client, node_dict)
+        _convert_node_to_create_schema(grdm_client, node_dict_has_license)
 
 
 def test_convert_node_to_create_schema__has_license(grdm_client):
-    node_dict = {
-        "id": "4u38t",
-        "type": "nodes",
-        "attributes": {
-            "title": "Project 002",
-            "description": "Project 002_change error license.",
-            "category": "project",
-            "fork": True,
-            "public": True,
-            "tags": [],
-            "node_license": {
-                "copyright_holders": [
-                    "holder3",
-                    "holder4"
-                ],
-                "year": "2024",
-                "license_name": "license_name"
-            },
-            "current_user_permissions": [
-                "admin",
-                "write",
-                "read"
-            ],
-            "quota_rate": 0.09756263613,
-            "quota_threshold": 0.9,
-            "subjects": [],
-            "children": [
-                {
-                    "id": "34dwda",
-                    "type": "nodes",
-                }
-            ]
-        },
-        "relationships": {
-            "license": {
-                "links": {
-                    "related": {
-                        "href": "http://localhost:8000/v2/licenses/64ddee0f7cffdd0001f55429/",
-                        "meta": {}
-                    }
-                },
-                "data": {
-                    "id": "64ddee0f7cffdd0001f55429",
-                    "type": "licenses"
-                }
-            },
-            "template_node": {
-                "data": {
-                    "id": "dqw312"
-                }
-            },
-            "forked_from": {
-                "data": {
-                    "id": "qw123"
-                }
-            }
-        },
-        "project_links": [
-            "nid92",
-            "nid93"
-        ]
-    }
-    project_link_str = {
-        "embeds":{
-            "target_node":{
-                "data":{
-                    "id": "74pnd"
-                }
-            }
-        }
-    }
     _projects_obj = json.loads(json.dumps(project_link_str), object_hook=lambda d: SimpleNamespace(**d))
-    logging.info(type(_projects_obj))
-    logging.info(_projects_obj)
     license = {"id": "64ddee0f7cffdd0001f55429", "attributes": {"name": "license_name"}}
     grdm_client.licenses.append(json.loads(json.dumps(license), object_hook=lambda d: SimpleNamespace(**d)))
     with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[_projects_obj]):
-        _convert_node_to_create_schema(grdm_client, node_dict)
+        _convert_node_to_create_schema(grdm_client, node_dict_has_license)

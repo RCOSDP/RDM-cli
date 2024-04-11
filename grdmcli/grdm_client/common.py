@@ -270,9 +270,12 @@ class CommonCLI(Namespace):
         _response, _error_message = self._request(method, url, params=params, data={}, )
         if _error_message:
             if is_target_node:
-                logger.warn(f'Target Node {url.split("/")[1]} not found')
+                if 'Not found' in _error_message:
+                    logger.warn(f'Target Node {url.split("/")[1]} not found')
+                else:
+                    logger.warn(_error_message)
                 return None
-            if ignore_error and is_target_node:
+            elif ignore_error:
                 logger.warning(_error_message)
                 return None
             else:

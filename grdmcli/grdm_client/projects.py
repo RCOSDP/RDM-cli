@@ -432,7 +432,6 @@ def _add_project_components(self, children, project, verbose=True):
                 continue
             # update child node
             component = self._update_project_component(_component_dict, verbose)
-            self._overwrite_node_link(component, _component_dict, verbose)
         # create new children if ID NOT EXIST in input
         else:
             logger.info(f'JSONPOINTER ./children/{_component_idx}/')
@@ -485,7 +484,6 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
         return None, None
     _content = _response.content
 
-    # pprint(_response.json())
     # Parse JSON into an object with attributes corresponding to dict keys.
     response = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 
