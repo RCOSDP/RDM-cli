@@ -6,6 +6,7 @@ from unittest import mock
 import pytest
 import requests
 import re
+import copy
 
 from grdmcli.exceptions import GrdmCliException
 from grdmcli.grdm_client.projects import (
@@ -19,13 +20,20 @@ from grdmcli.grdm_client.projects import (
     _add_project_pointers,
     _add_project_components,
     _projects_add_component,
-    _create_or_load_project,
+    _create_or_update_project,
+    _update_project,
+    _overwrite_node_link,
+    _update_project_component,
+    _overwrite_node_link_update_component,
+    _remapping_node,
+    _convert_node_to_create_schema,
     projects_create,
     projects_get_list,
     projects_get,
     get_all_linked_node,
     convert_contributor_with_template_get_cli,
-    call_api_user_nodes
+    call_api_user_nodes,
+    convert_namespace_to_dict
 )
 from pathvalidate import ValidationError
 from tests.factories import GRDMClientFactory
@@ -131,6 +139,49 @@ projects = {
                 "fork"
             ],
             "children": []
+        },
+        {
+            "fork_id": "dffe2",
+            "category": "project",
+            "title": "Project Example 333",
+            "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.",
+            "public": False,
+            "tags": [
+                "replication",
+                "fork"
+            ],
+            "children": [
+                {
+                    "id": "cdhe1",
+                    "category": "project",
+                    "title": "Project Example 003",
+                    "children": [
+                        {
+                            "category": "project",
+                            "title": "Project Example 004"
+                        }
+                    ],
+                    "project_links": [
+                        "nid90",
+                        "nid91"
+                    ]
+                }
+            ],
+        },
+        {
+            "category": "project",
+            "title": "Project Example 555",
+            "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.",
+            "public": False,
+            "tags": [
+                "replication",
+                "fork"
+            ],
+            "children": [],
+            "project_links": [
+                "nid90",
+                "nid91"
+            ]
         }
     ]
 }
@@ -975,7 +1026,165 @@ get_cli_linked_nodes = {
     "b2": ['1', '2', '3'],
     "d1": ['1', '2', '3'],
 }
+project_link_str = {
+    "embeds":{
+        "target_node":{
+            "data":{
+                "id": "74pnd"
+            }
+        }
+    }
+}
 
+list_project_links_str = """
+    {
+        "data":[
+            {
+                "id":"456465746755234",
+                "relationships": {
+                    "target_node": {
+                        "data": {
+                            "id": "nid20" 
+                        }
+                    }
+                }
+            }
+        ]
+    }
+"""
+
+project_dict = {
+    'id': 'fwf23',
+    'project_links': [
+        'abcd5',
+        'abcd7'
+    ]
+}
+
+node_dict_has_license = {
+    "id": "4u38t",
+    "type": "nodes",
+    "attributes": {
+        "title": "Project 002",
+        "description": "Project 002_change error license.",
+        "category": "project",
+        "fork": True,
+        "public": True,
+        "tags": [],
+        "node_license": {
+            "copyright_holders": [
+                "holder3",
+                "holder4"
+            ],
+            "year": "2024",
+            "license_name": "license_name"
+        },
+        "current_user_permissions": [
+            "admin",
+            "write",
+            "read"
+        ],
+        "quota_rate": 0.09756263613,
+        "quota_threshold": 0.9,
+        "subjects": [],
+        "children": [
+            {
+                "id": "34dwda",
+                "type": "nodes",
+            }
+        ]
+    },
+    "relationships": {
+        "license": {
+            "links": {
+                "related": {
+                    "href": "http://localhost:8000/v2/licenses/64ddee0f7cffdd0001f55429/",
+                    "meta": {}
+                }
+            },
+            "data": {
+                "id": "64ddee0f7cffdd0001f55429",
+                "type": "licenses"
+            }
+        },
+        "template_node": {
+            "data": {
+                "id": "dqw312"
+            }
+        },
+        "forked_from": {
+            "data": {
+                "id": "qw123"
+            }
+        }
+    },
+    "project_links": [
+        "nid92",
+        "nid93"
+    ]
+}
+
+prj_has_children_prj_link = {
+    "id": "fqw32",
+    "projects": [
+        {
+            "category": "project",
+            "title": "Project Example 001",
+            "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+            "public": False,
+            "tags": [
+                "replication",
+                "reproducibility",
+                "open science",
+                "reproduction",
+                "psychological science",
+                "psychology",
+                "metascience",
+                "crowdsource"
+            ],
+            "template_from": "abc36",
+            "children": [
+                {
+                    "category": "analysis",
+                    "title": "Analysis Component Example 001",
+                    "description": "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+                    "public": False,
+                    "tags": [
+                        "analysis",
+                        "component"
+                    ]
+                },
+                {
+                    "id": "abcd4",
+                    "category": "communication",
+                    "title": "Communication Component Example 001"
+                }
+            ],
+            "project_links": [
+                "abcd4"
+            ]
+        },
+        {
+            "id": "abcd5",
+            "category": "project",
+            "title": "Project Example License 001",
+            "description": "Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
+            "tags": [
+                "license"
+            ],
+            "node_license": {
+                "license_name": "MIT License",
+                "copyright_holders": [
+                    "holder1",
+                    "holder2"
+                ],
+                "year": "2023"
+            }
+        },
+    ]
+}
+
+list_project_links = json.loads(list_project_links_str, object_hook=lambda d: SimpleNamespace(**d))
 content_obj = json.loads(_content, object_hook=lambda d: SimpleNamespace(**d))
 fork_project_obj = json.loads(fork_project_str, object_hook=lambda d: SimpleNamespace(**d))
 new_project_obj = json.loads(new_project_str, object_hook=lambda d: SimpleNamespace(**d))
@@ -1031,7 +1240,7 @@ def test_prepare_project_data__new_has_license_verbose_true(grdm_client, caplog)
         actual = _prepare_project_data(grdm_client, _project, verbose=True)
     assert actual['data']['type'] == 'nodes'
     assert actual['data']['attributes']['tags'] == _project['tags']
-    assert actual['data']['attributes']['public'] is False
+    assert actual['data']['attributes'].get('public', None) == None
     _license = _project.get('node_license', {})
     del _license['license_name']
     assert actual['data']['attributes']['node_license'] == _license
@@ -1041,6 +1250,14 @@ def test_prepare_project_data__new_has_license_verbose_true(grdm_client, caplog)
     assert caplog.records[0].message.__contains__('Prepared project data:')
 
 
+def test_prepare_project_data__invalid_license_node_id_null(grdm_client):
+    _project = projects['projects'][1]
+    _project.pop('id', None)
+    with mock.patch.object(grdm_client, '_find_license_id_from_name', return_value=None):
+        actual = _prepare_project_data(grdm_client, _project, verbose=True)
+    assert actual == None
+
+
 def test_prepare_project_data__fork_project(grdm_client, caplog):
     _project = projects['projects'][3]
     actual = _prepare_project_data(grdm_client, _project, verbose=True)
@@ -1048,6 +1265,34 @@ def test_prepare_project_data__fork_project(grdm_client, caplog):
     assert actual['data']['attributes']['tags'] == _project['tags']
     assert actual['data']['attributes']['public'] == _project['public']
     assert actual['data']['relationships'] == {}
+
+
+def test_prepare_project_data__none_of_description_tags_id(grdm_client, caplog):
+    prepare_data = {
+        'category': 'data',
+        'public': 'false'
+    }
+    actual = _prepare_project_data(grdm_client, prepare_data, verbose=True)
+    assert actual['data']['type'] == 'nodes'
+    assert actual['data']['attributes']['tags'] == []
+    assert actual['data']['attributes']['public'] == 'false'
+
+
+def test_prepare_project_data__license_none_has_id(grdm_client, caplog):
+    prepare_data = {
+        'id': '123',
+        'category': 'data',
+        'public': 'false',
+        'node_license': {
+            'license_name': 'license_name'
+        }
+    }
+    with mock.patch.object(grdm_client, '_find_license_id_from_name', return_value=None):
+        actual = _prepare_project_data(grdm_client, prepare_data, verbose=True)
+        assert actual['data']['type'] == 'nodes'
+        assert actual['data']['id'] == '123'
+        assert actual['data']['attributes']['public'] == 'false'
+        assert 'node_license' not in actual['data']
 
 
 def test_load_project__is_fake_and_verbose_true(caplog, grdm_client):
@@ -1104,13 +1349,11 @@ def test_load_project__is_fake_false_verbose_false(caplog, grdm_client):
     assert caplog.records[1].message == f'Loaded project nodes/{project_id}/'
 
 
-def test_fork_project__request_error_and_ignore_error_false_sys_exit(grdm_client, caplog):
+def test_fork_project__request_error_and_ignore_error_false_log_error(grdm_client, caplog):
     _node_project = projects['projects'][3]
     error_message = 'error'
     with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
-        with pytest.raises(SystemExit) as ex_info:
-            _fork_project(grdm_client, _node_project, ignore_error=False, verbose=False)
-        assert ex_info.value.code == error_message
+        _fork_project(grdm_client, _node_project, ignore_error=False, verbose=False)
         pk = _node_project['fork_id']
         assert caplog.records[0].levelname == info_level_log
         assert caplog.records[0].message == f'Fork a project from nodes/{pk}/'
@@ -1118,7 +1361,7 @@ def test_fork_project__request_error_and_ignore_error_false_sys_exit(grdm_client
         assert 'Ignore the following attributes' in caplog.records[1].message
         assert caplog.records[2].levelname == warning_level_log
         assert caplog.records[2].message == f'{error_message}'
-        assert len(caplog.records) == 3
+        assert len(caplog.records) == 4
 
 
 def test_fork_project__request_error_and_ignore_error_true(grdm_client, caplog):
@@ -1250,9 +1493,13 @@ def test_link_project_to_project__request_error_and_ignore_error_true(grdm_clien
 def test_link_project_to_project__verbose_true(grdm_client, caplog):
     resp = requests.Response()
     resp._content = link_project_str
+    projects_creation_output = {}
+    projects_creation_output[link_project_obj.data.id] = link_project_obj.data
+
     _project_id = projects['projects'][2]['id']
     project_id = json.loads(link_project_str)['data']['id']
-    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)),\
+        mock.patch.object(grdm_client, 'projects_creation_output', return_value=projects_creation_output):
         actual1, actual2 = _link_project_to_project(grdm_client, _project_id, '74pnd', verbose=True)
     project_link = link_project_obj.data.embeds.target_node.data
     assert actual1 == project_link
@@ -1269,8 +1516,12 @@ def test_link_project_to_project__verbose_true(grdm_client, caplog):
 def test_link_project_to_project__verbose_false(grdm_client, caplog):
     resp = requests.Response()
     resp._content = link_project_str
+    projects_creation_output = {}
+    projects_creation_output[link_project_obj.data.id] = link_project_obj.data
+
     _project_id = projects['projects'][2]['id']
-    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)),\
+        mock.patch.object(grdm_client, 'projects_creation_output', return_value=projects_creation_output):
         actual1, actual2 = _link_project_to_project(grdm_client, _project_id, '74pnd', verbose=False)
     project_link = link_project_obj.data.embeds.target_node.data
     assert actual1 == project_link
@@ -1286,7 +1537,12 @@ def test_link_project_to_project__target_node_error_verbose_true(grdm_client, ca
     resp = requests.Response()
     resp._content = json.dumps(_project_link_error)
     _project_id = projects['projects'][2]['id']
-    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+
+    projects_creation_output = {}
+    projects_creation_output[link_project_obj.data.id] = link_project_obj.data
+
+    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)),\
+        mock.patch.object(grdm_client, 'projects_creation_output', return_value=projects_creation_output):
         actual1, actual2 = _link_project_to_project(grdm_client, _project_id, '74pnd', verbose=True)
     assert actual1 is None
     assert actual2 == _project_link_error['data']
@@ -1301,7 +1557,7 @@ def test_add_project_pointers__project_link_is_none(grdm_client, caplog):
     _project = projects_obj.projects[2]
     _project_links = ['74pnd', 'abcd7']
     project_link = link_project_obj.data.embeds.target_node.data
-    with mock.patch.object(grdm_client, '_link_project_to_project', side_effect=[(project_link, None), (None, None)]):
+    with mock.patch.object(grdm_client, '_link_project_to_project', side_effect=[(project_link, {'id': '74pnd'}), (None, None)]):
         _add_project_pointers(grdm_client, _project_links, _project)
     assert _project_links == ['74pnd', None]
     assert caplog.records[0].levelname == info_level_log
@@ -1311,22 +1567,23 @@ def test_add_project_pointers__project_link_is_none(grdm_client, caplog):
     assert len(caplog.records) == 2
 
 
-def test_create_or_load_project__case_load_project_none(grdm_client, caplog):
+def test_create_or_update_project__case_load_project_none(grdm_client, caplog):
     _projects = (projects.get('projects', [])).copy()
     _id = _projects[2].get('id')
     with mock.patch.object(grdm_client, '_load_project', return_value=(None, None)):
-        actual = _create_or_load_project(grdm_client, _projects, 2)
+        actual = _create_or_update_project(grdm_client, _projects, 2)
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'JSONPOINTER /projects/2/id == {_id}'
-    assert len(caplog.records) == 1
+    assert len(caplog.records) == 2
     assert actual == _projects[2] is None
 
 
-def test_create_or_load_project__case_load_project(caplog, grdm_client):
+def test_create_or_update_project__case_load_project(caplog, grdm_client):
     _projects = projects.get('projects', [])
     _id = _projects[2].get('id')
-    with mock.patch.object(grdm_client, '_load_project', return_value=(link_project_obj.data, None)):
-        actual = _create_or_load_project(grdm_client, _projects, 2)
+    with mock.patch.object(grdm_client, '_load_project', return_value=(link_project_obj.data, None)),\
+        mock.patch.object(grdm_client, '_update_project', return_value=(link_project_obj.data, None)):
+        actual = _create_or_update_project(grdm_client, _projects, 2)
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'JSONPOINTER /projects/2/id == {_id}'
@@ -1335,20 +1592,32 @@ def test_create_or_load_project__case_load_project(caplog, grdm_client):
     assert _projects[2]['type'] == link_project_obj.data.type
 
 
-def test_create_or_load_project__case_create_project_none(caplog, grdm_client):
+def test_create_or_update_project__case_load_project_error_update(caplog, grdm_client):
+    _projects = projects.get('projects', [])
+    _id = _projects[2].get('id')
+    with mock.patch.object(grdm_client, '_load_project', return_value=(link_project_obj.data, None)),\
+        mock.patch.object(grdm_client, '_update_project', return_value=(None, None)):
+        actual = _create_or_update_project(grdm_client, _projects, 2)
+    assert len(caplog.records) == 1
+    assert caplog.records[0].levelname == info_level_log
+    assert caplog.records[0].message == f'JSONPOINTER /projects/2/id == {_id}'
+    assert actual is None
+
+
+def test_create_or_update_project__case_create_project_none(caplog, grdm_client):
     _projects = (projects.get('projects', [])).copy()
     with mock.patch.object(grdm_client, '_create_project', return_value=(None, None)):
-        actual = _create_or_load_project(grdm_client, _projects, 0)
+        actual = _create_or_update_project(grdm_client, _projects, 0)
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'JSONPOINTER /projects/0/'
     assert actual == _projects[0] is None
 
 
-def test_create_or_load_project__case_create_project(caplog, grdm_client):
+def test_create_or_update_project__case_create_project(caplog, grdm_client):
     _projects = projects.get('projects', [])
     with mock.patch.object(grdm_client, '_create_project', return_value=(new_project_obj.data, None)):
-        actual = _create_or_load_project(grdm_client, _projects, 0)
+        actual = _create_or_update_project(grdm_client, _projects, 0)
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'JSONPOINTER /projects/0/'
@@ -1357,22 +1626,22 @@ def test_create_or_load_project__case_create_project(caplog, grdm_client):
     assert _projects[0]['type'] == new_project_obj.data.type
 
 
-def test_create_or_load_project__case_fork_project_none(caplog, grdm_client):
+def test_create_or_update_project__case_fork_project_none(caplog, grdm_client):
     _projects = (projects.get('projects', [])).copy()
     _fork_id = _projects[3].get('fork_id')
     with mock.patch.object(grdm_client, '_fork_project', return_value=(None, None)):
-        actual = _create_or_load_project(grdm_client, _projects, 3)
-    assert len(caplog.records) == 1
+        actual = _create_or_update_project(grdm_client, _projects, 3)
+    assert len(caplog.records) == 2
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'JSONPOINTER /projects/3/fork_id == {_fork_id}'
     assert actual == _projects[3] is None
 
 
-def test_create_or_load_project__case_fork_project(caplog, grdm_client):
+def test_create_or_update_project__case_fork_project(caplog, grdm_client):
     _projects = projects.get('projects', [])
     _fork_id = _projects[3].get('fork_id')
     with mock.patch.object(grdm_client, '_fork_project', return_value=(fork_project_obj.data, None)):
-        actual = _create_or_load_project(grdm_client, _projects, 3)
+        actual = _create_or_update_project(grdm_client, _projects, 3)
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'JSONPOINTER /projects/3/fork_id == {_fork_id}'
@@ -1384,17 +1653,18 @@ def test_create_or_load_project__case_fork_project(caplog, grdm_client):
 def test_add_project_components__children_exist_id_ignored(grdm_client, caplog):
     _children = projects['projects'][0]['children']
     children = [_children[1]]
-    _add_project_components(grdm_client, children, link_project_obj.data)
+    with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[]):
+        _add_project_components(grdm_client, children, link_project_obj.data)
     assert len(caplog.records) == 1
-    assert caplog.records[0].levelname == info_level_log
-    assert caplog.records[0].message == f'JSONPOINTER ./children/0/ ignored'
-    assert children[0] is None
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == f'Project could not created'
 
 
 def test_add_project_components__add_components_is_none(grdm_client, caplog):
     _children = (projects['projects'][2]['children']).copy()
     children = [_children[0]]
-    with mock.patch.object(grdm_client, '_projects_add_component', return_value=(None, None)):
+    with mock.patch.object(grdm_client, '_projects_add_component', return_value=(None, None)),\
+        mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[]):
         _add_project_components(grdm_client, children, link_project_obj.data)
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == info_level_log
@@ -1402,18 +1672,30 @@ def test_add_project_components__add_components_is_none(grdm_client, caplog):
     assert children[0] is None
 
 
-def test_add_project_components__add_components_success(grdm_client, caplog):
+def test_add_project_components__add_components_not_have_child_id(grdm_client, caplog):
     _project = link_project_obj.data
     _children = projects['projects'][2]['children']
     children = [_children[0]]
     component = new_project_obj.data
-    with mock.patch.object(grdm_client, '_projects_add_component', return_value=(component, None)):
+    with mock.patch.object(grdm_client, '_projects_add_component', return_value=(component, None)),\
+        mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[SimpleNamespace(id = 'abcd3')]):
         _add_project_components(grdm_client, children, _project)
     assert len(caplog.records) == 1
     assert caplog.records[0].levelname == info_level_log
     assert caplog.records[0].message == f'JSONPOINTER ./children/0/'
     assert children[0]['id'] == component.id
     assert children[0]['type'] == component.type
+
+
+def test_add_project_components__add_components_success(grdm_client, caplog):
+    _project = link_project_obj.data
+    _children = projects['projects'][4]['children']
+    children = [_children[0]]
+    component = new_project_obj.data
+    with mock.patch.object(grdm_client, '_projects_add_component', return_value=(component, None)),\
+        mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[SimpleNamespace(id = 'cdhe1')]):
+        _add_project_components(grdm_client, children, _project)
+    assert len(caplog.records) == 0
 
 
 def test_projects_add_component__request_error_and_ignore_error_false_sys_exit(grdm_client, caplog):
@@ -1460,6 +1742,9 @@ def test_projects_add_component__verbose_true(grdm_client, caplog):
             actual1, actual2 = _projects_add_component(grdm_client, parent_id, _project, verbose=True)
     assert _project['project_links'] == ['nid92']
     assert _project['children'] == [_project['children'][0]]
+    logging.info(f'actual1: {actual1}\n')
+    logging.info(f'new_project_obj.data: {new_project_obj.data}')
+    delattr(actual1, 'parent_id')
     assert actual1 == new_project_obj.data
     assert actual2 == json.loads(new_project_str)['data']
     assert caplog.records[0].levelname == info_level_log
@@ -1467,7 +1752,32 @@ def test_projects_add_component__verbose_true(grdm_client, caplog):
     assert caplog.records[1].levelname == info_level_log
     assert caplog.records[1].message == f'Created component \'{project_id}\''
     assert caplog.records[2].levelname == debug_level_log
-    assert len(caplog.records) == 3
+    assert len(caplog.records) == 5
+
+
+def test_projects_add_component__prepare_data_error(grdm_client, caplog):
+    _project = projects['projects'][2]
+    error_message = 'error'
+    parent_id = 'nid11'
+    with mock.patch.object(grdm_client, '_prepare_project_data', return_value=None):
+        with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
+            _projects_add_component(grdm_client, parent_id, _project, ignore_error=False)
+            assert len(caplog.records) == 0
+
+
+def test_projects_add_component__request_error_has_license(grdm_client, caplog):
+    error_message = 'error licence'
+    _project = projects['projects'][2]
+    parent_id = 'nid11'
+    with mock.patch('tests.factories.GRDMClientFactory._prepare_project_data', return_value=True):
+        with mock.patch.object(grdm_client, '_request', return_value=(None, error_message)):
+            actual1, actual2 = _projects_add_component(grdm_client, parent_id, _project, ignore_error=True)
+        assert actual1 == actual2 is None
+        assert caplog.records[0].levelname == info_level_log
+        assert caplog.records[0].message == f'Create new component to nodes/{parent_id}/'
+        assert caplog.records[1].levelname == warning_level_log
+        assert caplog.records[1].message == f'{error_message}'
+        assert len(caplog.records) == 3
 
 
 @mock.patch('os.path.exists', return_value=False)
@@ -1513,7 +1823,7 @@ def test_projects_create__verbose_true(mocker, grdm_client, caplog):
     _projects = {"projects": [projects['projects'][2]]}
     grdm_client.created_projects.append(fork_project_obj.data)
     mocker.patch('grdmcli.utils.check_json_schema')
-    with mock.patch.object(grdm_client, '_create_or_load_project', return_value=fork_project_obj.data):
+    with mock.patch.object(grdm_client, '_create_or_update_project', return_value=fork_project_obj.data):
         with pytest.raises(SystemExit) as ex_info:
             projects_create(grdm_client)
         assert caplog.records[3].levelname == info_level_log
@@ -1525,16 +1835,16 @@ def test_projects_create__verbose_true(mocker, grdm_client, caplog):
 
 @mock.patch('sys.exit')
 @mock.patch('grdmcli.utils.write_json_file')
-def test_projects_create__case_create_or_load_project_none(mocker, grdm_client, caplog):
+def test_projects_create__case_create_or_update_project_none(mocker, grdm_client, caplog):
     _projects = {"projects": [projects['projects'][2]]}
     mocker.patch('grdmcli.utils.check_json_schema')
     mocker.patch('os.path.exists', side_effect=[True, True])
     with mock.patch('grdmcli.utils.read_json_file', return_value=_projects):
-        with mock.patch.object(grdm_client, '_create_or_load_project',
-                               return_value=test_create_or_load_project__case_load_project_none(grdm_client, caplog)):
+        with mock.patch.object(grdm_client, '_create_or_update_project',
+                               return_value=test_create_or_update_project__case_load_project_none(grdm_client, caplog)):
             projects_create(grdm_client)
-        assert caplog.records[4].message == 'Loop following the template of projects'
-        assert caplog.records[5].message == 'Project is not found'
+        assert 'Validate by the template of projects' in caplog.records[4].message
+        assert caplog.records[5].message == 'Loop following the template of projects'
         assert caplog.records[6].message == 'The \'projects\' object is empty'
 
 
@@ -2047,3 +2357,303 @@ def test_call_api_user_nodes_successful(grdm_client):
     resp = requests.Response()
     with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
         call_api_user_nodes(grdm_client, 'GET', 'url')
+
+
+@mock.patch('sys.exit')
+def test_create_project__prepare_data_none(grdm_client):
+    node_object = SimpleNamespace()
+    with mock.patch.object(grdm_client, '_prepare_project_data', return_value=None):
+        actual1, actual2 = _create_project(grdm_client, node_object)
+        assert actual1 is None
+        assert actual2 is None
+
+
+@mock.patch('sys.exit')
+def test_create_project__license_error_message(grdm_client):
+    node_object = SimpleNamespace()
+    with mock.patch.object(grdm_client, '_request', return_value=(None, 'error licence')):
+        actual1, actual2 = _create_project(grdm_client, node_object)
+        assert actual1 is None
+        assert actual2 is None
+
+
+def test_update_project__successful(grdm_client, caplog):
+    resp = requests.Response()
+    resp._content = new_project_str
+    _prepare_data = {
+        'data': {
+            'id': 'ezcuj'
+        }
+    }
+    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)),\
+        mock.patch.object(grdm_client, '_prepare_project_data', return_value=_prepare_data):
+        _update_project(grdm_client, SimpleNamespace(), True, True)
+        assert caplog.records[0].message == 'Update project'
+        assert caplog.records[1].message == f'Updated project \'{_prepare_data['data']['id']}\''
+
+
+def test_update_project__error_403_ignore_error(grdm_client, caplog):
+    _prepare_data = {
+        'data': {
+            'id': 'ezcuj'
+        }
+    }
+    with mock.patch.object(grdm_client, '_request', return_value=(None, 'Error 403')),\
+        mock.patch.object(grdm_client, '_prepare_project_data', return_value=_prepare_data):
+        _update_project(grdm_client, SimpleNamespace(), True, False)
+        assert caplog.records[0].message == 'Update project'
+        assert caplog.records[1].message == 'Project could not be created'
+
+
+def test_update_project__normal_error_ignore_error(grdm_client, caplog):
+    _prepare_data = {
+        'data': {
+            'id': 'ezcuj'
+        }
+    }
+    with mock.patch.object(grdm_client, '_request', return_value=(None, 'Error normal')),\
+        mock.patch.object(grdm_client, '_prepare_project_data', return_value=_prepare_data):
+        _update_project(grdm_client, SimpleNamespace(), True, True)
+        assert caplog.records[0].message == 'Update project'
+        assert caplog.records[1].message == 'Error normal'
+
+
+@mock.patch('sys.exit')
+def test_update_project__no_ignore_error(grdm_client, caplog):
+    _prepare_data = {
+        'data': {
+            'id': 'ezcuj'
+        }
+    }
+    with mock.patch.object(grdm_client, '_request', return_value=(None, 'Error normal')),\
+        mock.patch.object(grdm_client, '_prepare_project_data', return_value=_prepare_data):
+        _update_project(grdm_client, SimpleNamespace(), False, True)
+    assert caplog.records[0].message == 'Update project'
+
+
+def test_create_or_update_project__case_has_fork_and_id(grdm_client, caplog):
+    test_projects = [prj for prj in projects.get('projects', [])]
+    test_projects[2]['fork_id'] = '24end'
+    with mock.patch.object(grdm_client, '_load_project', return_value=(None, None)):
+        _create_or_update_project(grdm_client, test_projects, 2)
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == 'Project could not be created'
+    assert len(caplog.records) == 1
+
+
+
+@mock.patch('grdmcli.utils.read_json_file', return_value=projects)
+@mock.patch('os.path.exists', side_effect=[True, True])
+def test_projects_create__id_none_has_project_links(mocker, grdm_client, caplog):
+    _projects = {"projects": [projects['projects'][2]]}
+    grdm_client.created_projects = [fork_project_obj.data]
+    mocker.patch('grdmcli.utils.check_json_schema')
+    with mock.patch.object(grdm_client, '_create_or_update_project', return_value=fork_project_obj.data),\
+        pytest.raises(SystemExit) as ex_info:
+            projects_create(grdm_client)
+    assert caplog.records[3].levelname == info_level_log
+    assert caplog.records[3].message == 'Loop following the template of projects'
+    assert _projects == _projects
+
+
+def test_overwrite_node_link__no_project_links(grdm_client):
+    non_prj_link_project = {k:v for k, v in project_dict.items()}
+    non_prj_link_project.pop('project_links', None)
+    with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=list_project_links.data),\
+        mock.patch.object(grdm_client, '_request', side_effect=[(None, 'Error'), (True, 'Error 404'), (True, None), (True, None)]),\
+        mock.patch.object(grdm_client, '_add_project_pointers'):
+        _overwrite_node_link(grdm_client, SimpleNamespace(), non_prj_link_project)
+
+
+def test_overwrite_node_link__successful(grdm_client):
+    with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=list_project_links.data),\
+        mock.patch.object(grdm_client, '_request', side_effect=[(None, None), (True, None), (True, None), (True, None)]),\
+        mock.patch.object(grdm_client, '_add_project_pointers'):
+        _overwrite_node_link(grdm_client, SimpleNamespace(), project_dict)
+
+
+def test_overwrite_node_link__delete_error_add_error_404(grdm_client, caplog):
+    with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=list_project_links.data),\
+        mock.patch.object(grdm_client, '_request', side_effect=[(None, 'Error'), (True, 'Error 404'), (True, None), (True, None)]),\
+        mock.patch.object(grdm_client, 'parse_api_response', side_effect=[SimpleNamespace(data=SimpleNamespace(id='abcd5')),
+                                                                          SimpleNamespace(data=SimpleNamespace(id='abcd7'))]),\
+        mock.patch.object(grdm_client, '_add_project_pointers'):
+        _overwrite_node_link(grdm_client, SimpleNamespace(), project_dict)
+
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == 'Error'
+    assert caplog.records[1].levelname == warning_level_log
+    assert caplog.records[1].message == f'Target Node {project_dict["project_links"][0]} not found'
+
+
+def test_update_project_component__get_error(grdm_client, caplog):
+    with mock.patch.object(grdm_client, '_request', side_effect=[(None, 'Error')]):
+        _update_project_component(grdm_client, project_dict)
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == 'Project could not be created'
+
+
+def test_update_project_component__put_403_error(grdm_client, caplog):
+    with mock.patch.object(grdm_client, '_request', side_effect=[(True, None), (None, 'Error 403')]),\
+        mock.patch.object(grdm_client, '_prepare_project_data'):
+        _update_project_component(grdm_client, project_dict)
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == 'Error 403'
+
+
+def test_update_project_component__put_normal_error(grdm_client, caplog):
+    with mock.patch.object(grdm_client, '_request', side_effect=[(True, None), (None, 'Error normal')]),\
+        mock.patch.object(grdm_client, '_prepare_project_data'):
+        _update_project_component(grdm_client, project_dict)
+    assert caplog.records[0].levelname == error_level_log
+    assert caplog.records[0].message == 'Project could not be created'
+
+
+def test_update_project_component__success(grdm_client):
+    node_str = """{
+        "data": {
+            "id": "qsqf2",
+            "relationships": {
+                "id": "ezcuj",
+                "parent": {
+                    "data": {
+                        "id": "f221h"
+                    }
+                }
+            },
+            "project_links": [
+                "abcd5",
+                "abcd7"
+            ],
+            "children": [
+                {
+                    "id": "44fef",
+                    "type": "nodes"
+                }
+            ]
+        }
+    }"""
+    resp = requests.Response()
+    resp._content = node_str
+    has_child_link_project = {k:v for k, v in project_dict.items()}
+    has_child_link_project['children'] = [
+        {
+            "id": "44fef",
+            "type": "nodes"
+        }
+    ]
+    with mock.patch.object(grdm_client, '_request', side_effect=[(None, None), (resp, None)]),\
+        mock.patch.object(grdm_client, '_prepare_project_data'),\
+        mock.patch.object(grdm_client, '_add_project_components'):
+        _update_project_component(grdm_client, has_child_link_project)
+
+
+def test_overwrite_node_link_update_component__successful(grdm_client, caplog):
+    override_prjs = copy.deepcopy(prj_has_children_prj_link)
+    override_prjs['projects'][0]['id'] = '123d'
+    override_prjs['projects'][0]['children'][0]['id'] = 'abcd3'
+    override_prjs.pop('project_links', None)
+
+    with mock.patch.object(grdm_client, '_create_or_update_project' ),\
+        mock.patch.object(grdm_client, '_overwrite_node_link'),\
+        mock.patch.object(grdm_client, '_add_project_pointers'):
+        _overwrite_node_link_update_component(grdm_client, override_prjs, True)
+    assert caplog.records[0].levelname == info_level_log
+    assert caplog.records[0].message == 'Loop following the template of child projects'
+
+
+def test_overwrite_node_link_update_component__project_none(grdm_client):
+    override_prjs = copy.deepcopy(prj_has_children_prj_link)
+    override_prjs['projects'][0]['id'] = '123d'
+    with mock.patch.object(grdm_client, '_create_or_update_project', return_value=None),\
+        mock.patch.object(grdm_client, '_overwrite_node_link'),\
+        mock.patch.object(grdm_client, '_add_project_pointers'):
+        _overwrite_node_link_update_component(grdm_client, override_prjs, True)
+
+
+def test_overwrite_node_link_update_component__project_not_none_id_empty(grdm_client):
+    with mock.patch.object(grdm_client, '_create_or_update_project', return_value=SimpleNamespace()),\
+        mock.patch.object(grdm_client, '_overwrite_node_link'),\
+        mock.patch.object(grdm_client, '_add_project_pointers'):
+        _overwrite_node_link_update_component(grdm_client, prj_has_children_prj_link, True)
+
+
+def test_overwrite_node_link_update_component__project_not_none_has_id(grdm_client):
+    override_prjs = copy.deepcopy(prj_has_children_prj_link)
+    override_prjs['projects'][0]['id'] = '4422'
+    with mock.patch.object(grdm_client, '_create_or_update_project', return_value=SimpleNamespace()),\
+        mock.patch.object(grdm_client, '_overwrite_node_link'),\
+        mock.patch.object(grdm_client, '_add_project_pointers'):
+        _overwrite_node_link_update_component(grdm_client, override_prjs, True)
+
+
+def test_remapping_node(grdm_client):
+    pr1 = {
+        "id": "id1",
+        "parent_id": "id4",
+        "children": [
+            {
+                "id": "id2"
+            }
+        ]
+    }
+    pr2 = {
+        "id": "id2",
+        "parent_id": "id1"
+    }
+    pr3 = {
+        "id": "id3",
+        "parent_id": "id2"
+    }
+    pr4 = {
+        "id": "id4",
+        "children": [
+            {
+                "id": "id1",
+                "parent_id": "id4",
+                "children": [
+                    {
+                        "id": "id2"
+                    }
+                ]
+            }
+        ]
+    }
+
+    tree = {
+        "id2": {
+            "id": "id2",
+            "parent_id": "id1"
+        },
+        "id1": {
+            "id": "id1",
+            "parent_id": "id4"
+        },
+        "id3": {
+            "id": "id3",
+            "parent_id": "id2"
+        },
+        "id4": {
+            "id": "id4",
+        },
+    }
+
+    with mock.patch.object(grdm_client, '_convert_node_to_create_schema', side_effect=[pr2, pr1, pr3, pr4]):
+        _remapping_node(grdm_client, tree)
+
+
+def test_convert_node_to_create_schema(grdm_client):
+    _projects_obj = json.loads(json.dumps(project_link_str), object_hook=lambda d: SimpleNamespace(**d))
+    with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[_projects_obj]),\
+        mock.patch.object(grdm_client, 'licenses', return_value=[{"id": "64ddee0f7cffdd0001f55429", "license_name": "123"}]):
+        _convert_node_to_create_schema(grdm_client, node_dict_has_license)
+
+
+def test_convert_node_to_create_schema__has_license(grdm_client):
+    _projects_obj = json.loads(json.dumps(project_link_str), object_hook=lambda d: SimpleNamespace(**d))
+    license = {"id": "64ddee0f7cffdd0001f55429", "attributes": {"name": "license_name"}}
+    grdm_client.licenses.append(json.loads(json.dumps(license), object_hook=lambda d: SimpleNamespace(**d)))
+    with mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[_projects_obj]):
+        _convert_node_to_create_schema(grdm_client, node_dict_has_license)
+
+

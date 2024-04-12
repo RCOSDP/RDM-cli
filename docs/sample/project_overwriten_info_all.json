@@ -1,0 +1,99 @@
+{
+  "projects": [
+    {
+      "id": "yanxg",
+      "template_from": "abcde",
+      "category": "project",
+      "title": "Project Example 001",
+      "description": "Lorem Ipsum 001.",
+      "node_license": {
+        "license_name": "MIT License",
+        "copyright_holders": [
+          "holder1",
+          "holder2"
+        ],
+        "year": "2023"
+      },
+      "public": false,
+      "tags": [
+        "replication",
+        "reproducibility",
+        "open science"
+      ],
+      "children": [
+        {
+          "id": "yanxy",
+          "template_from": "efghk",
+          "category": "analysis",
+          "title": "Analysis Component Example 011",
+          "description": "Lorem Ipsum 011.",
+          "public": false,
+          "node_license": {
+            "license_name": "MIT License",
+            "copyright_holders": [
+              "holder1",
+              "holder2"
+            ]
+          },
+          "tags": [
+            "analysis",
+            "component"
+          ],
+          "children": [],
+          "project_links": []
+        }
+      ],
+      "project_links": [
+        "yan92",
+        "yan93"
+      ]
+    },
+	  {
+      "template_from": "abcde",
+      "category": "project",
+      "title": "Project Example 002",
+      "description": "Lorem Ipsum 002.",
+      "node_license": {
+        "license_name": "MIT License",
+        "copyright_holders": [
+          "holder1",
+          "holder2"
+        ],
+        "year": "2023"
+      },
+      "public": false,
+      "tags": [
+        "replication",
+        "reproducibility",
+        "open science"
+      ],
+      "children": [
+        {
+          "id": "joyx3",
+          "template_from": "efghk",
+          "category": "analysis",
+          "title": "Analysis Component Example 021",
+          "description": "Lorem Ipsum 021.",
+          "public": false,
+          "node_license": {
+            "license_name": "MIT License",
+            "copyright_holders": [
+              "holder1",
+              "holder2"
+            ]
+          },
+          "tags": [
+            "analysis",
+            "component"
+          ],
+          "children": [],
+          "project_links": []
+        }
+      ],
+      "project_links": [
+        "yan94",
+        "yan95"
+      ]
+    }
+  ]
+}
