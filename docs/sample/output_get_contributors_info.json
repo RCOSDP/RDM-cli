@@ -1,0 +1,54 @@
+{
+    "projects": [
+        {
+            "id": "ycqrt",
+            "contributors": [
+                {
+                    "id": "yan01",
+                    "bibliographic": true,
+                    "permission": "admin"
+                },
+                {
+                    "id": "yan02",
+                    "bibliographic": true,
+                    "permission": "admin"
+                },
+                {
+                    "id": "yan03",
+                    "bibliographic": true,
+                    "permission": "write"
+                },
+                {
+                    "id": "yan04",
+                    "bibliographic": false,
+                    "permission": "read"
+                }
+            ]
+        },
+		{
+            "id": "joyx2",
+            "contributors": [
+                {
+                    "id": "joy01",
+                    "bibliographic": true,
+                    "permission": "admin"
+                },
+                {
+                    "id": "joy02",
+                    "bibliographic": true,
+                    "permission": "admin"
+                },
+                {
+                    "id": "joy03",
+                    "bibliographic": true,
+                    "permission": "write"
+                },
+                {
+                    "id": "joy04",
+                    "bibliographic": false,
+                    "permission": "read"
+                }
+            ]
+        }
+    ]
+}

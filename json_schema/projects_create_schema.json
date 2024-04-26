@@ -51,23 +51,9 @@
                     }
                 },
                 "additionalProperties": false,
-                "anyOf": [
-                    {
-                        "properties": {
-                            "id": {
-                                "$ref": "#/definitions/NodeId"
-                            }
-                        },
-                        "required": [
-                            "id"
-                        ]
-                    },
-                    {
-                        "required": [
-                            "category",
-                            "title"
-                        ]
-                    }
+                "required": [
+                    "category",
+                    "title"
                 ]
             }
         }
@@ -170,23 +156,9 @@
                         }
                     }
                 },
-                "anyOf": [
-                    {
-                        "properties": {
-                            "id": {
-                                "$ref": "#/definitions/NodeId"
-                            }
-                        },
-                        "required": [
-                            "id"
-                        ]
-                    },
-                    {
-                        "required": [
-                            "category",
-                            "title"
-                        ]
-                    }
+                "required": [
+                    "category",
+                    "title"
                 ],
                 "additionalProperties": false
             }

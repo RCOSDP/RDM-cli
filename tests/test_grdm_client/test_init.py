@@ -19,3 +19,4 @@ def test_init__grdm_client():
     assert grdm_client.created_projects == []
     # For contributors functions
     assert grdm_client.created_project_contributors == []
+    assert grdm_client.display_console is False

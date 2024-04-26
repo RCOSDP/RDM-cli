@@ -68,6 +68,8 @@ The following functions are possible
 - Create new components from an available template (don't support on the website UI)
 - Creates a fork of an available project
 - Link an available other projects to each specific project
+- Override the project information
+- Override the component information
 
 The impossible ones:
 - Update attributes for available projects
@@ -81,6 +83,13 @@ The impossible ones:
 **\* Notice** about forking from a project/component:  
 When forking, the following information will be changed: `title`.  
 The other properties will be ignored: `category`, `description`, `public`, `tags`, `node_license`.
+
+**\* Notice** about override project/component:  
+If `id` is entered in input project information, the other properties: `id`, `fork_id`, `template_from` will be overwritten. 
+If `id` and `fork_id` is entered in the input project information, the error message: "Project could not created" is shown.
+If `id` of the project does not exist or does not belong to the currently logged in user entered in the input project information, the error message: "Project could not created" is shown.
+If `id` of the component is entered in the input project information, the component information will be overwritten and the project's existing components will not be deleted.
+The output information only contains information for newly created or overwritten projects or components.
 
 ##### Usages
 Get help and see available commands, get help on a specific command
@@ -174,6 +183,100 @@ options:
 Refer to [docs/Template_file_design.xlsx](docs/Template_file_design.xlsx) for template file design.
 
 Refer to [docs/sample](docs/sample) for template sample.
+#### 既存プロジェクト情報の一覧リスト取得
+The following functions are possible:
+- Get the project list belonging to the currently logged-in user .
+
+**\* Notice** about getting the project list:  
+- Get all projects belonging to the user, output information includes: the project name and GUID, no component information.
+
+##### Usages
+Get help and see available commands, get help on a specific command
+```cmd
+grdmcli --help
+grdmcli projects --help
+grdmcli projects list --help
+```
+
+Example for getting user's project list function 
+```text
+$ grdmcli projects list --help
+usage: grdmcli projects list [-h]
+                             [--output_result_file OUTPUT_RESULT_FILE]
+                             [--display_console]
+                             [--osf_token OSF_TOKEN]
+                             [--osf_api_url OSF_API_URL]
+                             [--disable_ssl_verify]
+                             [--debug]
+                             [--verbose]
+
+projects list command
+
+options:
+  -h, --help            show this help message and exit
+  --output_result_file OUTPUT_RESULT_FILE
+                        The output result file path
+  --display_console     Output result to console screen
+  --osf_token OSF_TOKEN
+                        The Personal Access Token
+  --osf_api_url OSF_API_URL
+                        The API URL
+  --disable_ssl_verify  Disable SSL verification
+  --debug               Enable Debug mode
+  --verbose             Enable Verbose mode
+```
+
+#### コマンドラインツールによるプロジェクト情報の抽出
+The following functions are possible:
+- Get the all project/components and contributors information of user
+
+**\* Notice** About input information
+- If project_id is not specified, information of all projects/components and contributors of the user will be gotten
+- If project_id is specified, only project/component and contributor information of the specified project will be gotten
+
+**\* Notice** About output information
+- The output will be 2 Json files and can be input for "grdmcli projects create" and "grdmcli contributors create" commands.
+- Can output information of more than 1000 projects and 1000 contributors
+
+##### Usages
+Get help and see available commands, get help on a specific command
+```cmd
+grdmcli --help
+grdmcli projects --help
+grdmcli projects get --help
+```
+
+Example for projects get function 
+```text
+$ grdmcli projects get --help
+usage: grdmcli projects get [-h]
+                                   [--project_id PROJECT_ID [PROJECT_ID ...]]
+                                   [--output_projects_file OUTPUT_PROJECTS_FILE]
+                                   [--output_contributors_file OUTPUT_CONTRIBUTORS_FILE]
+                                   [--osf_token OSF_TOKEN]
+                                   [--osf_api_url OSF_API_URL]
+                                   [--disable_ssl_verify]
+                                   [--debug]
+                                   [--verbose]
+
+projects get command
+
+options:
+  -h, --help            show this help message and exit
+  --project_id PROJECT_ID [PROJECT_ID ...]
+                        List id of project that user want to get information
+  --output_projects_file OUTPUT_PROJECTS_FILE
+                        The output projects file path
+  --output_contributors_file OUTPUT_CONTRIBUTORS_FILE
+                        The output contributors file path
+  --osf_token OSF_TOKEN
+                        The Personal Access Token
+  --osf_api_url OSF_API_URL
+                        The API URL
+  --disable_ssl_verify  Disable SSL verification
+  --debug               Enable Debug mode
+  --verbose             Enable Verbose mode
+```
 
 ### How to run UT TCs
 - To run test code in the `test` module,  

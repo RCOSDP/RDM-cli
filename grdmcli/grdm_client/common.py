@@ -8,11 +8,14 @@ from argparse import Namespace
 from pathlib import Path
 from pprint import pprint  # noqa
 from types import SimpleNamespace
+import math
 
 import requests
 import urllib3  # noqa
 import validators
 from validators import ValidationFailure
+
+from concurrent.futures import ThreadPoolExecutor
 
 from .. import constants as const, status, utils  # noqa
 
@@ -41,6 +44,7 @@ class CommonCLI(Namespace):
         self.config_default = {}
         self.template = const.TEMPLATE_FILE_NAME_DEFAULT
         self.output_result_file = const.OUTPUT_RESULT_FILE_NAME_DEFAULT
+        self.display_console = False
 
         self.user = None
         self.is_authenticated = False
@@ -206,14 +210,16 @@ class CommonCLI(Namespace):
             logger.info('Check Personal Access Token')
             self._users_me(ignore_error=False, verbose=verbose)
 
-    def _prepare_output_file(self):
+    def _prepare_output_file(self, output_path = ""):
         """Create directory for output result if it's not existing
 
         :return: None
         """
         # prepare output file
-        if not os.path.exists(self.output_result_file):
-            _directory = os.path.abspath(os.path.join(self.output_result_file, os.pardir))
+        if output_path == "":
+            output_path = self.output_result_file
+        if not os.path.exists(output_path):
+            _directory = os.path.abspath(os.path.join(output_path, os.pardir))
             if not os.path.isdir(_directory):
                 Path(_directory).mkdir(parents=True, exist_ok=True)
                 logger.info(f'The new directory \'{_directory}\' is created.')
@@ -234,3 +240,50 @@ class CommonCLI(Namespace):
 
         if self.disable_ssl_verify:
             self.ssl_cert_verify = False
+
+    # Receive url api to get and check
+    # if has existed more than 1 page data will get all the remaining parts
+    def get_all_data_from_api(self, url, params={}, ignore_error=False):
+        data = []
+        # first call api to get total data of api at page 1
+        response = self.parse_api_response('GET', url, params, ignore_error)
+
+        # get page_count to check number api need to call
+        total_data = response.links.meta.total
+        data_per_page = response.links.meta.per_page
+        page_count = math.ceil(total_data / data_per_page)
+        data.extend(response.data)
+
+        if (page_count > 1):
+            # list all api need to call start from 2 to page_count
+            urls = [f'{url}?page={curr_page}' for curr_page in range(2, page_count + 1)]
+
+            # initialize ThreadPoolExecutor and use it to call api multi api in one time
+            with ThreadPoolExecutor(max_workers=const.MAX_THREADS_CALL_API) as executor:
+                responses = list(
+                    executor.map(lambda url: self.parse_api_response('GET', url, params, ignore_error),
+                                 urls))
+                for res in responses:
+                    data.extend(res.data)
+
+        return data
+
+    # Return only response of api request
+    def parse_api_response(self, method, url, params={}, ignore_error=False, is_target_node=False):
+        _response, _error_message = self._request(method, url, params=params, data={}, )
+        if _error_message:
+            if is_target_node:
+                if 'Not found' in _error_message:
+                    logger.warn(f'Target Node {url.split("/")[1]} not found')
+                else:
+                    logger.warn(_error_message)
+                return None
+            elif ignore_error:
+                logger.warning(_error_message)
+                return None
+            else:
+                sys.exit(_error_message)
+
+        response = json.loads(_response.content, object_hook=lambda d: SimpleNamespace(**d))
+
+        return response
