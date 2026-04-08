@@ -172,19 +172,16 @@ class CommonCLIFactory(Namespace):
     def _users_me(self, ignore_error=True, verbose=True):
         pass
 
+    def _users_institutions(self, ignore_error=True, verbose=True):
+        pass
+
     def _prepare_output_file(self):
-        pass
-    
-    def parse_api_response(self, method, url, params=None):
-        pass
-    
-    def get_all_data_from_api(self, url, params=None):
         pass
 
     def parse_api_response(self, method, url, params=None, ignore_error=False, is_target_node=False):
         pass
 
-    def get_all_data_from_api(self, url, params={}):
+    def get_all_data_from_api(self, url, params=None, ignore_error=False):
         pass
 
 
@@ -204,7 +201,6 @@ class GRDMClientFactory(CommonCLIFactory):
         # For contributors functions
         self.created_project_contributors = []
         self.template_schema_contributors = 'path-to-schema'
-
 
     # For projects functions
 
@@ -229,19 +225,25 @@ class GRDMClientFactory(CommonCLIFactory):
     def _create_project(self, node_object, ignore_error=True, verbose=True):
         pass
 
+    def _prepare_institutions_relationship_data(self, institutions, verbose=True):
+        return {'data': []}
+
+    def _add_node_institutions(self, node_id, institutions, ignore_error=True, verbose=True):
+        return True
+
     def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):
         pass
 
     def _fork_project(self, node_object, ignore_error=True, verbose=True):
         pass
 
-    def _projects_add_component(self, parent_id, node_object, ignore_error=True, verbose=True):
+    def _projects_add_component(self, parent_id, node_object, ignore_error=True, verbose=True, affiliated_institutions=None):
         pass
 
-    def _add_project_components(self, children, project, verbose=True):
+    def _add_project_components(self, children, project, verbose=True, affiliated_institutions=None):
         pass
 
-    def _create_or_update_project(self, projects, project_idx):
+    def _create_or_update_project(self, projects, project_idx, verbose=True, affiliated_institutions=None):
         pass
 
     def _update_project(self, node_object, ignore_error=True, verbose=True):
@@ -250,10 +252,10 @@ class GRDMClientFactory(CommonCLIFactory):
     def _overwrite_node_link(self, project, project_dict, verbose=True):
         pass
 
-    def _update_project_component(self, project_dict, verbose=True):
+    def _update_project_component(self, project_dict, verbose=True, affiliated_institutions=None):
         pass
 
-    def _overwrite_node_link_update_component(self, _ip_projects_dict, verbose=True):
+    def _overwrite_node_link_update_component(self, _ip_projects_dict, verbose=True, affiliated_institutions=None):
         pass
 
     def _remapping_node(self, tree_root):
