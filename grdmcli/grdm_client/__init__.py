@@ -21,6 +21,7 @@ class GRDMClient(CommonCLI):
 
     from .users import (
         _users_me,
+        _users_institutions,
     )
     # For projects functions
     from .licenses import (
@@ -34,6 +35,8 @@ class GRDMClient(CommonCLI):
         _load_project,
         _fork_project,
         _create_project,
+        _prepare_institutions_relationship_data,
+        _add_node_institutions,
         _link_project_to_project,
         _add_project_pointers,
         _add_project_components,

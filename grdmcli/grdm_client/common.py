@@ -48,6 +48,7 @@ class CommonCLI(Namespace):
 
         self.user = None
         self.is_authenticated = False
+        self.affiliated_institutions = []
 
         # Call initial methods before parse_args
         self._load_option_from_config_file()
