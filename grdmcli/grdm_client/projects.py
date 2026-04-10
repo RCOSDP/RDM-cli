@@ -493,7 +493,11 @@ def _add_project_components(
                 logger.error("Project could not created")
                 continue
             # update child node
-            component = self._update_project_component(_component_dict, verbose)
+            self._update_project_component(
+                _component_dict,
+                verbose,
+                affiliated_institutions=affiliated_institutions,
+            )
         # create new children if ID NOT EXIST in input
         else:
             logger.info(f'JSONPOINTER ./children/{_component_idx}/')
@@ -517,7 +521,11 @@ def _add_project_components(
             children[_component_idx]['type'] = component.type
 
         # handle create/update children of current child
-        self._overwrite_node_link_update_component(_component_dict, verbose)
+        self._overwrite_node_link_update_component(
+            _component_dict,
+            verbose,
+            affiliated_institutions=affiliated_institutions,
+        )
 
 
 def _projects_add_component(
@@ -1309,7 +1317,9 @@ def _overwrite_node_link(self, project, project_dict, verbose=True):
     self._add_project_pointers(_need_create_node_link_ids, project, verbose=verbose)
 
 
-def _update_project_component(self, child_project_dict, verbose=True):
+def _update_project_component(
+        self, child_project_dict, verbose=True, affiliated_institutions=None,
+):
     """Update component (project children)
 
     :param child_project_dict: children dictionary
@@ -1362,7 +1372,12 @@ def _update_project_component(self, child_project_dict, verbose=True):
         if len(_ip_children):
             child_project_dict['children'] = [_child for _child in _ip_children if _child is not None]
             _filtered_ip_children = child_project_dict['children']
-            self._add_project_components(_filtered_ip_children, _node, verbose)
+            self._add_project_components(
+                _filtered_ip_children,
+                _node,
+                verbose,
+                affiliated_institutions=affiliated_institutions,
+            )
         return _node
 
 
