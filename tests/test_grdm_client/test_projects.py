@@ -1626,7 +1626,7 @@ def test_create_or_update_project__case_create_project(caplog, grdm_client):
 
 
 def test_create_or_update_project__case_fork_project_none(caplog, grdm_client):
-    _projects = (projects.get('projects', [])).copy()
+    _projects = copy.deepcopy(projects.get('projects', []))
     _fork_id = _projects[3].get('fork_id')
     with mock.patch.object(grdm_client, '_fork_project', return_value=(None, None)):
         actual = _create_or_update_project(grdm_client, _projects, 3)
@@ -1637,7 +1637,7 @@ def test_create_or_update_project__case_fork_project_none(caplog, grdm_client):
 
 
 def test_create_or_update_project__case_fork_project(caplog, grdm_client):
-    _projects = projects.get('projects', [])
+    _projects = copy.deepcopy(projects.get('projects', []))
     _fork_id = _projects[3].get('fork_id')
     with mock.patch.object(grdm_client, '_fork_project', return_value=(fork_project_obj.data, None)):
         actual = _create_or_update_project(grdm_client, _projects, 3)
@@ -1647,6 +1647,42 @@ def test_create_or_update_project__case_fork_project(caplog, grdm_client):
     assert actual is fork_project_obj.data
     assert _projects[3]['id'] == fork_project_obj.data.id
     assert _projects[3]['type'] == fork_project_obj.data.type
+
+
+def test_create_or_update_project__fork_calls_add_node_institutions(grdm_client):
+    _projects = copy.deepcopy(projects.get('projects', []))
+    institutions = [SimpleNamespace(id='inst01')]
+    with (
+        mock.patch.object(grdm_client, '_fork_project', return_value=(fork_project_obj.data, None)),
+        mock.patch.object(grdm_client, '_add_node_institutions') as mocked_add_institutions,
+    ):
+        _create_or_update_project(
+            grdm_client, _projects, 3,
+            affiliated_institutions=institutions,
+        )
+
+    mocked_add_institutions.assert_called_once_with(
+        fork_project_obj.data.id, institutions,
+        ignore_error=True, verbose=True,
+    )
+
+
+def test_create_or_update_project__update_does_not_add_node_institutions(grdm_client):
+    test_projects = [{'id': 'node01'}]
+    institutions = [SimpleNamespace(id='inst01')]
+    project = SimpleNamespace(id='node01', type='nodes')
+
+    with (
+        mock.patch.object(grdm_client, '_load_project', return_value=(project, None)),
+        mock.patch.object(grdm_client, '_update_project', return_value=(project, None)),
+        mock.patch.object(grdm_client, '_add_node_institutions') as mocked_add_institutions,
+    ):
+        _create_or_update_project(
+            grdm_client, test_projects, 0,
+            affiliated_institutions=institutions,
+        )
+
+    mocked_add_institutions.assert_not_called()
 
 
 def test_prepare_institutions_relationship_data__success(grdm_client):
@@ -1837,6 +1873,43 @@ def test_add_project_components__add_components_not_have_child_id(grdm_client, c
     assert children[0]['type'] == component.type
 
 
+def test_add_project_components__new_child_passes_affiliated_institutions(grdm_client):
+    children = [{
+        'category': 'analysis',
+        'title': 'new child',
+        'project_links': ['node01'],
+    }]
+    project = SimpleNamespace(id='parent01')
+    component = SimpleNamespace(id='child01', type='nodes')
+    institutions = [SimpleNamespace(id='inst01')]
+
+    with (
+        mock.patch.object(grdm_client, 'get_all_data_from_api', return_value=[]),
+        mock.patch.object(grdm_client, '_projects_add_component', return_value=(component, None)) as mocked_add_component,
+        mock.patch.object(grdm_client, '_overwrite_node_link_update_component') as mocked_overwrite,
+    ):
+        _add_project_components(
+            grdm_client,
+            children,
+            project,
+            verbose=False,
+            affiliated_institutions=institutions,
+        )
+
+    mocked_add_component.assert_called_once_with(
+        project.id,
+        children[0],
+        ignore_error=True,
+        verbose=False,
+        affiliated_institutions=institutions,
+    )
+    mocked_overwrite.assert_called_once_with(
+        children[0],
+        False,
+        affiliated_institutions=institutions,
+    )
+
+
 def test_add_project_components__add_components_success(grdm_client, caplog):
     _project = link_project_obj.data
     _children = projects['projects'][4]['children']
@@ -1981,6 +2054,40 @@ def test_projects_create__verbose_true(mocker, grdm_client, caplog):
         assert caplog.records[4].message == 'The \'projects\' object is empty'
         assert _projects == _projects
         assert ex_info.value.args[0] == 0
+
+
+@mock.patch('sys.exit')
+def test_projects_create__passes_affiliated_institutions_to_downstream(mocker, grdm_client):
+    institutions = [SimpleNamespace(id='inst01')]
+    input_projects = {
+        'projects': [
+            {
+                'title': 'project01',
+                'category': 'project',
+                'children': [
+                    {
+                        'title': 'component01',
+                        'category': 'analysis',
+                    }
+                ],
+            }
+        ]
+    }
+    created_project = SimpleNamespace(id='node01')
+
+    mocker.patch('grdmcli.utils.check_json_schema')
+    mocker.patch('os.path.exists', side_effect=[True, True])
+    with (
+        mock.patch('grdmcli.utils.read_json_file', return_value=input_projects),
+        mock.patch.object(grdm_client, '_users_institutions', return_value=institutions) as mocked_users_institutions,
+        mock.patch.object(grdm_client, '_create_or_update_project', return_value=created_project) as mocked_create_or_update,
+        mock.patch.object(grdm_client, '_add_project_components') as mocked_add_components,
+    ):
+        projects_create(grdm_client)
+
+    mocked_users_institutions.assert_called_once_with(ignore_error=True, verbose=False)
+    assert mocked_create_or_update.call_args.kwargs.get('affiliated_institutions') == institutions
+    assert mocked_add_components.call_args.kwargs.get('affiliated_institutions') == institutions
 
 
 @mock.patch('sys.exit')
@@ -2783,6 +2890,36 @@ def test_overwrite_node_link_update_component__project_not_none_has_id(grdm_clie
         mock.patch.object(grdm_client, '_overwrite_node_link'),\
         mock.patch.object(grdm_client, '_add_project_pointers'):
         _overwrite_node_link_update_component(grdm_client, override_prjs, True)
+
+
+def test_overwrite_node_link_update_component__passes_affiliated_institutions(grdm_client):
+    override_prjs = copy.deepcopy(prj_has_children_prj_link)
+    override_prjs['projects'][0]['id'] = '123d'
+    institutions = [SimpleNamespace(id='inst01')]
+    project = SimpleNamespace(id='123d')
+
+    with (
+        mock.patch.object(grdm_client, '_create_or_update_project', return_value=project) as mocked_create_or_update,
+        mock.patch.object(grdm_client, '_overwrite_node_link'),
+        mock.patch.object(grdm_client, '_add_project_components') as mocked_add_components,
+    ):
+        _overwrite_node_link_update_component(
+            grdm_client,
+            override_prjs,
+            False,
+            affiliated_institutions=institutions,
+        )
+
+    assert mocked_create_or_update.call_count == len(override_prjs['projects'])
+    for _call in mocked_create_or_update.call_args_list:
+        assert _call.kwargs.get('affiliated_institutions') == institutions
+
+    mocked_add_components.assert_called_once_with(
+        override_prjs['projects'][0]['children'],
+        project,
+        False,
+        affiliated_institutions=institutions,
+    )
 
 
 def test_remapping_node(grdm_client):

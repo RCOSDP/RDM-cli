@@ -219,3 +219,6 @@ def test_users_institutions__request_success(caplog, grdm_client):
 
     assert len(actual) == 1
     assert actual[0].id == 'csic'
+    assert grdm_client.affiliated_institutions == actual
+    assert caplog.records[0].levelname == debug_level_log
+    assert caplog.records[0].message == 'Found affiliated institutions. [1]'
