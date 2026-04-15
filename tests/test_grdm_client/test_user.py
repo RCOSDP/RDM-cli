@@ -7,7 +7,8 @@ import pytest
 import requests
 
 from grdmcli.grdm_client.users import (
-    _users_me
+    _users_me,
+    _users_institutions,
 )
 from tests.factories import GRDMClientFactory
 from tests.utils import *
@@ -168,3 +169,65 @@ def test_users_me__send_request_success_and_verbose_true(caplog, grdm_client):
         assert caplog.records[1].message == f'You are logged in as \'{grdm_client.user.id}\''
         assert caplog.records[2].levelname == debug_level_log
         assert caplog.records[2].message == f'\'{grdm_client.user.id}\' - \'{grdm_client.user.attributes.full_name}\''
+
+
+def test_users_institutions__missing_user_sys_exit(
+        caplog, grdm_client):
+    grdm_client.user = None
+    with pytest.raises(SystemExit) as ex_info:
+        _users_institutions(grdm_client)
+    assert ex_info.value.code == 'Missing currently logged-in user'
+    assert caplog.records[0].levelname == warning_level_log
+    assert caplog.records[0].message == 'Missing currently logged-in user'
+
+
+def test_users_institutions__request_error_sys_exit(
+        caplog, grdm_client):
+    _error_message = 'error'
+    with mock.patch.object(grdm_client, '_request', return_value=(None, _error_message)):
+        with pytest.raises(SystemExit) as ex_info:
+            _users_institutions(grdm_client)
+    assert ex_info.value.code == _error_message
+    assert caplog.records[0].levelname == warning_level_log
+    assert caplog.records[0].message == _error_message
+
+
+def test_users_institutions__request_success(caplog, grdm_client):
+    resp = requests.Response()
+    resp._content = _users_me_institutions_str
+    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+        actual = _users_institutions(grdm_client, verbose=True)
+
+    assert len(actual) == 1
+    assert actual[0]['id'] == 'csic'
+    assert actual[0]['type'] == 'institutions'
+    assert grdm_client.affiliated_institutions == actual
+    assert caplog.records[0].levelname == debug_level_log
+    assert caplog.records[0].message == 'Found affiliated institutions. [1]'
+
+
+def test_users_institutions__invalid_response_data_not_list_sys_exit(caplog, grdm_client):
+    resp = requests.Response()
+    resp._content = '{"data": {"id": "csic", "type": "institutions"}}'.encode('utf-8')
+    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+        with pytest.raises(SystemExit) as ex_info:
+            _users_institutions(grdm_client)
+
+    assert ex_info.value.code == 'Invalid institutions response format. Expected "data" as a list of objects with "id" and "type".'
+    assert caplog.records[0].levelname == warning_level_log
+
+
+@pytest.mark.parametrize('data_payload', [
+    '{"data": [{"id": "csic"}]}',
+    '{"data": [{"type": "institutions"}]}',
+    '{"data": ["csic"]}',
+])
+def test_users_institutions__invalid_response_item_sys_exit(data_payload, caplog, grdm_client):
+    resp = requests.Response()
+    resp._content = data_payload.encode('utf-8')
+    with mock.patch.object(grdm_client, '_request', return_value=(resp, None)):
+        with pytest.raises(SystemExit) as ex_info:
+            _users_institutions(grdm_client)
+
+    assert ex_info.value.code.startswith('Invalid institutions response format. Expected "data" as a list of objects with "id" and "type".')
+    assert caplog.records[0].levelname == warning_level_log

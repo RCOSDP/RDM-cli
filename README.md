@@ -70,12 +70,14 @@ The following functions are possible
 - Link an available other projects to each specific project
 - Override the project information
 - Override the component information
+- Add affiliated institutions to the created project/component and to the forked project
 
 The impossible ones:
 - Update attributes for available projects
 
 **\* Notice** about the order of creating a project/component:
 - Create project (includes `category`, `title`, `description`, `public`, `tags`)
+- Add affiliated institutions to the created project/component
 - Add license (as `node_license`)
 - Create components for the created project
 - Link to other projects (as `project_links`)

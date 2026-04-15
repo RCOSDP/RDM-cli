@@ -3,14 +3,12 @@ import json
 import logging
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pprint import pprint  # noqa
 from types import SimpleNamespace
-from concurrent.futures import ThreadPoolExecutor
-import re
-
-from .. import constants as const, utils
 
 from grdmcli.status import HTTP_403_FORBIDDEN, HTTP_404_NOT_FOUND
+from .. import constants as const, utils
 
 __all__ = [
     '_get_template_schema_projects',
@@ -20,6 +18,8 @@ __all__ = [
     '_fork_project',
     '_create_project',
     '_update_project',
+    '_prepare_institutions_relationship_data',
+    '_add_node_institutions',
     '_link_project_to_project',
     '_overwrite_node_link',
     '_update_project_component',
@@ -37,6 +37,10 @@ __all__ = [
 here = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 logger = logging.getLogger(__name__)
+
+MSG_E_INSTITUTIONS_INVALID = (
+    'Invalid affiliated institutions input. Expected a list of items with "id" and type "institutions".'
+)
 
 
 def _get_template_schema_projects(self):
@@ -329,6 +333,70 @@ def _update_project(self, node_object, ignore_error=True, verbose=True):
     return project, json.loads(_content)['data']
 
 
+def _prepare_institutions_relationship_data(self, institutions, verbose=True):
+    """Build payload for adding institution relationships to a node.
+
+    :param institutions: list of institution dicts with keys id and type
+    :param verbose: boolean
+    :return: dict payload
+    """
+    if not institutions:
+        return {'data': []}
+
+    if not isinstance(institutions, list):
+        logger.warning(MSG_E_INSTITUTIONS_INVALID)
+        sys.exit(MSG_E_INSTITUTIONS_INVALID)
+
+    unique_ids = []
+    for idx, institution in enumerate(institutions):
+        if not isinstance(institution, dict):
+            _error_message = f'{MSG_E_INSTITUTIONS_INVALID} Invalid item at index {idx}.'
+            logger.warning(_error_message)
+            sys.exit(_error_message)
+
+        institution_id = institution.get('id')
+        institution_type = institution.get('type')
+
+        if not institution_id or institution_type != 'institutions':
+            _error_message = f'{MSG_E_INSTITUTIONS_INVALID} Invalid item at index {idx}.'
+            logger.warning(_error_message)
+            sys.exit(_error_message)
+
+        if institution_id not in unique_ids:
+            unique_ids.append(institution_id)
+
+    data = {
+        'data': [
+            {
+                'type': 'institutions',
+                'id': institution_id
+            }
+            for institution_id in unique_ids
+        ]
+    }
+
+    if verbose and data['data']:
+        logger.debug(f'Prepared institutions relationship data: {data}')
+
+    return data
+
+
+def _add_node_institutions(
+        self, node_id, institutions, verbose=True,
+):
+    """Add affiliated institutions to a node."""
+    _data = self._prepare_institutions_relationship_data(institutions, verbose=verbose)
+    if len(_data.get('data', [])) == 0:
+        return True
+
+    _url = f'nodes/{node_id}/relationships/institutions/'
+    _response, _error_message = self._request('POST', _url, params={}, data=_data)
+    if _error_message:
+        logger.warning(f'Failed to add affiliated institutions to nodes/{node_id}/: {_error_message}')
+        sys.exit(_error_message)
+    return _response is not None
+
+
 def _link_project_to_project(self, node_id, pointer_id, ignore_error=True, verbose=True):
     """Add a link to another project into this project by project's GUID.\n
 
@@ -408,12 +476,14 @@ def _add_project_pointers(self, project_links, project, verbose=True):
             continue
 
         # update output object
-        # can overwrite object by dictionary _project_links[_node_id_idx] = _
+        # can overwrite object by dictionary _project_links[_node_id_idx] = linked
         project_links[_node_id_idx] = linked['id']
     return project_links
 
 
-def _add_project_components(self, children, project, verbose=True):
+def _add_project_components(
+        self, children, project, verbose=True, affiliated_institutions=None,
+):
     """Add component to project from list of children in template file
 
     :param children: object of component from template file
@@ -434,12 +504,22 @@ def _add_project_components(self, children, project, verbose=True):
                 logger.error("Project could not created")
                 continue
             # update child node
-            component = self._update_project_component(_component_dict, verbose)
+            self._update_project_component(
+                _component_dict,
+                verbose,
+                affiliated_institutions=affiliated_institutions,
+            )
         # create new children if ID NOT EXIST in input
         else:
             logger.info(f'JSONPOINTER ./children/{_component_idx}/')
 
-            component, _ = self._projects_add_component(project.id, _component_dict, ignore_error=True, verbose=verbose)
+            component, _ = self._projects_add_component(
+                project.id,
+                _component_dict,
+                ignore_error=True,
+                verbose=verbose,
+                affiliated_institutions=affiliated_institutions,
+            )
 
             if component is None:
                 # has error, update output object
@@ -452,10 +532,17 @@ def _add_project_components(self, children, project, verbose=True):
             children[_component_idx]['type'] = component.type
 
         # handle create/update children of current child
-        self._overwrite_node_link_update_component(_component_dict, verbose)
+        self._overwrite_node_link_update_component(
+            _component_dict,
+            verbose,
+            affiliated_institutions=affiliated_institutions,
+        )
 
 
-def _projects_add_component(self, parent_id, node_object, ignore_error=True, verbose=True):
+def _projects_add_component(
+        self, parent_id, node_object, ignore_error=True, verbose=True,
+        affiliated_institutions=None
+):
     """Add a component into project by project's GUID, component's attributes such as title and category.\n
     In scope of method, call component as 'project' and its child as 'component'.
 
@@ -502,6 +589,12 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     if verbose:
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
+    # Institution relation errors should stop CLI to prevent partial creation.
+    self._add_node_institutions(
+        project.id, affiliated_institutions,
+        verbose=verbose,
+    )
+
     # link a project to this node (parent_node_id = project.id)
     self._add_project_pointers(_project_links, project, verbose=verbose)
 
@@ -510,7 +603,11 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
         node_object['project_links'] = [_pointer for _pointer in _project_links if _pointer is not None]
 
     # add Components to this node (parent_node_id = project.id)
-    self._add_project_components(_children, project, verbose=verbose)
+    self._add_project_components(
+        _children, project,
+        verbose=verbose,
+        affiliated_institutions=affiliated_institutions,
+    )
 
     # Delete None from children
     if _children:
@@ -519,8 +616,11 @@ def _projects_add_component(self, parent_id, node_object, ignore_error=True, ver
     return project, json.loads(_content)['data']
 
 
-def _create_or_update_project(self, projects, project_idx, verbose=True):
-    """Create new project or fork project or load project
+def _create_or_update_project(
+        self, projects, project_idx, verbose=True,
+        affiliated_institutions=None
+):
+    """Create new project or fork project or update project
 
     :param projects: list of project from template
     :param project_idx: integer of project index base on it order in project list
@@ -551,6 +651,12 @@ def _create_or_update_project(self, projects, project_idx, verbose=True):
 
         # overwrite project
         self.projects_creation_output[project.id] = convert_namespace_to_dict(project)
+
+        # Institution relation errors should stop CLI to prevent partial creation.
+        self._add_node_institutions(
+            project.id, affiliated_institutions,
+            verbose=verbose,
+        )
     elif _id:
         logger.info(f'JSONPOINTER /projects/{project_idx}/id == {_id}')
         project, _ = self._load_project(_id, is_fake=const.IS_FAKE_LOAD_PROJECT, ignore_error=True, verbose=verbose)
@@ -590,6 +696,12 @@ def _create_or_update_project(self, projects, project_idx, verbose=True):
 
         # add to output
         self.projects_creation_output[project.id] = convert_namespace_to_dict(project)
+
+        # Institution relation errors should stop CLI to prevent partial creation.
+        self._add_node_institutions(
+            project.id, affiliated_institutions,
+            verbose=verbose
+        )
     return project
 
 
@@ -625,6 +737,10 @@ def projects_create(self):
         logger.info(f'Validate by the template of projects: {self.template_schema_projects}')
         utils.check_json_schema(self.template_schema_projects, _input_prj_dicts)
 
+        affiliated_institutions = self._users_institutions(
+            verbose=verbose,
+        )
+
         logger.info('Loop following the template of projects')
         _input_projects = _input_prj_dicts.get('projects', [])
         for _project_idx, _input_prj_dict in enumerate(_input_projects):
@@ -633,7 +749,12 @@ def projects_create(self):
             _input_prj_link_ids = _input_prj_dict.get('project_links', None)
 
             # create new or fork project or update project
-            project = self._create_or_update_project(_input_projects, _project_idx, verbose)
+            project = self._create_or_update_project(
+                _input_projects,
+                _project_idx,
+                verbose,
+                affiliated_institutions=affiliated_institutions,
+            )
             if project is None:
                 # update output object and ignore it
                 _input_projects[_project_idx] = None
@@ -660,7 +781,10 @@ def projects_create(self):
                 _filtered_input_children = _input_prj_dict['children']
 
                 # Create Components and lower level component
-                self._add_project_components(_filtered_input_children, project, verbose)
+                self._add_project_components(
+                    _filtered_input_children, project, verbose,
+                    affiliated_institutions=affiliated_institutions,
+                )
 
         # Delete None from projects
         _input_prj_dicts['projects'] = [_prj for _prj in _input_projects if _prj is not None]
@@ -1204,7 +1328,9 @@ def _overwrite_node_link(self, project, project_dict, verbose=True):
     self._add_project_pointers(_need_create_node_link_ids, project, verbose=verbose)
 
 
-def _update_project_component(self, child_project_dict, verbose=True):
+def _update_project_component(
+        self, child_project_dict, verbose=True, affiliated_institutions=None,
+):
     """Update component (project children)
 
     :param child_project_dict: children dictionary
@@ -1257,11 +1383,19 @@ def _update_project_component(self, child_project_dict, verbose=True):
         if len(_ip_children):
             child_project_dict['children'] = [_child for _child in _ip_children if _child is not None]
             _filtered_ip_children = child_project_dict['children']
-            self._add_project_components(_filtered_ip_children, _node, verbose)
+            self._add_project_components(
+                _filtered_ip_children,
+                _node,
+                verbose,
+                affiliated_institutions=affiliated_institutions,
+            )
         return _node
 
 
-def _overwrite_node_link_update_component(self, _input_prj_dicts, verbose=True):
+def _overwrite_node_link_update_component(
+        self, _input_prj_dicts, verbose=True,
+        affiliated_institutions=None,
+):
     """Update component node link and update current component with the update of _input_prj_dicts
 
     :param _input_prj_dicts: list children want to update
@@ -1276,7 +1410,10 @@ def _overwrite_node_link_update_component(self, _input_prj_dicts, verbose=True):
         _input_prj_links_id = _input_prj_dict.get('project_links', None)
 
         # create new or fork project or update project
-        project = self._create_or_update_project(_input_projects, _project_idx, verbose)
+        project = self._create_or_update_project(
+            _input_projects, _project_idx, verbose,
+            affiliated_institutions=affiliated_institutions,
+        )
         if project is None:
             # update output object and ignore it
             _input_projects[_project_idx] = None
@@ -1303,7 +1440,10 @@ def _overwrite_node_link_update_component(self, _input_prj_dicts, verbose=True):
             _filtered_ip_children = _input_prj_dict['children']
 
             # Create Components and lower level component
-            self._add_project_components(_filtered_ip_children, project, verbose)
+            self._add_project_components(
+                _filtered_ip_children, project, verbose,
+                affiliated_institutions=affiliated_institutions,
+            )
 
 
 def convert_namespace_to_dict(namespace):

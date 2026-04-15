@@ -48,6 +48,7 @@ class CommonCLI(Namespace):
 
         self.user = None
         self.is_authenticated = False
+        self.affiliated_institutions = []
 
         # Call initial methods before parse_args
         self._load_option_from_config_file()
@@ -116,8 +117,20 @@ class CommonCLI(Namespace):
                 error_msg = error.detail
                 if hasattr(error, 'source'):
                     error_msg = f'{error_msg}. The pointer is {error.source.pointer}'
-            except Exception:
+            except Exception as ex:
                 error_msg = f'{_response.status_code} {_response.reason}'
+
+                # Keep parse context for troubleshooting unexpected API responses.
+                response_content = _response.content
+                if isinstance(response_content, (bytes, bytearray)):
+                    response_content = response_content.decode('utf-8', errors='replace')
+                else:
+                    response_content = str(response_content)
+                error_msg = (
+                    f'{error_msg}.'
+                    f'\n  - Failed to parse API error response: {type(ex).__name__}: {ex}'
+                    f'\n  - Response content: {response_content}'
+                )
 
             return None, error_msg
 

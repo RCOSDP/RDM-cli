@@ -21,10 +21,6 @@ OUTPUT_CONTRIBUTORS_FILE_NAME_DEFAULT = './output_contributors_file.json'
 PAGE_SIZE_SERVER = 100
 MAX_THREADS_CALL_API = 10
 
-# Maximum data return from API
-# (update it if the max range of return data per_page of server is change)
-MAX_THREADS_CALL_API = 10
-
 MAX_PAGE_SIZE = 1000
 PAGE_SIZE_QUERY_PARAM = 'page[size]'
 ORDERING_QUERY_PARAM = 'sort'

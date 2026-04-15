@@ -91,7 +91,25 @@ class TestCommonCLI:
         mock_get.return_value = resp
         actual1, actual2 = CommonCLI._request(common_cli, 'GET', self.url)
         assert actual1 is None
-        assert actual2 == f'{resp.status_code} {resp.reason}'
+        assert actual2.startswith(f'{resp.status_code} {resp.reason}.')
+        assert 'Failed to parse API error response' in actual2
+        assert 'Response content:' in actual2
+
+    @mock.patch('requests.request')
+    def test_request__error_exception_contains_parse_context(self, mock_get, common_cli):
+        resp = requests.Response()
+        resp.reason = 'bad request'
+        resp.status_code = 400
+        resp._content = b'{"errors": invalid-json}'
+        mock_get.return_value = resp
+
+        actual1, actual2 = CommonCLI._request(common_cli, 'GET', self.url)
+
+        assert actual1 is None
+        assert actual2.startswith('400 bad request.')
+        assert 'Failed to parse API error response' in actual2
+        assert 'JSONDecodeError' in actual2
+        assert 'Response content: {"errors": invalid-json}' in actual2
 
     @mock.patch('requests.request')
     def test_request__error_source(self, mock_get, common_cli):
