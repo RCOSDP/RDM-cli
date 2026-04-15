@@ -172,7 +172,7 @@ class CommonCLIFactory(Namespace):
     def _users_me(self, ignore_error=True, verbose=True):
         pass
 
-    def _users_institutions(self, ignore_error=True, verbose=True):
+    def _users_institutions(self, verbose=True):
         pass
 
     def _prepare_output_file(self):
@@ -228,7 +228,7 @@ class GRDMClientFactory(CommonCLIFactory):
     def _prepare_institutions_relationship_data(self, institutions, verbose=True):
         return {'data': []}
 
-    def _add_node_institutions(self, node_id, institutions, ignore_error=True, verbose=True):
+    def _add_node_institutions(self, node_id, institutions, verbose=True):
         return True
 
     def _load_project(self, pk, is_fake=True, ignore_error=True, verbose=True):

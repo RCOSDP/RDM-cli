@@ -38,6 +38,10 @@ here = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
 logger = logging.getLogger(__name__)
 
+MSG_E_INSTITUTIONS_INVALID = (
+    'Invalid affiliated institutions input. Expected a list of items with "id" and type "institutions".'
+)
+
 
 def _get_template_schema_projects(self):
     return os.path.abspath(os.path.join(os.path.dirname(here), const.TEMPLATE_SCHEMA_PROJECTS))
@@ -332,24 +336,33 @@ def _update_project(self, node_object, ignore_error=True, verbose=True):
 def _prepare_institutions_relationship_data(self, institutions, verbose=True):
     """Build payload for adding institution relationships to a node.
 
-    :param institutions: list of institution object/dict/string id
+    :param institutions: list of institution dicts with keys id and type
     :param verbose: boolean
     :return: dict payload
     """
     if not institutions:
         return {'data': []}
 
-    unique_ids = []
-    for institution in institutions:
-        institution_id = None
-        if isinstance(institution, str):
-            institution_id = institution
-        elif isinstance(institution, dict):
-            institution_id = institution.get('id')
-        else:
-            institution_id = getattr(institution, 'id', None)
+    if not isinstance(institutions, list):
+        logger.warning(MSG_E_INSTITUTIONS_INVALID)
+        sys.exit(MSG_E_INSTITUTIONS_INVALID)
 
-        if institution_id and institution_id not in unique_ids:
+    unique_ids = []
+    for idx, institution in enumerate(institutions):
+        if not isinstance(institution, dict):
+            _error_message = f'{MSG_E_INSTITUTIONS_INVALID} Invalid item at index {idx}.'
+            logger.warning(_error_message)
+            sys.exit(_error_message)
+
+        institution_id = institution.get('id')
+        institution_type = institution.get('type')
+
+        if not institution_id or institution_type != 'institutions':
+            _error_message = f'{MSG_E_INSTITUTIONS_INVALID} Invalid item at index {idx}.'
+            logger.warning(_error_message)
+            sys.exit(_error_message)
+
+        if institution_id not in unique_ids:
             unique_ids.append(institution_id)
 
     data = {
@@ -369,9 +382,9 @@ def _prepare_institutions_relationship_data(self, institutions, verbose=True):
 
 
 def _add_node_institutions(
-        self, node_id, institutions, ignore_error=True, verbose=True,
+        self, node_id, institutions, verbose=True,
 ):
-    """Add affiliated institutions to a node (best-effort support via ignore_error)."""
+    """Add affiliated institutions to a node."""
     _data = self._prepare_institutions_relationship_data(institutions, verbose=verbose)
     if len(_data.get('data', [])) == 0:
         return True
@@ -380,9 +393,7 @@ def _add_node_institutions(
     _response, _error_message = self._request('POST', _url, params={}, data=_data)
     if _error_message:
         logger.warning(f'Failed to add affiliated institutions to nodes/{node_id}/: {_error_message}')
-        if not ignore_error:
-            sys.exit(_error_message)
-        return False
+        sys.exit(_error_message)
     return _response is not None
 
 
@@ -578,10 +589,10 @@ def _projects_add_component(
     if verbose:
         logger.debug(f'\'{project.id}\' - \'{project.attributes.title}\' [{project.type}][{project.attributes.category}]')
 
-    # Best effort: do not interrupt the creation flow when institution relation fails.
+    # Institution relation errors should stop CLI to prevent partial creation.
     self._add_node_institutions(
         project.id, affiliated_institutions,
-        ignore_error=True, verbose=verbose,
+        verbose=verbose,
     )
 
     # link a project to this node (parent_node_id = project.id)
@@ -641,10 +652,10 @@ def _create_or_update_project(
         # overwrite project
         self.projects_creation_output[project.id] = convert_namespace_to_dict(project)
 
-        # Best effort: do not interrupt the create flow when institution relation fails.
+        # Institution relation errors should stop CLI to prevent partial creation.
         self._add_node_institutions(
             project.id, affiliated_institutions,
-            ignore_error=True, verbose=verbose,
+            verbose=verbose,
         )
     elif _id:
         logger.info(f'JSONPOINTER /projects/{project_idx}/id == {_id}')
@@ -686,10 +697,10 @@ def _create_or_update_project(
         # add to output
         self.projects_creation_output[project.id] = convert_namespace_to_dict(project)
 
-        # Best effort: do not interrupt the create flow when institution relation fails.
+        # Institution relation errors should stop CLI to prevent partial creation.
         self._add_node_institutions(
             project.id, affiliated_institutions,
-            ignore_error=True, verbose=verbose
+            verbose=verbose
         )
     return project
 
@@ -727,7 +738,7 @@ def projects_create(self):
         utils.check_json_schema(self.template_schema_projects, _input_prj_dicts)
 
         affiliated_institutions = self._users_institutions(
-            ignore_error=True, verbose=verbose,
+            verbose=verbose,
         )
 
         logger.info('Loop following the template of projects')
